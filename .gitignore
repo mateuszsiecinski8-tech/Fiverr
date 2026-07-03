@@ -1,0 +1,24 @@
+# Zależności (instalują się same przez `npm install`)
+/node_modules
+
+# Pliki budowania Next.js
+/.next/
+/out/
+
+# Pliki systemowe i środowiskowe
+.DS_Store
+*.pem
+.env*
+!.env.example
+
+# Logi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
