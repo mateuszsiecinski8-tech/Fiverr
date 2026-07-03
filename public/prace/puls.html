@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PULS Studio — Trenuj mocniej</title>
+<!-- PROJEKT POKAZOWY (spec work) — fikcyjne studio fitness -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0b0d;--pan:#141417;--line:#232329;--tx:#f4f4f2;--mut:#8e8e98;--lime:#d4ff3f}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Archivo',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .hd{font-family:'Archivo Black',sans-serif;text-transform:uppercase;letter-spacing:-.01em}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+
+  nav{position:sticky;top:0;z-index:10;background:rgba(11,11,13,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .logo{font-family:'Archivo Black';font-size:21px;letter-spacing:.02em}
+  .logo i{color:var(--lime);font-style:normal}
+  .nav-l{display:flex;gap:26px;font-size:13.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+  .nav-l a{color:inherit;text-decoration:none}
+  .btn{display:inline-block;background:var(--lime);color:#0b0b0d;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:13px 26px;border-radius:6px;font-size:13.5px;text-decoration:none}
+  .btn.line{background:transparent;color:var(--tx);border:1.5px solid var(--line)}
+
+  /* HERO */
+  .hero{position:relative;padding:90px 0 70px}
+  .hero::after{content:"PULS";position:absolute;right:-60px;bottom:-40px;font-family:'Archivo Black';font-size:300px;line-height:1;color:transparent;-webkit-text-stroke:1.5px #1e1e24;z-index:0;pointer-events:none}
+  .hero .in{position:relative;z-index:1}
+  .kick{display:inline-flex;align-items:center;gap:9px;color:var(--lime);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.16em}
+  .kick::before{content:"";width:26px;height:2px;background:var(--lime)}
+  .hero h1{font-size:clamp(52px,9vw,116px);line-height:.94;margin-top:22px}
+  .hero h1 .l{color:var(--lime)}
+  .hero p{color:var(--mut);font-size:18px;max-width:480px;margin-top:26px;line-height:1.65}
+  .hero-cta{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap}
+  .btn.big{padding:17px 34px;font-size:14.5px}
+
+  /* STATY */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:14px;margin-top:70px;overflow:hidden}
+  .st{padding:26px;border-right:1px solid var(--line);background:var(--pan)}
+  .st:last-child{border-right:0}
+  .st b{font-family:'Archivo Black';font-size:38px;display:block}
+  .st b i{color:var(--lime);font-style:normal}
+  .st span{color:var(--mut);font-size:13px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+
+  /* ZAJĘCIA */
+  .sec{padding:90px 0}
+  .sec-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .sec h2{font-size:clamp(34px,5vw,56px)}
+  .sec .mut{color:var(--mut);max-width:380px;line-height:1.6;font-size:15px}
+  .klasy{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:44px}
+  .k{border:1px solid var(--line);background:var(--pan);border-radius:14px;padding:24px;position:relative;transition:.25s}
+  .k:hover{border-color:var(--lime)}
+  .k .nr{font-family:'Archivo Black';color:#26262e;font-size:30px}
+  .k h3{font-size:19px;text-transform:uppercase;font-family:'Archivo Black';margin-top:34px}
+  .k p{color:var(--mut);font-size:13.5px;margin-top:8px;line-height:1.55}
+  .k .czas{margin-top:18px;display:inline-block;font-size:11.5px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.1em}
+
+  /* KARNETY */
+  .cennik{background:var(--pan);border-block:1px solid var(--line)}
+  .plany{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+  .pl{border:1px solid var(--line);border-radius:16px;padding:30px;background:var(--bg)}
+  .pl.hot{border-color:var(--lime);position:relative}
+  .pl.hot::before{content:"NAJPOPULARNIEJSZY";position:absolute;top:-11px;left:26px;background:var(--lime);color:#0b0b0d;font-size:10px;font-weight:800;letter-spacing:.1em;padding:4px 12px;border-radius:99px}
+  .pl h3{text-transform:uppercase;font-family:'Archivo Black';font-size:16px}
+  .pl .cena{font-family:'Archivo Black';font-size:44px;margin-top:14px}
+  .pl .cena small{font-family:'Archivo';font-size:14px;color:var(--mut);font-weight:500}
+  .pl ul{list-style:none;margin:22px 0 26px;display:grid;gap:11px}
+  .pl li{font-size:14px;color:#c9c9d2;padding-left:22px;position:relative}
+  .pl li::before{content:"→";position:absolute;left:0;color:var(--lime);font-weight:700}
+  .pl .btn{width:100%;text-align:center}
+
+  footer{padding:28px 0;text-align:center;color:var(--mut);font-size:13px}
+  @media(max-width:860px){.nav-l{display:none}.klasy{grid-template-columns:1fr 1fr}.plany{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.st{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap nav-in">
+  <div class="logo">PULS<i>—</i>STUDIO</div>
+  <div class="nav-l"><a href="#">Zajęcia</a><a href="#">Grafik</a><a href="#">Karnety</a><a href="#">Kontakt</a></div>
+  <a class="btn" href="#">Dołącz teraz</a>
+</div></nav>
+
+<header class="hero"><div class="wrap in">
+  <span class="kick">Studio treningowe · Warszawa</span>
+  <h1 class="hd">Trenuj<br>mocniej.<br><span class="l">Żyj pełniej.</span></h1>
+  <p>Treningi siłowe, mobility i zajęcia grupowe pod okiem trenerów, którzy naprawdę Cię znają. Bez tłumów, bez czekania na sprzęt.</p>
+  <div class="hero-cta">
+    <a class="btn big" href="#">Pierwszy trening gratis</a>
+    <a class="btn line big" href="#">Zobacz grafik</a>
+  </div>
+  <div class="stats">
+    <div class="st"><b>1200<i>+</i></b><span>aktywnych członków</span></div>
+    <div class="st"><b>40<i>+</i></b><span>zajęć tygodniowo</span></div>
+    <div class="st"><b>24<i>/7</i></b><span>dostęp z aplikacją</span></div>
+  </div>
+</div></header>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-hd">
+    <h2 class="hd">Wybierz swoją strefę</h2>
+    <p class="mut">Cztery formaty treningów — od spokojnej mobilności po zajęcia, po których zapomnisz, jak się nazywasz.</p>
+  </div>
+  <div class="klasy">
+    <div class="k"><span class="nr">01</span><h3>Siła</h3><p>Progresywny trening siłowy w małych grupach, plan pod Ciebie.</p><span class="czas">60 min · pon/śr/pt</span></div>
+    <div class="k"><span class="nr">02</span><h3>HIIT</h3><p>Interwały, które podkręcają metabolizm na 48 godzin.</p><span class="czas">45 min · codziennie</span></div>
+    <div class="k"><span class="nr">03</span><h3>Mobility</h3><p>Zakres ruchu, zdrowe stawy i regeneracja po ciężkim tygodniu.</p><span class="czas">50 min · wt/czw</span></div>
+    <div class="k"><span class="nr">04</span><h3>Box</h3><p>Technika, worki i padwork — czysta frajda i kondycja.</p><span class="czas">60 min · wt/sob</span></div>
+  </div>
+</div></section>
+
+<section class="sec cennik"><div class="wrap">
+  <div class="sec-hd">
+    <h2 class="hd">Karnety bez gwiazdek</h2>
+    <p class="mut">Żadnych umów na 24 miesiące. Wchodzisz, trenujesz, zostajesz — bo chcesz.</p>
+  </div>
+  <div class="plany">
+    <div class="pl"><h3>Start</h3><div class="cena">149<small> zł/mies</small></div>
+      <ul><li>8 wejść w miesiącu</li><li>Strefa siłowa + cardio</li><li>Aplikacja z grafikiem</li></ul>
+      <a class="btn line" href="#">Wybieram Start</a></div>
+    <div class="pl hot"><h3>Pro</h3><div class="cena">219<small> zł/mies</small></div>
+      <ul><li>Wejścia bez limitu</li><li>Wszystkie zajęcia grupowe</li><li>1 konsultacja trenerska/mies</li><li>Zamrożenie karnetu 2×/rok</li></ul>
+      <a class="btn" href="#">Wybieram Pro</a></div>
+    <div class="pl"><h3>Elite</h3><div class="cena">349<small> zł/mies</small></div>
+      <ul><li>Wszystko z Pro</li><li>4 treningi personalne/mies</li><li>Plan żywieniowy</li><li>Dostęp 24/7</li></ul>
+      <a class="btn line" href="#">Wybieram Elite</a></div>
+  </div>
+</div></section>
+
+<footer>© 2026 PULS Studio — projekt pokazowy. Design: Mateusz</footer>
+</body>
+</html>

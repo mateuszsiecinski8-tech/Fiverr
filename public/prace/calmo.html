@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calmo — aplikacja do medytacji (UI/UX)</title>
+<!-- PROJEKT POKAZOWY (spec work) — makieta UI fikcyjnej aplikacji -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0d0c16;--pan:#16141f;--line:#262336;--tx:#f2f1f7;--mut:#8d89a3;--ak:#8b7cf7;--tur:#4fd1c5}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+
+  /* ======== SCENA HERO (z niej robimy kafelek do portfolio) ======== */
+  .scena{position:relative;min-height:760px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:60px 20px;background:radial-gradient(900px 500px at 50% 10%,rgba(139,124,247,.28),transparent 65%),radial-gradient(700px 400px at 85% 90%,rgba(79,209,197,.14),transparent 60%),var(--bg)}
+  .scena h1{font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.02em;text-align:center}
+  .scena h1 span{background:linear-gradient(90deg,var(--ak),var(--tur));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .scena .sub{color:var(--mut);margin-top:10px;text-align:center;font-size:15px}
+  .fan{display:flex;align-items:center;justify-content:center;margin-top:46px}
+
+  /* Ramka telefonu */
+  .fon{width:250px;height:520px;background:#08070d;border-radius:38px;padding:10px;box-shadow:0 40px 90px rgba(0,0,0,.6);flex-shrink:0}
+  .ekran{width:100%;height:100%;border-radius:30px;background:var(--pan);overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .fan .fon:nth-child(1){transform:rotate(-9deg) translateY(26px) translateX(24px);z-index:1}
+  .fan .fon:nth-child(2){z-index:3;transform:translateY(-6px);box-shadow:0 50px 110px rgba(139,124,247,.35)}
+  .fan .fon:nth-child(3){transform:rotate(9deg) translateY(26px) translateX(-24px);z-index:1}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:78px;height:20px;background:#08070d;border-radius:99px;z-index:5}
+
+  /* ---- Ekran 1: ONBOARDING ---- */
+  .e-on{align-items:center;justify-content:center;text-align:center;padding:26px;background:linear-gradient(180deg,#191430,#0d0c16)}
+  .orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a99bff,#6b5ce0);position:relative;box-shadow:0 0 60px rgba(139,124,247,.55)}
+  .orb::before,.orb::after{content:"";position:absolute;inset:-16px;border-radius:50%;border:1.5px solid rgba(139,124,247,.35)}
+  .orb::after{inset:-32px;border-color:rgba(139,124,247,.16)}
+  .e-on h2{font-size:21px;font-weight:800;margin-top:34px;letter-spacing:-.01em}
+  .e-on p{font-size:12px;color:var(--mut);margin-top:9px;line-height:1.6;max-width:180px}
+  .dots{display:flex;gap:6px;margin-top:20px}
+  .dots span{width:6px;height:6px;border-radius:99px;background:var(--line)}
+  .dots span.on{width:18px;background:var(--ak)}
+  .cta-app{margin-top:22px;background:var(--ak);border-radius:14px;padding:13px 0;width:100%;text-align:center;font-size:13px;font-weight:700}
+
+  /* ---- Ekran 2: HOME ---- */
+  .e-hm{padding:34px 16px 0;gap:14px}
+  .hm-top{display:flex;justify-content:space-between;align-items:center}
+  .hm-top b{font-size:16px;font-weight:700}
+  .hm-top small{display:block;color:var(--mut);font-size:10.5px;font-weight:500}
+  .awa{width:32px;height:32px;border-radius:99px;background:linear-gradient(135deg,var(--tur),var(--ak))}
+  .sesja{background:linear-gradient(135deg,#241e45,#1a1730);border:1px solid #322c56;border-radius:18px;padding:16px;position:relative}
+  .sesja small{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ak)}
+  .sesja b{display:block;font-size:15px;margin-top:6px}
+  .sesja span{font-size:11px;color:var(--mut)}
+  .play{position:absolute;right:14px;bottom:14px;width:36px;height:36px;border-radius:99px;background:var(--ak);display:flex;align-items:center;justify-content:center;font-size:11px}
+  .katy{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .kat{border:1px solid var(--line);background:var(--pan);border-radius:14px;padding:13px}
+  .kat i{font-style:normal;font-size:16px}
+  .kat b{display:block;font-size:12px;margin-top:8px}
+  .kat small{font-size:9.5px;color:var(--mut)}
+  .nav-app{margin-top:auto;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:13px 0 16px;font-size:10px;color:var(--mut)}
+  .nav-app b{color:var(--ak);font-weight:600}
+
+  /* ---- Ekran 3: PROFIL ---- */
+  .e-pr{padding:36px 16px 0;align-items:center}
+  .awa-lg{width:64px;height:64px;border-radius:99px;background:linear-gradient(135deg,var(--tur),var(--ak));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px}
+  .e-pr h3{font-size:15px;font-weight:700;margin-top:10px}
+  .e-pr .od{font-size:10px;color:var(--mut)}
+  .staty{display:flex;gap:8px;width:100%;margin-top:16px}
+  .stat{flex:1;background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+  .stat b{font-size:14px;display:block}
+  .stat small{font-size:8.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .tydz{width:100%;background:var(--pan);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+  .tydz small{font-size:9.5px;color:var(--mut);font-weight:600}
+  .slupki{display:flex;gap:6px;align-items:flex-end;height:52px;margin-top:8px}
+  .slupki span{flex:1;border-radius:4px;background:linear-gradient(180deg,var(--ak),#5346a8)}
+  .lista{width:100%;margin-top:10px;display:grid;gap:7px}
+  .li{display:flex;align-items:center;gap:9px;background:var(--pan);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:11px;font-weight:600}
+  .li i{font-style:normal}
+  .li span{margin-left:auto;color:var(--mut)}
+
+  /* ======== OPIS PROJEKTU pod sceną ======== */
+  .opis{padding:80px 0 90px}
+  .opis h2{font-size:clamp(26px,3.4vw,36px);font-weight:800;letter-spacing:-.02em;text-align:center}
+  .opis .sub{text-align:center;color:var(--mut);margin-top:10px;max-width:560px;margin-inline:auto;line-height:1.65;font-size:15px}
+  .trzy{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:50px}
+  .tr{border:1px solid var(--line);background:var(--pan);border-radius:18px;padding:24px}
+  .tr b{font-size:15px}
+  .tr small{display:block;color:var(--ak);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+  .tr p{color:var(--mut);font-size:13.5px;line-height:1.6;margin-top:8px}
+  footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:var(--mut);font-size:13px}
+  @media(max-width:900px){.fan .fon:nth-child(1),.fan .fon:nth-child(3){display:none}.trzy{grid-template-columns:1fr}.scena{min-height:auto}}
+</style>
+</head>
+<body>
+
+<!-- SCENA: trzy ekrany aplikacji w ramkach telefonów -->
+<section class="scena" id="scena">
+  <h1>Calmo — <span>medytacja bez presji</span></h1>
+  <p class="sub">Koncept UI/UX · aplikacja mobilna · tryb ciemny</p>
+  <div class="fan">
+
+    <!-- EKRAN 1: onboarding -->
+    <div class="fon"><div class="ekran e-on">
+      <span class="notch"></span>
+      <div class="orb"></div>
+      <h2>Oddychaj.<br>Jesteś tu.</h2>
+      <p>5 minut dziennie wystarczy, żeby obniżyć poziom stresu.</p>
+      <div class="dots"><span class="on"></span><span></span><span></span></div>
+      <div class="cta-app">Zaczynamy →</div>
+    </div></div>
+
+    <!-- EKRAN 2: ekran główny -->
+    <div class="fon"><div class="ekran e-hm">
+      <span class="notch"></span>
+      <div class="hm-top"><div><small>czwartek, 3 lipca</small><b>Dzień dobry, Ola 🌿</b></div><span class="awa"></span></div>
+      <div class="sesja"><small>Sesja dnia</small><b>Spokojny poranek</b><span>10 min · oddech + skan ciała</span><span class="play">▶</span></div>
+      <div class="katy">
+        <div class="kat"><i>🌙</i><b>Sen</b><small>14 sesji</small></div>
+        <div class="kat"><i>🌊</i><b>Stres</b><small>18 sesji</small></div>
+        <div class="kat"><i>🎯</i><b>Fokus</b><small>9 sesji</small></div>
+        <div class="kat"><i>🫁</i><b>Oddech</b><small>12 sesji</small></div>
+      </div>
+      <div class="nav-app"><b>Dziś</b><span>Odkrywaj</span><span>Statystyki</span><span>Profil</span></div>
+    </div></div>
+
+    <!-- EKRAN 3: profil -->
+    <div class="fon"><div class="ekran e-pr">
+      <span class="notch"></span>
+      <div class="awa-lg">O</div>
+      <h3>Ola Nowak</h3>
+      <span class="od">w Calmo od marca 2026</span>
+      <div class="staty">
+        <div class="stat"><b>320</b><small>minut</small></div>
+        <div class="stat"><b>12 🔥</b><small>dni serii</small></div>
+        <div class="stat"><b>48</b><small>sesji</small></div>
+      </div>
+      <div class="tydz"><small>Ten tydzień</small>
+        <div class="slupki"><span style="height:40%"></span><span style="height:65%"></span><span style="height:30%"></span><span style="height:80%"></span><span style="height:55%"></span><span style="height:95%"></span><span style="height:20%"></span></div>
+      </div>
+      <div class="lista">
+        <div class="li"><i>🔔</i>Przypomnienia<span>20:30</span></div>
+        <div class="li"><i>💜</i>Ulubione sesje<span>7</span></div>
+      </div>
+      <div class="nav-app" style="width:calc(100% + 32px)"><span>Dziś</span><span>Odkrywaj</span><span>Statystyki</span><b>Profil</b></div>
+    </div></div>
+
+  </div>
+</section>
+
+<section class="opis"><div class="wrap">
+  <h2>O projekcie</h2>
+  <p class="sub">Koncept aplikacji do medytacji zaprojektowany wokół jednej zasady: zero presji. Bez rankingów, bez porównywania się — tylko Ty i Twój oddech.</p>
+  <div class="trzy">
+    <div class="tr"><small>Ekran 01</small><b>Onboarding</b><p>Trzy proste plansze zamiast formularza. Użytkownik zaczyna pierwszą sesję w mniej niż 30 sekund.</p></div>
+    <div class="tr"><small>Ekran 02</small><b>Ekran główny</b><p>Jedna „sesja dnia" zamiast paraliżującego wyboru. Kategorie dopiero niżej — hierarchia prowadzi wzrok.</p></div>
+    <div class="tr"><small>Ekran 03</small><b>Profil</b><p>Statystyki, które motywują łagodnie: seria dni i minuty spokoju zamiast tabel wyników.</p></div>
+  </div>
+</div></section>
+
+<footer>Calmo © 2026 — projekt pokazowy UI/UX · Design: Mateusz</footer>
+</body>
+</html>

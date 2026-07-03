@@ -73,49 +73,50 @@ export const uslugi = [
 
 // --- SEKCJA 3: PORTFOLIO (6 kart w siatce bento) ---
 // „uklad" decyduje o rozmiarze kafelka: "szeroki" = 2 kolumny, "waski" = 1 kolumna
-// „motyw" to kolor gradientu kafelka: fiolet / niebieski / roz / bursztyn / szmaragd / grafit
+// „obraz"  = plik z folderu public/portfolio/ (kafelek-mockup projektu)
+// „link"   = dokąd prowadzi klik (strony-demo leżą w public/prace/)
 export const portfolio = [
   {
-    tytul: "Landing page — SaaS",
+    tytul: "Flowly — landing SaaS",
     kategoria: "Strona WWW",
     uklad: "szeroki",
-    motyw: "fiolet",
-    mockup: "przegladarka", // przegladarka = ekran komputera, telefon = ekran telefonu
+    obraz: "/portfolio/flowly.jpg",
+    link: "/prace/flowly.html",
   },
   {
-    tytul: "Aplikacja fitness",
+    tytul: "Calmo — aplikacja do medytacji",
     kategoria: "UI/UX",
     uklad: "waski",
-    motyw: "niebieski",
-    mockup: "telefon",
+    obraz: "/portfolio/calmo.jpg",
+    link: "/prace/calmo.html",
   },
   {
-    tytul: "Identyfikacja kawiarni",
+    tytul: "Palona — identyfikacja kawiarni",
     kategoria: "Branding",
     uklad: "waski",
-    motyw: "bursztyn",
-    mockup: "branding",
+    obraz: "/portfolio/palona-brand.jpg",
+    link: "/prace/palona-brand.html",
   },
   {
-    tytul: "Panel analityczny",
-    kategoria: "UI/UX",
-    uklad: "szeroki",
-    motyw: "grafit",
-    mockup: "przegladarka",
-  },
-  {
-    tytul: "Sklep online — moda",
+    tytul: "PULS Studio — strona fitness",
     kategoria: "Strona WWW",
     uklad: "szeroki",
-    motyw: "roz",
-    mockup: "przegladarka",
+    obraz: "/portfolio/puls.jpg",
+    link: "/prace/puls.html",
   },
   {
-    tytul: "Aplikacja bankowa",
-    kategoria: "UI/UX",
+    tytul: "NOIA — marka kosmetyków",
+    kategoria: "Strona WWW",
+    uklad: "szeroki",
+    obraz: "/portfolio/noia.jpg",
+    link: "/prace/noia.html",
+  },
+  {
+    tytul: "Palona — strona kawiarni",
+    kategoria: "Strona WWW",
     uklad: "waski",
-    motyw: "szmaragd",
-    mockup: "telefon",
+    obraz: "/portfolio/palona-www.jpg",
+    link: "/prace/palona.html",
   },
 ];
 

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOIA — Pielęgnacja w Twoim rytmie</title>
+<!-- PROJEKT POKAZOWY (spec work) — fikcyjna marka kosmetyków -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf6f1;--ink:#2b2320;--mut:#8a7d74;--roz:#c98a7d;--roz2:#e7c4b5;--krem:#f1e7dc;--line:#e6dcd1}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .serif{font-family:'Cormorant Garamond',serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+
+  nav{position:sticky;top:0;z-index:10;background:rgba(250,246,241,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:70px}
+  .logo{font-family:'Jost';font-weight:600;font-size:20px;letter-spacing:.42em;padding-left:.42em}
+  .nav-l{display:flex;gap:30px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+  .nav-l a{color:inherit;text-decoration:none}
+  .btn{display:inline-block;background:var(--ink);color:#faf6f1;padding:13px 30px;border-radius:99px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none}
+  .btn.line{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+
+  /* HERO */
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:84px 0}
+  .kick{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--roz)}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(44px,5.6vw,72px);line-height:1.05;font-weight:500;margin-top:20px}
+  .hero h1 em{font-style:italic;color:var(--roz)}
+  .hero p{color:var(--mut);font-size:17px;line-height:1.75;max-width:440px;margin-top:24px}
+  .hero-cta{display:flex;gap:14px;margin-top:36px}
+
+  /* Ilustracja produktu (CSS) + miejsce na prawdziwe zdjęcie */
+  .stage{position:relative;height:520px;border-radius:200px 200px 24px 24px;background:linear-gradient(170deg,var(--roz2),var(--krem) 70%);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+  .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .butelka{position:relative;width:130px;height:300px;margin-bottom:56px}
+  .butelka .korpus{position:absolute;bottom:0;width:100%;height:230px;border-radius:18px;background:linear-gradient(160deg,#fff9f4,#eeddd2);box-shadow:0 30px 60px rgba(120,80,60,.25)}
+  .butelka .zakretka{position:absolute;top:24px;left:50%;transform:translateX(-50%);width:44px;height:58px;border-radius:8px;background:linear-gradient(160deg,#3a2f28,#22190f)}
+  .butelka .kropla{position:absolute;top:0;left:50%;transform:translateX(-50%);width:8px;height:30px;border-radius:99px;background:#22190f}
+  .butelka .etykieta{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);width:84px;height:100px;background:#fffdfb;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .butelka .etykieta b{font-size:13px;letter-spacing:.34em;padding-left:.34em;font-weight:600}
+  .butelka .etykieta span{font-size:8px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase}
+  .plamka{position:absolute;border-radius:50%;filter:blur(2px)}
+  .p1{width:120px;height:120px;background:rgba(201,138,125,.35);top:60px;left:40px}
+  .p2{width:70px;height:70px;background:rgba(255,255,255,.5);top:150px;right:60px}
+  .tag-eko{position:absolute;top:36px;right:36px;background:#fffdfb;border-radius:99px;padding:10px 18px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;box-shadow:0 10px 30px rgba(120,80,60,.15)}
+
+  /* PASEK WARTOŚCI */
+  .pasek{border-block:1px solid var(--line);background:#fffdfb}
+  .pasek .in{display:flex;justify-content:space-between;padding:22px 24px;max-width:1100px;margin:0 auto;flex-wrap:wrap;gap:12px}
+  .pasek span{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+  .pasek b{color:var(--roz);margin-right:8px}
+
+  /* PRODUKTY */
+  .sec{padding:92px 0}
+  .sec-hd{text-align:center;max-width:520px;margin:0 auto}
+  .sec h2{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,4.4vw,52px);font-weight:500}
+  .sec .sub{color:var(--mut);margin-top:14px;line-height:1.7}
+  .prod{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:56px}
+  .pr{background:#fffdfb;border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:.3s}
+  .pr:hover{transform:translateY(-6px);box-shadow:0 24px 50px rgba(120,80,60,.14)}
+  .pr .foto{height:230px;display:flex;align-items:center;justify-content:center}
+  .f1{background:linear-gradient(160deg,#efd9cd,#f7ece2)}
+  .f2{background:linear-gradient(160deg,#e3d3c4,#f4ebdf)}
+  .f3{background:linear-gradient(160deg,#d9c9c6,#f2e8e6)}
+  .mini{width:56px;height:110px;border-radius:10px;background:linear-gradient(160deg,#fff,#e9dbd2);position:relative;box-shadow:0 16px 30px rgba(120,80,60,.2)}
+  .mini::before{content:"";position:absolute;top:-16px;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:4px;background:#2b2320}
+  .mini.sl{border-radius:50px 50px 12px 12px}
+  .mini.ok{width:78px;height:64px;border-radius:14px}
+  .mini.ok::before{width:52px;height:12px;border-radius:3px}
+  .pr .op{padding:22px;text-align:center}
+  .pr h3{font-size:16px;letter-spacing:.06em}
+  .pr small{display:block;color:var(--mut);font-size:12.5px;margin-top:5px;letter-spacing:.06em}
+  .pr .cena{display:block;font-family:'Cormorant Garamond';font-size:22px;margin-top:12px;color:var(--roz);font-weight:600}
+
+  /* NEWSLETTER */
+  .news{background:var(--ink);color:#faf6f1;text-align:center;padding:84px 24px;border-radius:32px;margin:0 24px 90px}
+  .news h2{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,4vw,44px);font-weight:500}
+  .news h2 em{font-style:italic;color:var(--roz2)}
+  .news p{color:#bfae9f;margin-top:14px}
+  .form{display:flex;gap:10px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+  .form input{background:transparent;border:1px solid #55463c;border-radius:99px;padding:14px 24px;color:#faf6f1;font-family:'Jost';font-size:14px;width:300px;outline:none}
+  .form .btn{background:var(--roz);color:#fff}
+
+  footer{padding:28px 0;text-align:center;color:var(--mut);font-size:13px;letter-spacing:.06em}
+  @media(max-width:860px){.nav-l{display:none}.hero{grid-template-columns:1fr;padding:56px 0}.stage{height:400px}.prod{grid-template-columns:1fr}.pasek .in{justify-content:center}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap nav-in">
+  <div class="logo">NOIA</div>
+  <div class="nav-l"><a href="#">Sklep</a><a href="#">Rytuały</a><a href="#">Składniki</a><a href="#">O nas</a></div>
+  <a class="btn line" href="#">Koszyk (0)</a>
+</div></nav>
+
+<header class="wrap hero">
+  <div>
+    <span class="kick">Naturalna pielęgnacja · vegan</span>
+    <h1 class="serif">Pielęgnacja, która czuje <em>Twój rytm</em></h1>
+    <p>Minimalistyczne formuły z 9 składników lub mniej. Bez parabenów, bez kompromisów — tylko to, czego naprawdę potrzebuje Twoja skóra.</p>
+    <div class="hero-cta">
+      <a class="btn" href="#">Odkryj rytuały</a>
+      <a class="btn line" href="#">Bestsellery</a>
+    </div>
+  </div>
+  <div class="stage">
+    <!-- Gdy wrzucisz zdjęcie do public/prace/img/kosmetyki.png — pokaże się zamiast ilustracji -->
+    <img src="img/kosmetyki.png" alt="" onerror="this.remove()">
+    <span class="plamka p1"></span><span class="plamka p2"></span>
+    <span class="tag-eko">97% składników naturalnych</span>
+    <div class="butelka">
+      <span class="kropla"></span><span class="zakretka"></span>
+      <div class="korpus"></div>
+      <div class="etykieta"><b>NOIA</b><span>serum · no 02</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="pasek"><div class="in">
+  <span><b>✦</b>Wegańskie formuły</span>
+  <span><b>✦</b>Bez parabenów i SLS</span>
+  <span><b>✦</b>Szkło z recyklingu</span>
+  <span><b>✦</b>Cruelty-free</span>
+</div></div>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-hd">
+    <h2 class="serif">Bestsellery</h2>
+    <p class="sub">Trzy produkty, od których nasze klientki zaczynają najczęściej.</p>
+  </div>
+  <div class="prod">
+    <div class="pr"><div class="foto f1"><div class="mini"></div></div>
+      <div class="op"><h3>Serum No 02</h3><small>witamina C + skwalan · 30 ml</small><span class="cena">139 zł</span></div></div>
+    <div class="pr"><div class="foto f2"><div class="mini sl"></div></div>
+      <div class="op"><h3>Emulsja No 04</h3><small>ceramidy + prebiotyki · 50 ml</small><span class="cena">119 zł</span></div></div>
+    <div class="pr"><div class="foto f3"><div class="mini ok"></div></div>
+      <div class="op"><h3>Krem No 07</h3><small>masło shea + niacynamid · 45 ml</small><span class="cena">129 zł</span></div></div>
+  </div>
+</div></section>
+
+<section class="news">
+  <h2 class="serif">Dołącz do <em>rytuału</em></h2>
+  <p>Zapisz się i odbierz −15% na pierwsze zamówienie.</p>
+  <div class="form"><input type="email" placeholder="Twój adres email"><a class="btn" href="#">Zapisuję się</a></div>
+</section>
+
+<footer>© 2026 NOIA — projekt pokazowy · Design: Mateusz</footer>
+</body>
+</html>

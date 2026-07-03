@@ -104,12 +104,30 @@ I odpowiadasz na kilka pytań (wszędzie możesz nacisnąć Enter).
 
 ---
 
-## ❓ Częste pytania
+## 🖼️ Portfolio i projekty pokazowe (spec work)
 
-**Jak podmienić placeholdery w portfolio na prawdziwe projekty?**
-Tytuły i kolory kart zmienisz w `lib/dane.ts`. Gdy będziesz mieć screeny
-projektów, wrzuć je do folderu `public/` i podmień mockupy w
-`components/Portfolio.tsx` na `<Image>` — albo wróć do mnie, pomogę. 😉
+Portfolio jest wypełnione **6 projektami pokazowymi** — fikcyjnymi, ale
+zrobionymi jak płatne zlecenia. Kliknięcie kafelka otwiera **żywe demo**:
+
+| Projekt | Demo | Kafelek |
+|---|---|---|
+| Flowly — landing SaaS | `public/prace/flowly.html` | `public/portfolio/flowly.jpg` |
+| Calmo — aplikacja do medytacji (UI/UX) | `public/prace/calmo.html` | `public/portfolio/calmo.jpg` |
+| Palona — branding kawiarni | `public/prace/palona-brand.html` | `public/portfolio/palona-brand.jpg` |
+| PULS Studio — strona fitness | `public/prace/puls.html` | `public/portfolio/puls.jpg` |
+| NOIA — marka kosmetyków | `public/prace/noia.html` | `public/portfolio/noia.jpg` |
+| Palona — strona kawiarni | `public/prace/palona.html` | `public/portfolio/palona-www.jpg` |
+
+**Jak podmienić na prawdziwe projekty?** Wrzuć obrazek do
+`public/portfolio/` i zmień pola `obraz` + `link` przy danym wpisie
+w `lib/dane.ts`. Nic więcej.
+
+**Zdjęcia AI (opcjonalny bajer):** strony kawiarni i kosmetyków mają
+przygotowane miejsce na zdjęcia. Jeśli wrzucisz pliki
+`public/prace/img/kawa.png` oraz `public/prace/img/kosmetyki.png`,
+strony automatycznie pokażą je zamiast ilustracji CSS.
+
+## ❓ Częste pytania
 
 **Strona nie startuje po `npm run dev`?**
 Upewnij się, że najpierw uruchomiłeś `npm install` i masz Node.js ≥ 18
