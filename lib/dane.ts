@@ -8,7 +8,7 @@
 
 // --- LINKI (podmień na swoje!) ---
 export const linki = {
-  fiverr: "https://www.fiverr.com/twoj-nick", // ← wklej link do swojego profilu Fiverr
+  fiverr: "https://www.fiverr.com/matthew_maty", // twój profil Fiverr
   email: "twoj@email.com",                     // ← twój adres email
   instagram: "https://instagram.com/twoj-nick",
   behance: "https://behance.net/twoj-nick",
