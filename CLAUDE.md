@@ -3,6 +3,9 @@
 Jednostronicowe portfolio web designera: Next.js 15 (App Router) + Tailwind CSS 4.
 Właściciel jest POCZĄTKUJĄCY — tłumacz zmiany prostym językiem, po polsku.
 
+⭐ Pełna historia projektu, podjęte decyzje i checklista „do zrobienia"
+są w pliku `KONTEKST.md` — przy większych zadaniach przeczytaj go najpierw.
+
 ## Komendy
 - `npm install` — instalacja zależności (raz, na start)
 - `npm run dev` — podgląd lokalny na http://localhost:3000
