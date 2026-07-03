@@ -5,6 +5,7 @@
 // ============================================================
 
 import Reveal from "./Reveal";
+import KartaSpotlight from "./KartaSpotlight";
 import { IkonaMonitor, IkonaPaleta, IkonaWarstwy, IkonaPtaszek } from "./Ikony";
 import { uslugi } from "@/lib/dane";
 
@@ -35,8 +36,10 @@ export default function Services() {
           {uslugi.map((usluga, indeks) => {
             const Ikona = ikony[usluga.ikona as keyof typeof ikony];
             return (
-              // Każda kolejna karta pojawia się z małym opóźnieniem (efekt kaskady)
+              // Każda kolejna karta pojawia się z małym opóźnieniem (efekt kaskady),
+              // a KartaSpotlight dodaje poświatę podążającą za kursorem
               <Reveal key={usluga.tytul} opoznienie={indeks * 0.12}>
+                <KartaSpotlight className="h-full rounded-3xl">
                 <article className="group h-full rounded-3xl border border-zinc-200 bg-zinc-50/50 p-8 transition-all duration-300 hover:-translate-y-1.5 hover:border-akcent/40 hover:shadow-xl hover:shadow-akcent/10 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-akcent/40">
                   {/* Ikona w kolorowym kwadracie */}
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-akcent/10 text-akcent transition-transform duration-300 group-hover:scale-110">
@@ -58,6 +61,7 @@ export default function Services() {
                     ))}
                   </ul>
                 </article>
+                </KartaSpotlight>
               </Reveal>
             );
           })}

@@ -5,6 +5,7 @@
 // ============================================================
 
 import Reveal from "./Reveal";
+import KartaSpotlight from "./KartaSpotlight";
 import { IkonaPtaszek } from "./Ikony";
 import { cennik, linki } from "@/lib/dane";
 
@@ -26,6 +27,7 @@ export default function Pricing() {
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {cennik.map((pakiet, indeks) => (
             <Reveal key={pakiet.nazwa} opoznienie={indeks * 0.12}>
+              <KartaSpotlight className="h-full rounded-3xl">
               <article
                 className={`relative flex h-full flex-col rounded-3xl border p-8 transition-all duration-300 hover:-translate-y-1.5 ${
                   pakiet.wyrozniony
@@ -64,15 +66,16 @@ export default function Pricing() {
                   href={linki.fiverr}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`mt-8 block rounded-full py-3.5 text-center text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
+                  className={`relative z-10 mt-8 block rounded-full py-3.5 text-center text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
                     pakiet.wyrozniony
-                      ? "bg-akcent text-white hover:bg-akcent-hover hover:shadow-lg hover:shadow-akcent/30"
+                      ? "blysk bg-akcent text-white hover:bg-akcent-hover hover:shadow-lg hover:shadow-akcent/30"
                       : "border border-zinc-300 text-zinc-800 hover:border-akcent hover:text-akcent dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-akcent dark:hover:text-akcent"
                   }`}
                 >
                   Wybieram {pakiet.nazwa}
                 </a>
               </article>
+              </KartaSpotlight>
             </Reveal>
           ))}
         </div>

@@ -48,18 +48,160 @@ body {
 .reveal {
   opacity: 0;
   transform: translateY(28px);
+  filter: blur(6px); /* lekkie rozmycie na starcie = efekt „wyostrzania" */
   transition:
     opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--reveal-opoznienie, 0s);
 }
 .reveal.widoczny {
   opacity: 1;
   transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ============================================================
+   ANIMACJE „PREMIUM" — dodatkowa warstwa efektów
+   ============================================================ */
+
+/* Elegancki pasek przewijania — mały detal, wielkie wrażenie */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 99px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-akcent);
+}
+
+/* --- WJAZD: animacja startowa sekcji hero (odpala się od razu
+   po wczytaniu strony — tekst „wyłania się" z rozmycia) --- */
+@keyframes wjazd {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.wjazd {
+  opacity: 0;
+  animation: wjazd 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* opóźnienie ustawiamy w komponencie przez style={{animationDelay}} */
+}
+
+/* --- ŻYWY GRADIENT: kolorowy tekst, który powoli „faluje" --- */
+@keyframes gradient-ruch {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.gradient-zywy {
+  background-size: 200% 200%;
+  animation: gradient-ruch 6s ease-in-out infinite;
+}
+
+/* --- PŁYWANIE: poświaty w tle delikatnie dryfują --- */
+@keyframes plywanie {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(calc(-50% + 30px), -34px); }
+}
+@keyframes plywanie2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-38px, 26px) scale(1.12); }
+}
+.plywa1 { animation: plywanie 13s ease-in-out infinite; }
+.plywa2 { animation: plywanie2 17s ease-in-out infinite; }
+
+/* --- PULSOWANIE: poświata w sekcji kontakt „oddycha" --- */
+@keyframes pulsowanie {
+  0%, 100% { opacity: 0.28; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.14); }
+}
+.pulsuje { animation: pulsowanie 5.5s ease-in-out infinite; }
+
+/* --- MARQUEE: pasek haseł przewijany w nieskończoność --- */
+@keyframes marquee-przesun {
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-przesun 38s linear infinite;
+}
+.marquee:hover {
+  animation-play-state: paused; /* najechanie myszką zatrzymuje pasek */
+}
+
+/* --- BŁYSK: smuga światła przelatująca przez przycisk na hover --- */
+.blysk {
+  position: relative;
+  overflow: hidden;
+}
+.blysk::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -160%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.65s ease;
+  pointer-events: none;
+}
+.blysk:hover::after {
+  left: 170%;
+}
+
+/* --- SPOTLIGHT: poświata podążająca za kursorem na kartach
+   (pozycję --mx/--my ustawia components/KartaSpotlight.tsx) --- */
+.spot {
+  position: relative;
+}
+.spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    340px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--color-akcent) 13%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+  z-index: 1;
+}
+.spot:hover::after {
+  opacity: 1;
+}
+
+/* --- ZIARNO: subtelna tekstura szumu na gradientach
+   (sprawia, że tła wyglądają „drogo", jak w druku) --- */
+.ziarno {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Jeśli użytkownik ma włączone „ograniczenie animacji" w systemie —
-   wyłączamy efekty (dostępność / accessibility) */
+   wyłączamy wszystkie efekty (dostępność / accessibility) */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -68,5 +210,19 @@ body {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .wjazd {
+    animation: none;
+    opacity: 1;
+  }
+  .gradient-zywy,
+  .plywa1,
+  .plywa2,
+  .pulsuje,
+  .marquee {
+    animation: none;
+  }
+  .blysk::after {
+    display: none;
   }
 }

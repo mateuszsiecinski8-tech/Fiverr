@@ -5,7 +5,9 @@
 // ============================================================
 
 import Navbar from "@/components/Navbar";
+import ScrollProgress from "@/components/ScrollProgress";
 import Hero from "@/components/Hero";
+import Marquee from "@/components/Marquee";
 import Services from "@/components/Services";
 import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
@@ -17,9 +19,11 @@ import Footer from "@/components/Footer";
 export default function Strona() {
   return (
     <>
+      <ScrollProgress />  {/* Kolorowy pasek postępu na górze ekranu */}
       <Navbar />
       <main>
         <Hero />          {/* 1. Duże imię + przyciski */}
+        <Marquee />       {/* Przewijany pasek haseł */}
         <Services />      {/* 2. Trzy karty usług */}
         <Portfolio />     {/* 3. Siatka bento z projektami */}
         <Process />       {/* 4. Cztery kroki współpracy */}

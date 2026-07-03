@@ -56,7 +56,7 @@ export default function Navbar() {
             href={linki.fiverr}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-akcent hover:shadow-lg hover:shadow-akcent/25 md:block dark:bg-white dark:text-zinc-900 dark:hover:bg-akcent dark:hover:text-white"
+            className="blysk hidden rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-akcent hover:shadow-lg hover:shadow-akcent/25 md:block dark:bg-white dark:text-zinc-900 dark:hover:bg-akcent dark:hover:text-white"
           >
             Zamów projekt
           </a>

@@ -28,7 +28,26 @@ export const hero = {
     "Projektuję strony, marki i interfejsy, które wyglądają premium i sprzedają. Od pomysłu do gotowego projektu — bez kompromisów.",
   przyciskPrace: "Zobacz prace",
   przyciskKontakt: "Napisz do mnie",
+  // Trzy liczby pod przyciskami — buduj wiarygodność (edytuj śmiało!)
+  statystyki: [
+    { liczba: "6+", opis: "projektów w portfolio" },
+    { liczba: "<24h", opis: "odpowiedź na wiadomości" },
+    { liczba: "100%", opis: "terminowych realizacji" },
+  ],
 };
+
+// --- PASEK PRZEWIJANYCH HASEŁ (marquee, pod sekcją hero) ---
+export const marquee = [
+  "Strony WWW",
+  "Landing Page",
+  "Branding",
+  "Logo",
+  "UI/UX Design",
+  "Figma",
+  "Next.js",
+  "Animacje",
+  "Grafika Social Media",
+];
 
 // --- SEKCJA 2: USŁUGI (3 karty) ---
 export const uslugi = [
