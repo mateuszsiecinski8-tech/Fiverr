@@ -70,8 +70,29 @@
   .pl li::before{content:"→";position:absolute;left:0;color:var(--lime);font-weight:700}
   .pl .btn{width:100%;text-align:center}
 
-  footer{padding:28px 0;text-align:center;color:var(--mut);font-size:13px}
-  @media(max-width:860px){.nav-l{display:none}.klasy{grid-template-columns:1fr 1fr}.plany{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.st{border-right:0;border-bottom:1px solid var(--line)}}
+  /* OPINIE */
+  .opinie{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
+  .op{border:1px solid var(--line);border-radius:14px;padding:26px;background:var(--pan);transition:.25s}
+  .op:hover{border-color:var(--lime)}
+  .op .gw{color:var(--lime);letter-spacing:3px;font-size:13px}
+  .op p{margin-top:14px;color:#c9c9d2;font-size:14px;line-height:1.7}
+  .op b{display:block;margin-top:16px;font-size:13.5px;text-transform:uppercase;letter-spacing:.06em}
+  .op small{color:var(--mut);font-size:12px}
+
+  /* STOPKA */
+  .stopa{border-top:1px solid var(--line);padding-top:52px;background:var(--pan)}
+  .gorna{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px;padding-bottom:44px}
+  .gorna p{color:var(--mut);font-size:13.5px;line-height:1.8;margin-top:12px;max-width:250px}
+  .gorna h5{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-bottom:14px}
+  .gorna a{display:block;color:#c9c9d2;text-decoration:none;font-size:14px;margin-bottom:10px;font-weight:500}
+  .gorna a:hover{color:var(--lime)}
+  .dolna{border-top:1px solid var(--line);padding:20px 24px;font-size:12.5px;color:var(--mut);text-align:center}
+
+  /* Animacja pojawiania się sekcji przy scrollu */
+  .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+  .rv.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+  @media(max-width:860px){.nav-l{display:none}.klasy{grid-template-columns:1fr 1fr}.plany{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.st{border-right:0;border-bottom:1px solid var(--line)}.opinie{grid-template-columns:1fr}.gorna{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -128,6 +149,34 @@
   </div>
 </div></section>
 
-<footer>© 2026 PULS Studio — projekt pokazowy. Design: Mateusz</footer>
+<section class="sec"><div class="wrap">
+  <div class="sec-hd">
+    <h2 class="hd">Oni już trenują</h2>
+    <p class="mut">Ponad 1200 osób zostawiło u nas swój pot. I dobre opinie.</p>
+  </div>
+  <div class="opinie">
+    <div class="op"><span class="gw">★★★★★</span><p>„Pierwszy klub, w którym trener naprawdę pamięta, jak masz na imię i jaki masz cel. Po 4 miesiącach −9 kg i pierwszy podciąg w życiu."</p><b>Kasia R.</b><small>karnet Pro · 8 miesięcy</small></div>
+    <div class="op"><span class="gw">★★★★★</span><p>„Trenowałem w trzech sieciówkach. Tu nie ma czekania na sprzęt, a zajęcia HIIT to najlepsze 45 minut tygodnia. Nie wracam do tamtych."</p><b>Michał D.</b><small>karnet Elite · rok</small></div>
+    <div class="op"><span class="gw">★★★★★</span><p>„Mobility w czwartki uratowało moje plecy po pracy przy biurku. Małe grupy robią ogromną różnicę — każdy dostaje uwagę."</p><b>Ola W.</b><small>karnet Start · 5 miesięcy</small></div>
+  </div>
+</div></section>
+
+<footer class="stopa">
+  <div class="wrap gorna">
+    <div><div class="logo">PULS<i>—</i>STUDIO</div><p>Studio treningowe w centrum Warszawy. Siła, HIIT, mobility i box — bez tłumów, z trenerami, którzy Cię znają.</p></div>
+    <div><h5>Studio</h5><a href="#">Zajęcia</a><a href="#">Grafik</a><a href="#">Karnety</a><a href="#">Trenerzy</a></div>
+    <div><h5>Kontakt</h5><a href="#">ul. Prosta 51, Warszawa</a><a href="#">hej@puls.studio</a><a href="#">Pon–Nd: 6:00–23:00</a><a href="#">Instagram</a></div>
+  </div>
+  <div class="dolna">© 2026 PULS Studio — projekt pokazowy · Design: Mateusz</div>
+</footer>
+
+<script>
+// Animacja pojawiania się sekcji podczas przewijania
+document.querySelectorAll('section, footer').forEach(el => el.classList.add('rv'));
+const io = new IntersectionObserver(w => w.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: 0.1 });
+document.querySelectorAll('.rv').forEach(el => io.observe(el));
+</script>
 </body>
 </html>

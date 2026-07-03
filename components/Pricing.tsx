@@ -16,7 +16,7 @@ export default function Pricing() {
         {/* Nagłówek sekcji */}
         <Reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-akcent">
-            Cennik
+            05 — Cennik
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
             Przejrzyste pakiety, zero ukrytych kosztów

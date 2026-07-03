@@ -90,6 +90,20 @@ export const uslugi = [
   },
 ];
 
+// --- PROJEKT WYRÓŻNIONY (prawdziwy klient!) ---
+// Wyświetla się jako duża karta NAD siatką portfolio.
+// ⭐ Miniaturę podmienisz, wrzucając zrzut ekranu strony
+//    do pliku: public/portfolio/justyna.jpg (ta sama nazwa!)
+export const projektWyrozniony = {
+  odznaka: "Prawdziwy klient",
+  tytul: "Justyna Rodziewicz — Nieruchomości Premium",
+  podtytul: "Elegancka strona dla biura nieruchomości premium z Olsztyna",
+  opis: "Kompletna strona-wizytówka dla licencjonowanej pośredniczki nieruchomości. Minimalistyczny, luksusowy design (paleta beż + czerń), numerowane sekcje, filtrowana baza ofert, formularz sprzedaży nieruchomości i integracja z podcastem. Responsywna, dopracowana, budująca zaufanie i prestiż marki.",
+  tagi: ["Web Design", "Real Estate", "Branding"],
+  link: "https://www.justynarodziewicz.pl/",
+  obraz: "/portfolio/justyna.jpg",
+};
+
 // --- SEKCJA 3: PORTFOLIO (6 kart w siatce bento) ---
 // „uklad" decyduje o rozmiarze kafelka: "szeroki" = 2 kolumny, "waski" = 1 kolumna
 // „obraz"  = plik z folderu public/portfolio/ (kafelek-mockup projektu)

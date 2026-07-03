@@ -82,8 +82,29 @@
   .form input{background:transparent;border:1px solid #55463c;border-radius:99px;padding:14px 24px;color:#faf6f1;font-family:'Jost';font-size:14px;width:300px;outline:none}
   .form .btn{background:var(--roz);color:#fff}
 
-  footer{padding:28px 0;text-align:center;color:var(--mut);font-size:13px;letter-spacing:.06em}
-  @media(max-width:860px){.nav-l{display:none}.hero{grid-template-columns:1fr;padding:56px 0}.stage{height:400px}.prod{grid-template-columns:1fr}.pasek .in{justify-content:center}}
+  /* RECENZJE */
+  .rece{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:56px}
+  .re{background:#fffdfb;border:1px solid var(--line);border-radius:18px;padding:28px;transition:.3s}
+  .re:hover{transform:translateY(-5px);box-shadow:0 22px 46px rgba(120,80,60,.12)}
+  .re .gw{color:var(--roz);letter-spacing:3px;font-size:13px}
+  .re p{margin-top:14px;color:#5d5049;font-size:14px;line-height:1.75;font-style:italic;font-family:'Cormorant Garamond',serif;font-size:17px}
+  .re b{display:block;margin-top:16px;font-size:13px;letter-spacing:.08em}
+  .re small{color:var(--mut);font-size:11.5px;letter-spacing:.06em}
+
+  /* STOPKA */
+  .stopa{border-top:1px solid var(--line);background:#fffdfb;padding-top:56px}
+  .gorna{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px;max-width:1100px;margin:0 auto;padding:0 24px 46px}
+  .gorna p{color:var(--mut);font-size:13.5px;line-height:1.8;margin-top:14px;max-width:240px}
+  .gorna h5{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin-bottom:16px}
+  .gorna a{display:block;color:#5d5049;text-decoration:none;font-size:14px;margin-bottom:11px}
+  .gorna a:hover{color:var(--roz)}
+  .dolna{border-top:1px solid var(--line);padding:20px 24px;font-size:12.5px;color:var(--mut);text-align:center;letter-spacing:.06em}
+
+  /* Animacja pojawiania się sekcji przy scrollu */
+  .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+  .rv.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+  @media(max-width:860px){.nav-l{display:none}.hero{grid-template-columns:1fr;padding:56px 0}.stage{height:400px}.prod{grid-template-columns:1fr}.pasek .in{justify-content:center}.rece{grid-template-columns:1fr}.gorna{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -139,12 +160,41 @@
   </div>
 </div></section>
 
+<section class="sec" style="padding-top:0"><div class="wrap">
+  <div class="sec-hd">
+    <h2 class="serif">Skóra mówi „dziękuję"</h2>
+    <p class="sub">Ponad 2 000 recenzji ze średnią 4,9 ★</p>
+  </div>
+  <div class="rece">
+    <div class="re"><span class="gw">★★★★★</span><p>„Serum No 02 to pierwszy kosmetyk, po którym naprawdę widzę różnicę. Skóra rozświetlona już po dwóch tygodniach."</p><b>MAGDA</b><small>cera mieszana</small></div>
+    <div class="re"><span class="gw">★★★★★</span><p>„W końcu marka, która nie obiecuje cudów, tylko po prostu działa. Minimalny skład, zero podrażnień, piękne opakowania."</p><b>ALEKSANDRA</b><small>cera wrażliwa</small></div>
+    <div class="re"><span class="gw">★★★★★</span><p>„Krem No 07 kupuję już trzeci raz. Rytuał wieczorny z NOIA to mój ulubiony moment dnia — polecam każdej koleżance."</p><b>NATALIA</b><small>cera sucha</small></div>
+  </div>
+</div></section>
+
 <section class="news">
   <h2 class="serif">Dołącz do <em>rytuału</em></h2>
   <p>Zapisz się i odbierz −15% na pierwsze zamówienie.</p>
   <div class="form"><input type="email" placeholder="Twój adres email"><a class="btn" href="#">Zapisuję się</a></div>
 </section>
 
-<footer>© 2026 NOIA — projekt pokazowy · Design: Mateusz</footer>
+<footer class="stopa">
+  <div class="gorna">
+    <div><div class="logo">NOIA</div><p>Minimalistyczna pielęgnacja z 9 składników lub mniej. Wegańska, świadoma, skuteczna.</p></div>
+    <div><h5>Sklep</h5><a href="#">Serum</a><a href="#">Kremy</a><a href="#">Zestawy</a><a href="#">Karty podarunkowe</a></div>
+    <div><h5>Marka</h5><a href="#">O nas</a><a href="#">Składniki</a><a href="#">Rytuały</a><a href="#">Dziennik</a></div>
+    <div><h5>Pomoc</h5><a href="#">Dostawa</a><a href="#">Zwroty</a><a href="#">Kontakt</a><a href="#">FAQ</a></div>
+  </div>
+  <div class="dolna">© 2026 NOIA — projekt pokazowy · Design: Mateusz</div>
+</footer>
+
+<script>
+// Animacja pojawiania się sekcji podczas przewijania
+document.querySelectorAll('section, footer, .pasek').forEach(el => el.classList.add('rv'));
+const io = new IntersectionObserver(w => w.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: 0.1 });
+document.querySelectorAll('.rv').forEach(el => io.observe(el));
+</script>
 </body>
 </html>

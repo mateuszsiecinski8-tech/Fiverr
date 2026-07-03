@@ -79,8 +79,31 @@
   .cta-in::before{content:"";position:absolute;inset:auto;left:50%;top:-140px;width:520px;height:320px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(123,97,255,.55),transparent)}
   .cta-in h2{color:#fff;font-size:clamp(28px,4vw,42px);position:relative}
   .cta-in p{color:#a7a4b8;margin:14px 0 30px;position:relative}
-  footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--mut);font-size:13px}
-  @media(max-width:760px){.nav-links{display:none}.grid3{grid-template-columns:1fr}.side{display:none}.cards{grid-template-columns:1fr 1fr}}
+  /* OPINIE */
+  .opinie{padding:0 0 96px}
+  .op-k{background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px;transition:.3s}
+  .op-k:hover{transform:translateY(-5px);box-shadow:0 22px 50px rgba(109,93,252,.12)}
+  .gw{color:#f5b100;letter-spacing:3px;font-size:13px}
+  .op-k p{margin-top:14px;color:#3c3e4c;font-size:14.5px;line-height:1.7}
+  .kto{display:flex;gap:11px;margin-top:18px;align-items:center;border-top:1px solid var(--line);padding-top:16px}
+  .aw{width:38px;height:38px;border-radius:99px;background:linear-gradient(135deg,var(--ak),var(--ak2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;font-family:'Space Grotesk'}
+  .kto b{font-size:13.5px;display:block}
+  .kto small{color:var(--mut);font-size:12px}
+
+  /* STOPKA */
+  .stopa{border-top:1px solid var(--line);background:#fff;padding-top:56px}
+  .gorna{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px;padding-bottom:46px}
+  .gorna p{color:var(--mut);font-size:13.5px;line-height:1.7;margin-top:12px;max-width:230px}
+  .gorna h5{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:14px}
+  .gorna a{display:block;color:#3c3e4c;text-decoration:none;font-size:14px;margin-bottom:10px;font-weight:500}
+  .gorna a:hover{color:var(--ak)}
+  .dolna{border-top:1px solid var(--line);padding:20px 24px;font-size:12.5px;color:var(--mut);text-align:center}
+
+  /* Animacja pojawiania się sekcji przy scrollu */
+  .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+  .rv.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+  @media(max-width:760px){.nav-links{display:none}.grid3{grid-template-columns:1fr}.side{display:none}.cards{grid-template-columns:1fr 1fr}.gorna{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -145,12 +168,40 @@
   </div>
 </div></section>
 
+<section class="opinie"><div class="wrap">
+  <div class="grid3">
+    <div class="op-k"><span class="gw">★★★★★</span><p>„Przeszliśmy z trzech narzędzi na samo Flowly. Zespół w końcu wie, kto co robi — a ja nie spędzam piątków na składaniu raportów."</p>
+      <div class="kto"><span class="aw">MK</span><div><b>Marta Kowal</b><small>Head of Product, Kuvio</small></div></div></div>
+    <div class="op-k"><span class="gw">★★★★★</span><p>„Automatyzacje to złoto. Przypomnienia i statusy dzieją się same — oszczędzamy realnie kilka godzin tygodniowo na każdej osobie."</p>
+      <div class="kto"><span class="aw">PN</span><div><b>Piotr Nowicki</b><small>CTO, brightpath</small></div></div></div>
+    <div class="op-k"><span class="gw">★★★★★</span><p>„Wdrożenie zajęło jedno popołudnie. Interfejs jest tak przejrzysty, że nikt nie potrzebował szkolenia. Polecam każdemu zespołowi."</p>
+      <div class="kto"><span class="aw">AL</span><div><b>Ania Lis</b><small>Operations, NORDIC</small></div></div></div>
+  </div>
+</div></section>
+
 <section class="cta"><div class="cta-in">
   <h2>Zacznij dowozić projekty na czas</h2>
   <p>14 dni za darmo. Bez karty, bez zobowiązań.</p>
   <a class="btn ak big" href="#">Załóż konto →</a>
 </div></section>
 
-<footer>© 2026 Flowly — projekt pokazowy. Design: Mateusz</footer>
+<footer class="stopa">
+  <div class="wrap gorna">
+    <div><div class="logo">flowly<b>.</b></div><p>Zadania, terminy i zespół w jednym przejrzystym panelu. Mniej spotkań, więcej zrobionego.</p></div>
+    <div><h5>Produkt</h5><a href="#">Funkcje</a><a href="#">Cennik</a><a href="#">Integracje</a><a href="#">Changelog</a></div>
+    <div><h5>Firma</h5><a href="#">O nas</a><a href="#">Blog</a><a href="#">Kariera</a><a href="#">Kontakt</a></div>
+    <div><h5>Zasoby</h5><a href="#">Pomoc</a><a href="#">API</a><a href="#">Status</a><a href="#">Bezpieczeństwo</a></div>
+  </div>
+  <div class="dolna">© 2026 Flowly — projekt pokazowy · Design: Mateusz</div>
+</footer>
+
+<script>
+// Animacja pojawiania się sekcji podczas przewijania
+document.querySelectorAll('section, footer').forEach(el => el.classList.add('rv'));
+const io = new IntersectionObserver(w => w.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: 0.1 });
+document.querySelectorAll('.rv').forEach(el => io.observe(el));
+</script>
 </body>
 </html>
