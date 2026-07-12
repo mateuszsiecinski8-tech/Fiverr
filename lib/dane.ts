@@ -9,7 +9,7 @@
 // --- LINKI (podmień na swoje!) ---
 export const linki = {
   fiverr: "https://www.fiverr.com/matthew_maty", // twój profil Fiverr
-  email: "twoj@email.com",                     // ← twój adres email
+  email: "mateuszsiecinski8@gmail.com",                     // ← twój adres email
   instagram: "https://instagram.com/twoj-nick",
   behance: "https://behance.net/twoj-nick",
   dribbble: "https://dribbble.com/twoj-nick",
@@ -20,9 +20,9 @@ export const linki = {
 export const hero = {
   dostepnosc: "Dostępny do nowych projektów",
   // Imię lub nick — wyświetla się bardzo dużą czcionką
-  imie: "Mateusz",
+  imie: "Maty",
   // Druga linijka nagłówka (ta z kolorowym gradientem)
-  imieAkcent: "Design & Web",
+  imieAkcent: "Web Design",
   // Jedno zdanie o Tobie
   opis:
     "Projektuję strony, marki i interfejsy, które wyglądają premium i sprzedają. Od pomysłu do gotowego projektu — bez kompromisów.",
