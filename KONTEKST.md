@@ -48,6 +48,15 @@ nad siatką bento, z tagami i case study. Dema z etapu 2 dostały sekcje
 opinii, wielokolumnowe stopki i animacje reveal. Link Fiverr podpięty
 wszędzie: https://www.fiverr.com/matthew_maty
 
+**Etap 5 — scena 3D w hero.** Komponent `components/Scena3D.tsx`:
+tekst po lewej, interaktywna scena Spline po prawej (desktop). Dwa tryby
+linku (ustawiane w `lib/dane.ts` → `hero.scena3d`): adres `.splinecode`
+→ silnik `@splinetool/runtime` na canvasie; zwykły link Spline → iframe
+(działa w darmowym planie). Ładowanie leniwe + spinner; na mobile,
+przy `prefers-reduced-motion` i przy braku dostępu do serwera Spline —
+statyczny fallback (kula CSS z pierścieniami). Waga strony bez zmian
+(silnik dociąga się osobno, tylko na desktopie).
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.

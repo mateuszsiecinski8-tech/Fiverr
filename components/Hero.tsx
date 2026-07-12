@@ -7,6 +7,7 @@
 // ============================================================
 
 import { IkonaStrzalka } from "./Ikony";
+import Scena3D from "./Scena3D";
 import { hero, linki } from "@/lib/dane";
 
 export default function Hero() {
@@ -27,7 +28,9 @@ export default function Hero() {
       {/* Subtelna tekstura ziarna na całym tle */}
       <div aria-hidden="true" className="ziarno" />
 
-      <div className="relative mx-auto w-full max-w-6xl py-24 md:py-28">
+      {/* Na dużych ekranach: tekst po lewej, scena 3D po prawej */}
+      <div className="relative mx-auto w-full max-w-6xl py-24 md:py-28 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8">
+      <div>
         {/* Zielona kropka + „Dostępny do projektów" */}
         <div className="wjazd">
           <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/60 px-4 py-1.5 text-sm font-medium text-zinc-600 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
@@ -41,7 +44,7 @@ export default function Hero() {
         </div>
 
         {/* Wielki nagłówek — imię + falujący gradient */}
-        <h1 className="mt-8 text-6xl font-extrabold leading-[1.02] tracking-tighter sm:text-7xl md:text-8xl lg:text-[7rem]">
+        <h1 className="mt-8 text-6xl font-extrabold leading-[1.02] tracking-tighter sm:text-7xl md:text-8xl lg:text-6xl xl:text-[4.75rem]">
           <span className="wjazd block" style={{ animationDelay: "0.1s" }}>
             {hero.imie}
           </span>
@@ -99,6 +102,13 @@ export default function Hero() {
               </div>
             ))}
           </dl>
+        </div>
+      </div>
+
+        {/* Interaktywna scena 3D (Spline) — po prawej na komputerze,
+            pod tekstem na tablecie; szczegóły w components/Scena3D.tsx */}
+        <div className="wjazd mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
+          <Scena3D />
         </div>
       </div>
 

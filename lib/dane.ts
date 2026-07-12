@@ -28,6 +28,15 @@ export const hero = {
     "Projektuję strony, marki i interfejsy, które wyglądają premium i sprzedają. Od pomysłu do gotowego projektu — bez kompromisów.",
   przyciskPrace: "Zobacz prace",
   przyciskKontakt: "Napisz do mnie",
+  // 🎮 SCENA 3D (Spline) w sekcji hero. Działają DWA rodzaje linków:
+  //  a) adres eksportu „...scene.splinecode" (Spline: Export → Code → React)
+  //     — najładniejszy, bez ramki;
+  //  b) zwykły link do sceny (np. z app.spline.design lub my.spline.design)
+  //     — osadzany przez iframe, działa w darmowym planie Spline.
+  // 💡 Jeśli zamiast sceny zobaczysz ekran logowania Spline — użyj linku
+  //    publicznego: w Spline kliknij „Share" → skopiuj „Public URL"
+  //    (my.spline.design/...) i wklej go tutaj.
+  scena3d: "https://app.spline.design/ui/78988053-c6cc-4586-89ad-cd3da618cfab",
   // Trzy liczby pod przyciskami — buduj wiarygodność (edytuj śmiało!)
   statystyki: [
     { liczba: "6+", opis: "projektów w portfolio" },
