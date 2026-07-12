@@ -16,7 +16,7 @@ const pozycjeMenu = [
   { nazwa: "Usługi", href: "#uslugi" },
   { nazwa: "Portfolio", href: "#portfolio" },
   { nazwa: "Proces", href: "#proces" },
-  { nazwa: "Cennik", href: "#cennik" },
+  { nazwa: "Opinie", href: "#opinie" },
   { nazwa: "Kontakt", href: "#kontakt" },
 ];
 

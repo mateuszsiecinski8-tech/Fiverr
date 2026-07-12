@@ -1,4 +1,4 @@
-# Portfolio freelancera — Mateusz (matthew_maty na Fiverr)
+# Portfolio freelancera — Maty (matthew_maty na Fiverr)
 
 Jednostronicowe portfolio web designera: Next.js 15 (App Router) + Tailwind CSS 4.
 Właściciel jest POCZĄTKUJĄCY — tłumacz zmiany prostym językiem, po polsku.

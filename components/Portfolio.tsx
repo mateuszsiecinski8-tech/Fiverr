@@ -11,6 +11,7 @@
 
 import Image from "next/image";
 import Reveal from "./Reveal";
+import KartaProjektu from "./KartaProjektu";
 import { IkonaStrzalka } from "./Ikony";
 import { portfolio, projektWyrozniony } from "@/lib/dane";
 
@@ -103,42 +104,9 @@ export default function Portfolio() {
               opoznienie={(indeks % 3) * 0.1}
               className={projekt.uklad === "szeroki" ? "md:col-span-2" : ""}
             >
-              {/* Cały kafelek jest linkiem — otwiera demo w nowej karcie */}
-              <a
-                href={projekt.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative block h-72 overflow-hidden rounded-3xl bg-zinc-200 md:h-80 dark:bg-zinc-800"
-              >
-                {/* Obrazek-mockup projektu; delikatnie przybliża się na hover */}
-                <Image
-                  src={projekt.obraz}
-                  alt={projekt.tytul}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 66vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                />
-
-                {/* Ciemna winieta u góry, żeby podpisy były czytelne */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-transparent" />
-
-                {/* Podpisy: kategoria + tytuł projektu */}
-                <div className="absolute inset-x-0 top-0 flex items-start justify-between p-6">
-                  <div>
-                    <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                      {projekt.kategoria}
-                    </span>
-                    <h3 className="mt-3 max-w-[16rem] text-xl font-bold text-white drop-shadow-sm md:text-2xl">
-                      {projekt.tytul}
-                    </h3>
-                  </div>
-
-                  {/* Kółko ze strzałką — pojawia się na hover */}
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100">
-                    <IkonaStrzalka className="h-4 w-4 -rotate-45" />
-                  </span>
-                </div>
-              </a>
+              {/* Karta z tiltem 3D i żywym podglądem po najechaniu —
+                  cała magia siedzi w components/KartaProjektu.tsx */}
+              <KartaProjektu projekt={projekt} />
             </Reveal>
           ))}
         </div>

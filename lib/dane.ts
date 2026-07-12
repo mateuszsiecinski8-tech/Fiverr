@@ -255,5 +255,5 @@ export const kontakt = {
 
 // --- STOPKA ---
 export const stopka = {
-  nazwa: "Mateusz — Design & Web", // podpis w stopce
+  nazwa: "Maty — Design & Web", // podpis w stopce
 };

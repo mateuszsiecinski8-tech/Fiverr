@@ -10,7 +10,7 @@ import { opinie } from "@/lib/dane";
 
 export default function Testimonials() {
   return (
-    <section className="bg-zinc-50 px-5 py-24 md:px-8 md:py-32 dark:bg-zinc-900/40">
+    <section id="opinie" className="scroll-mt-20 bg-zinc-50 px-5 py-24 md:px-8 md:py-32 dark:bg-zinc-900/40">
       <div className="mx-auto max-w-6xl">
         {/* Nagłówek sekcji */}
         <Reveal>

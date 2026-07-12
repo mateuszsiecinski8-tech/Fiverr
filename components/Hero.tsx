@@ -8,6 +8,7 @@
 
 import { IkonaStrzalka } from "./Ikony";
 import Scena3D from "./Scena3D";
+import Ozdoby3D from "./Ozdoby3D";
 import { hero, linki } from "@/lib/dane";
 
 export default function Hero() {
@@ -105,10 +106,12 @@ export default function Hero() {
         </div>
       </div>
 
-        {/* Interaktywna scena 3D (Spline) — po prawej na komputerze,
-            pod tekstem na tablecie; szczegóły w components/Scena3D.tsx */}
-        <div className="wjazd mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
+        {/* Interaktywna scena 3D (Spline) + unoszące się szklane chipy
+            z parallaxą za kursorem; szczegóły w components/Scena3D.tsx
+            i components/Ozdoby3D.tsx */}
+        <div className="wjazd relative mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
           <Scena3D />
+          <Ozdoby3D />
         </div>
       </div>
 

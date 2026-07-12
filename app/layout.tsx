@@ -19,7 +19,7 @@ const inter = Inter({
 // Meta-dane strony — to widzą Google i podgląd linku na social media.
 // ✏️ Podmień tytuł i opis na swoje!
 export const metadata: Metadata = {
-  title: "Mateusz — Design & Web | Strony, Branding, UI/UX",
+  title: "Maty — Design & Web | Strony, Branding, UI/UX",
   description:
     "Freelancer: projektowanie stron i landing page, grafika i branding, UI/UX design. Projekty klasy premium, które sprzedają.",
 };

@@ -8,7 +8,7 @@ jakby nic nie przerwało rozmowy.
 
 ## 1. Co to za projekt
 
-Jednostronicowe portfolio freelancera (Mateusz, na Fiverr: **matthew_maty**),
+Jednostronicowe portfolio freelancera (Maty, na Fiverr: **matthew_maty**),
 oferującego: strony/landing page, grafikę i branding, UI/UX design.
 Strona sama w sobie jest popisem umiejętności — poziom „agencja premium".
 
@@ -56,6 +56,18 @@ linku (ustawiane w `lib/dane.ts` → `hero.scena3d`): adres `.splinecode`
 przy `prefers-reduced-motion` i przy braku dostępu do serwera Spline —
 statyczny fallback (kula CSS z pierścieniami). Waga strony bez zmian
 (silnik dociąga się osobno, tylko na desktopie).
+
+**Etap 6 — strona jako pokaz umiejętności (inspiracje: supaste /
+dreiraum / haoqi).** Imię na całej stronie zmienione na „Maty".
+CENNIK CHWILOWO UKRYTY (komponent `Pricing.tsx` zostaje w projekcie;
+przywrócenie = odkomentowanie 2 linijek w `app/page.tsx`). Nowości:
+- `KartaProjektu.tsx` — kafelki portfolio z ŻYWYM PODGLĄDEM (hover →
+  statyczny obrazek płynnie przechodzi w prawdziwe demo w iframe,
+  plakietka „podgląd na żywo"; iframe montowany leniwie, tylko desktop)
+  + tilt 3D karty w stronę kursora;
+- `Ozdoby3D.tsx` — szklane chipy (Next.js/UI-UX/Figma/3D·Spline)
+  unoszące się wokół sceny 3D w hero, z parallaxą za ruchem myszy;
+- menu: „Cennik" zastąpiony pozycją „Opinie" (#opinie).
 
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
