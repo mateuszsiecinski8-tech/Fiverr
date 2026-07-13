@@ -15,26 +15,25 @@
 import { technologie } from "@/lib/dane";
 
 // Pozycje „gwiazd" na ekranie hero (w % szerokości/wysokości sekcji).
-// Rozmieszczone nieregularnie; omijają blok tekstu (lewy środek)
-// i sam środek planety (prawa strona, centrum).
+// Chipy trzymają się GÓRNEGO i DOLNEGO pasa hero (tam jest pusto),
+// żeby nie nachodzić ani na tekst (lewy środek), ani na planety (prawa
+// strona) — jak gwiazdy oprawiające scenę.
 // s = skala (rozmiar), o = jasność, migocze = czy ma pulsować
 const gwiazdy = [
-  { top: "8%",  left: "5%",  s: 1,    o: 0.9,  migocze: false, mobil: true },
-  { top: "16%", left: "22%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
-  { top: "6%",  left: "38%", s: 0.8,  o: 0.45, migocze: true,  mobil: false },
-  { top: "12%", left: "56%", s: 0.95, o: 0.8,  migocze: false, mobil: true },
-  { top: "5%",  left: "74%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
-  { top: "14%", left: "90%", s: 1,    o: 0.85, migocze: false, mobil: true },
-  { top: "34%", left: "50%", s: 0.85, o: 0.6,  migocze: true,  mobil: false },
-  { top: "33%", left: "90%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
-  { top: "58%", left: "48%", s: 0.9,  o: 0.65, migocze: false, mobil: false },
-  { top: "62%", left: "89%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
-  { top: "78%", left: "55%", s: 1,    o: 0.85, migocze: false, mobil: true },
-  { top: "88%", left: "72%", s: 0.9,  o: 0.6,  migocze: true,  mobil: false },
-  { top: "82%", left: "87%", s: 0.95, o: 0.75, migocze: false, mobil: false },
-  { top: "88%", left: "10%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
-  { top: "90%", left: "34%", s: 0.9,  o: 0.65, migocze: false, mobil: true },
-  { top: "84%", left: "45%", s: 0.75, o: 0.4,  migocze: true,  mobil: false },
+  // — górny pas (poniżej navbara, nad treścią) —
+  { top: "13%", left: "6%",  s: 0.9,  o: 0.7,  migocze: false, mobil: true },
+  { top: "11%", left: "22%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "15%", left: "40%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
+  { top: "12%", left: "55%", s: 0.8,  o: 0.5,  migocze: true,  mobil: true },
+  { top: "15%", left: "68%", s: 0.9,  o: 0.65, migocze: false, mobil: false },
+  // — dolny pas (pod treścią) —
+  { top: "92%", left: "8%",  s: 0.85, o: 0.6,  migocze: true,  mobil: false },
+  { top: "90%", left: "22%", s: 0.95, o: 0.8,  migocze: false, mobil: true },
+  { top: "94%", left: "37%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "91%", left: "52%", s: 0.85, o: 0.65, migocze: false, mobil: false },
+  { top: "94%", left: "67%", s: 0.8,  o: 0.5,  migocze: true,  mobil: true },
+  { top: "90%", left: "80%", s: 0.9,  o: 0.7,  migocze: false, mobil: false },
+  { top: "93%", left: "91%", s: 0.8,  o: 0.55, migocze: true,  mobil: false },
 ];
 
 export default function Ozdoby3D() {

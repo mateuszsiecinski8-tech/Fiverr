@@ -83,6 +83,24 @@ przywrócenie = odkomentowanie 2 linijek w `app/page.tsx`). Nowości:
 - Tekst hero przesunięty mocniej w lewo (grid 0.85/1.15, max-w-7xl) —
   planeta jest głównym elementem strony.
 
+**Etap 8 — rozbudowa sceny 3D (Three.js).** Hero to teraz mini-układ
+planetarny:
+- planeta główna z PIERŚCIENIAMI dostała wymyślone KONTYNENTY (ocean +
+  lądy + czapy polarne malowane na canvasie) zamiast „sztucznych chmur";
+- KSIĘŻYC krąży po prawdziwej orbicie w płaszczyźnie pierścieni
+  (R=1.95, zawsze > promień planety 1.35 → NIGDY nie przechodzi przez
+  planetę; wcześniej był błąd — orbita była elipsą wchodzącą w planetę);
+- RÓŻOWA planeta bez pierścieni w prawym górnym rogu (obraca się szybciej);
+- SŁOŃCE w oddali: prawie biała kula + żółte halo (blending additive) +
+  ciepłe światło punktowe oświetlające planety z lewej.
+- Chipy „gwiazdy" (Ozdoby3D) przeniesione do GÓRNEGO i DOLNEGO pasa hero —
+  nie nachodzą na planety ani na tekst.
+- Tekst przesunięty mocniej w lewo (grid 0.78/1.22, max-w-[94rem]).
+- Usunięty wskaźnik myszki (scroll) z dołu hero.
+UWAGA na przyszłość: kanwa 3D bywa wąska (na szerokich monitorach prawa
+kolumna jest wysoka-wąska) — dlatego promień orbity księżyca jest mały,
+żeby księżyc nie wychodził poza kadr.
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.

@@ -38,7 +38,7 @@ export default function Hero() {
       {/* pointer-events-none = kontener „przepuszcza" myszkę do gwiazd
           pod spodem; [&_a]:pointer-events-auto przywraca klikalność
           wszystkich przycisków/linków w środku */}
-      <div className="pointer-events-none relative z-10 mx-auto w-full max-w-7xl py-24 [&_a]:pointer-events-auto md:py-28 lg:grid lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-4">
+      <div className="pointer-events-none relative z-10 mx-auto w-full max-w-[94rem] py-24 [&_a]:pointer-events-auto md:py-28 lg:grid lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:gap-2">
       <div>
         {/* Zielona kropka + „Dostępny do projektów" */}
         <div className="wjazd">
@@ -114,20 +114,11 @@ export default function Hero() {
         </div>
       </div>
 
-        {/* Planeta 3D (Three.js) — główny element strony;
-            szczegóły w components/Scena3D.tsx */}
+        {/* Scena 3D (Three.js): planeta z pierścieniami + różowa planeta
+            + słońce w oddali — główny element strony.
+            Szczegóły w components/Scena3D.tsx */}
         <div className="wjazd pointer-events-none relative mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
           <Scena3D />
-        </div>
-      </div>
-
-      {/* Wskaźnik „przewiń w dół" na dole ekranu */}
-      <div
-        aria-hidden="true"
-        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 md:block"
-      >
-        <div className="flex h-9 w-6 items-start justify-center rounded-full border-2 border-zinc-300 p-1.5 dark:border-zinc-700">
-          <div className="h-2 w-1 animate-bounce rounded-full bg-zinc-400 dark:bg-zinc-500" />
         </div>
       </div>
     </section>
