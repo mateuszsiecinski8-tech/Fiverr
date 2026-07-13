@@ -34,7 +34,8 @@ są w pliku `KONTEKST.md` — przy większych zadaniach przeczytaj go najpierw.
 - Tryb ciemny: klasa `dark` na `<html>`, przełącznik w Navbarze,
   zapis w localStorage (klucz `motyw`).
 - Zero dodatkowych bibliotek bez wyraźnej potrzeby — animacje robimy
-  czystym CSS + IntersectionObserver.
+  czystym CSS + IntersectionObserver. Jedyny wyjątek: `three` (planeta 3D
+  w hero) — ładowany leniwie, tylko na desktopie.
 
 ## Deploy
 Vercel podpięty pod to repo GitHub (mateuszsiecinski8-tech/Fiverr,

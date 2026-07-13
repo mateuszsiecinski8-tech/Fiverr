@@ -125,6 +125,16 @@ body {
 .plywa1 { animation: plywanie 13s ease-in-out infinite; }
 .plywa2 { animation: plywanie2 17s ease-in-out infinite; }
 
+/* --- MIGOTANIE: niektóre „gwiazdy" (chipy) w hero delikatnie
+   pulsują jasnością — jak prawdziwe gwiazdy (bez ruchu!) --- */
+@keyframes migotanie {
+  0%, 100% { opacity: inherit; }
+  50% { opacity: 0.25; }
+}
+.migocze {
+  animation: migotanie 4.5s ease-in-out infinite;
+}
+
 /* --- PULSOWANIE: poświata w sekcji kontakt „oddycha" --- */
 @keyframes pulsowanie {
   0%, 100% { opacity: 0.28; transform: translate(-50%, -50%) scale(1); }

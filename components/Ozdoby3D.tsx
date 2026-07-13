@@ -1,70 +1,81 @@
 "use client";
 // ============================================================
-// OZDOBY 3D (inspiracja: haoqi.design) — szklane „chipy"
-// unoszące się wokół sceny 3D w hero. Reagują na ruch myszki
-// efektem parallax: każdy chip ma inną „głębię", więc porusza
-// się z inną siłą — to daje wrażenie przestrzeni.
-// Widoczne tylko na dużych ekranach; wyłączone przy
-// „ograniczeniu animacji".
+// GWIAZDOZBIÓR CHIPÓW — nazwy technologii rozrzucone po całym
+// ekranie hero jak gwiazdy na niebie (tło dla planety 3D).
+//
+// • Każdy chip ma inną pozycję, rozmiar i jasność — jak prawdziwe
+//   gwiazdy; niektóre delikatnie „migoczą" (sama przezroczystość,
+//   bez ruchu).
+// • Chipy poruszają się TYLKO, gdy najedziesz na nie myszką:
+//   sprężyście odskakują od kursora i wracają na miejsce.
+// • Listę nazw edytujesz w lib/dane.ts (lista „technologie").
+// • Na telefonach pokazujemy tylko kilka najjaśniejszych (bez tłoku).
 // ============================================================
 
-import { useEffect, useRef } from "react";
+import { technologie } from "@/lib/dane";
 
-// Lista chipów: tekst, pozycja (klasy Tailwind), głębia parallaxy
-// (większa liczba = mocniej reaguje na mysz), opóźnienie „pływania"
-const chipy = [
-  { tekst: "⚡ Next.js", pozycja: "left-[-6%] top-[10%]", glebia: 26, opoznienie: "0s" },
-  { tekst: "🎨 UI/UX", pozycja: "right-[-3%] top-[4%]", glebia: 38, opoznienie: "1.4s" },
-  { tekst: "✦ Figma", pozycja: "left-[0%] bottom-[16%]", glebia: 32, opoznienie: "2.2s" },
-  { tekst: "◉ 3D · Spline", pozycja: "right-[2%] bottom-[6%]", glebia: 20, opoznienie: "0.8s" },
+// Pozycje „gwiazd" na ekranie hero (w % szerokości/wysokości sekcji).
+// Rozmieszczone nieregularnie; omijają blok tekstu (lewy środek)
+// i sam środek planety (prawa strona, centrum).
+// s = skala (rozmiar), o = jasność, migocze = czy ma pulsować
+const gwiazdy = [
+  { top: "8%",  left: "5%",  s: 1,    o: 0.9,  migocze: false, mobil: true },
+  { top: "16%", left: "22%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
+  { top: "6%",  left: "38%", s: 0.8,  o: 0.45, migocze: true,  mobil: false },
+  { top: "12%", left: "56%", s: 0.95, o: 0.8,  migocze: false, mobil: true },
+  { top: "5%",  left: "74%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "14%", left: "90%", s: 1,    o: 0.85, migocze: false, mobil: true },
+  { top: "34%", left: "50%", s: 0.85, o: 0.6,  migocze: true,  mobil: false },
+  { top: "33%", left: "90%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "58%", left: "48%", s: 0.9,  o: 0.65, migocze: false, mobil: false },
+  { top: "62%", left: "89%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
+  { top: "78%", left: "55%", s: 1,    o: 0.85, migocze: false, mobil: true },
+  { top: "88%", left: "72%", s: 0.9,  o: 0.6,  migocze: true,  mobil: false },
+  { top: "82%", left: "87%", s: 0.95, o: 0.75, migocze: false, mobil: false },
+  { top: "88%", left: "10%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
+  { top: "90%", left: "34%", s: 0.9,  o: 0.65, migocze: false, mobil: true },
+  { top: "84%", left: "45%", s: 0.75, o: 0.4,  migocze: true,  mobil: false },
 ];
 
 export default function Ozdoby3D() {
-  const warstwa = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Parallax tylko dla myszki i tylko bez „ograniczenia animacji"
-    const mysz = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const bezAnimacji = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!mysz || bezAnimacji) return;
-
-    function ruch(e: MouseEvent) {
-      // pozycja kursora w skali -0.5 … 0.5 względem całego okna
-      const x = e.clientX / window.innerWidth - 0.5;
-      const y = e.clientY / window.innerHeight - 0.5;
-      warstwa.current
-        ?.querySelectorAll<HTMLElement>("[data-glebia]")
-        .forEach((chip) => {
-          const g = Number(chip.dataset.glebia);
-          chip.style.transform = `translate(${(x * g).toFixed(1)}px, ${(y * g).toFixed(1)}px)`;
-        });
-    }
-
-    window.addEventListener("mousemove", ruch, { passive: true });
-    return () => window.removeEventListener("mousemove", ruch);
-  }, []);
+  /* Sprężyste odskoczenie chipa od kursora (tylko przy najechaniu) */
+  function odskocz(zdarzenie: React.MouseEvent<HTMLSpanElement>) {
+    const chip = zdarzenie.currentTarget;
+    const r = chip.getBoundingClientRect();
+    // wektor OD kursora DO środka chipa → chip ucieka w tę stronę
+    const dx = r.left + r.width / 2 - zdarzenie.clientX;
+    const dy = r.top + r.height / 2 - zdarzenie.clientY;
+    const dlugosc = Math.max(Math.hypot(dx, dy), 1);
+    const sila = 26;
+    chip.style.transform = `translate(${((dx / dlugosc) * sila).toFixed(1)}px, ${((dy / dlugosc) * sila).toFixed(1)}px) rotate(${dx > 0 ? 5 : -5}deg) scale(1.1)`;
+  }
+  function wroc(zdarzenie: React.MouseEvent<HTMLSpanElement>) {
+    zdarzenie.currentTarget.style.transform = "";
+  }
 
   return (
-    <div
-      ref={warstwa}
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-10 hidden lg:block"
-    >
-      {chipy.map((chip) => (
-        <div
-          key={chip.tekst}
-          data-glebia={chip.glebia}
-          className={`absolute ${chip.pozycja} transition-transform duration-300 ease-out`}
-        >
-          {/* wewnętrzny span „pływa" niezależnie od parallaxy */}
+    <div aria-hidden="true" className="absolute inset-0 z-0">
+      {gwiazdy.map((gwiazda, i) => {
+        const nazwa = technologie[i % technologie.length];
+        return (
           <span
-            className="plywa2 block rounded-2xl border border-white/50 bg-white/65 px-4 py-2 text-xs font-bold text-zinc-700 shadow-lg shadow-akcent/10 backdrop-blur-md dark:border-white/10 dark:bg-zinc-800/60 dark:text-zinc-200"
-            style={{ animationDelay: chip.opoznienie }}
+            key={`${nazwa}-${i}`}
+            onMouseEnter={odskocz}
+            onMouseLeave={wroc}
+            className={`absolute select-none rounded-full border border-zinc-200/80 bg-white/60 px-3.5 py-1.5 text-[11px] font-semibold text-zinc-600 backdrop-blur-sm [transition:transform_.45s_cubic-bezier(.34,1.56,.64,1)] dark:border-white/10 dark:bg-zinc-800/50 dark:text-zinc-300 ${
+              gwiazda.migocze ? "migocze" : ""
+            } ${gwiazda.mobil ? "" : "hidden lg:inline-block"}`}
+            style={{
+              top: gwiazda.top,
+              left: gwiazda.left,
+              scale: String(gwiazda.s),
+              opacity: gwiazda.o,
+            }}
           >
-            {chip.tekst}
+            {nazwa}
           </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

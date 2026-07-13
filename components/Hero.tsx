@@ -29,8 +29,16 @@ export default function Hero() {
       {/* Subtelna tekstura ziarna na całym tle */}
       <div aria-hidden="true" className="ziarno" />
 
-      {/* Na dużych ekranach: tekst po lewej, scena 3D po prawej */}
-      <div className="relative mx-auto w-full max-w-6xl py-24 md:py-28 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8">
+      {/* „Gwiazdy" — chipy z technologiami rozrzucone po CAŁYM hero,
+          jako tło dla planety (ruszają się tylko pod myszką) */}
+      <Ozdoby3D />
+
+      {/* Na dużych ekranach: tekst mocno po lewej, wielka planeta 3D
+          po prawej — to ona jest głównym elementem strony */}
+      {/* pointer-events-none = kontener „przepuszcza" myszkę do gwiazd
+          pod spodem; [&_a]:pointer-events-auto przywraca klikalność
+          wszystkich przycisków/linków w środku */}
+      <div className="pointer-events-none relative z-10 mx-auto w-full max-w-7xl py-24 [&_a]:pointer-events-auto md:py-28 lg:grid lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-4">
       <div>
         {/* Zielona kropka + „Dostępny do projektów" */}
         <div className="wjazd">
@@ -106,12 +114,10 @@ export default function Hero() {
         </div>
       </div>
 
-        {/* Interaktywna scena 3D (Spline) + unoszące się szklane chipy
-            z parallaxą za kursorem; szczegóły w components/Scena3D.tsx
-            i components/Ozdoby3D.tsx */}
-        <div className="wjazd relative mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
+        {/* Planeta 3D (Three.js) — główny element strony;
+            szczegóły w components/Scena3D.tsx */}
+        <div className="wjazd pointer-events-none relative mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
           <Scena3D />
-          <Ozdoby3D />
         </div>
       </div>
 

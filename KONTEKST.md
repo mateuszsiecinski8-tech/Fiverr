@@ -69,6 +69,20 @@ przywrócenie = odkomentowanie 2 linijek w `app/page.tsx`). Nowości:
   unoszące się wokół sceny 3D w hero, z parallaxą za ruchem myszy;
 - menu: „Cennik" zastąpiony pozycją „Opinie" (#opinie).
 
+**Etap 7 — planeta 3D + gwiazdozbiór.** Spline wyleciał całkiem
+(pokazywał swój cennik zamiast sceny). Zamiast niego:
+- `Scena3D.tsx` = kolorowa planeta z pierścieniami zbudowana w **Three.js**
+  (tekstury malowane kodem na canvasie: pasy fiolet→róż→turkus, pierścienie,
+  księżyc na orbicie, poświata). Ładowana leniwie, tylko desktop, fallback
+  CSS na mobile/braku WebGL. UWAGA: pierścień czyta teksturę w pasie
+  57–100% promienia — malować promienie 150–254 px na płótnie 512.
+- `Ozdoby3D.tsx` = 16 chipów-„gwiazd" (nazwy z listy `technologie`
+  w dane.ts) rozrzuconych po CAŁYM hero; poruszają się TYLKO pod myszką
+  (sprężysty odskok od kursora), część migocze. Hero: kontener treści ma
+  pointer-events-none (+ [&_a]:auto), żeby gwiazdy pod tekstem reagowały.
+- Tekst hero przesunięty mocniej w lewo (grid 0.85/1.15, max-w-7xl) —
+  planeta jest głównym elementem strony.
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.
