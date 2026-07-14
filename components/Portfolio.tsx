@@ -25,7 +25,7 @@ export default function Portfolio() {
             02 — Portfolio
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
-            Selected work{" "}
+            Selected Work{" "}
             <sup className="text-lg font-semibold text-akcent md:text-xl">
               ({String(portfolio.length + 1).padStart(2, "0")})
             </sup>
