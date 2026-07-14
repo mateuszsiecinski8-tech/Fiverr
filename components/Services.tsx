@@ -27,7 +27,7 @@ export default function Services() {
             01 — Services
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
-            Everything your brand needs
+            Everything Your Brand Needs
           </h2>
         </Reveal>
 
