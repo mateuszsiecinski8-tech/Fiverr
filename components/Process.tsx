@@ -17,7 +17,7 @@ export default function Process() {
             03 — Process
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
-            How we&apos;ll work together
+            How We&apos;ll Work Together
           </h2>
         </Reveal>
 
