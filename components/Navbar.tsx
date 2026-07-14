@@ -8,7 +8,6 @@
 // ============================================================
 
 import { useState } from "react";
-import ThemeToggle from "./ThemeToggle";
 import { IkonaMenu, IkonaZamknij } from "./Ikony";
 import { linki, hero } from "@/lib/dane";
 
@@ -49,8 +48,6 @@ export default function Navbar() {
           {/* separator */}
           <span className="mx-1 h-5 w-px bg-zinc-300/70 dark:bg-white/10" />
 
-          <ThemeToggle />
-
           {/* Przycisk Fiverr — akcentowy, na końcu pigułki */}
           <a
             href={linki.fiverr}
@@ -62,9 +59,8 @@ export default function Navbar() {
           </a>
         </div>
 
-        {/* Wersja mobilna: motyw + szklany hamburger */}
+        {/* Wersja mobilna: szklany hamburger */}
         <div className="flex items-center gap-2 md:hidden">
-          <ThemeToggle />
           <button
             onClick={() => setOtwarte(!otwarte)}
             aria-label={otwarte ? "Close menu" : "Open menu"}

@@ -7,8 +7,8 @@
 
 @import "tailwindcss";
 
-/* Tryb ciemny włącza się, gdy element <html> ma klasę "dark"
-   (przełącznik w menu dodaje/usuwa tę klasę) */
+/* Strona ma JEDEN motyw: ciemny (klasa "dark" siedzi na stałe na <html>
+   w app/layout.tsx). Style „dark:" w komponentach są więc zawsze aktywne. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -21,9 +21,12 @@
     "Segoe UI", Roboto, sans-serif;
 }
 
-/* Płynne przewijanie po kliknięciu w menu */
+/* Płynne przewijanie po kliknięciu w menu.
+   color-scheme: dark = systemowe elementy (pasek przewijania, pola
+   formularzy) też dostają ciemny wygląd. */
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 /* Kolory tła i tekstu — jasny i ciemny motyw */
@@ -135,6 +138,30 @@ body {
   animation: migotanie 4.5s ease-in-out infinite;
 }
 
+/* --- DRYF: chipy z technologiami powoli „latają" po sekcjach
+   (używa components/OzdobyKosmos.tsx; czas lotu ustawiany inline) --- */
+@keyframes dryf {
+  0%, 100% { transform: translate(0, 0) rotate(-2deg); }
+  25% { transform: translate(20px, -14px) rotate(1.5deg); }
+  50% { transform: translate(-10px, -28px) rotate(-1deg); }
+  75% { transform: translate(-22px, -8px) rotate(2deg); }
+}
+.dryf {
+  animation: dryf 22s ease-in-out infinite;
+}
+
+/* --- KOMETA: krótka smuga przelatuje raz na kilkanaście sekund --- */
+@keyframes kometa-lot {
+  0% { opacity: 0; transform: translate(0, 0); }
+  3% { opacity: 0.9; }
+  12% { opacity: 0; transform: translate(220px, 138px); }
+  100% { opacity: 0; transform: translate(220px, 138px); }
+}
+.kometa {
+  opacity: 0;
+  animation: kometa-lot 16s linear infinite;
+}
+
 /* --- PULSOWANIE: poświata w sekcji kontakt „oddycha" --- */
 @keyframes pulsowanie {
   0%, 100% { opacity: 0.28; transform: translate(-50%, -50%) scale(1); }
@@ -229,8 +256,13 @@ body {
   .plywa1,
   .plywa2,
   .pulsuje,
+  .dryf,
+  .kometa,
   .marquee {
     animation: none;
+  }
+  .kometa {
+    display: none; /* kometa bez animacji to tylko dziwna kreska — chowamy */
   }
   .blysk::after {
     display: none;

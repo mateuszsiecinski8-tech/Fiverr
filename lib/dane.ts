@@ -112,19 +112,31 @@ export const uslugi = [
   },
 ];
 
-// --- PROJEKT WYRÓŻNIONY (prawdziwy klient!) ---
-// Wyświetla się jako duża karta NAD siatką portfolio.
-// ⭐ Miniaturę podmienisz, wrzucając zrzut ekranu strony
-//    do pliku: public/portfolio/justyna.jpg (ta sama nazwa!)
-export const projektWyrozniony = {
-  odznaka: "Real client",
-  tytul: "Justyna Rodziewicz — Premium Real Estate",
-  podtytul: "An elegant website for a premium real estate agency from Poland",
-  opis: "A complete brand website for a licensed real estate agent. Minimalist, luxurious design (beige + black palette), numbered sections, a filterable property listing, a property-selling form and podcast integration. Responsive, polished, built to inspire trust and prestige.",
-  tagi: ["Web Design", "Real Estate", "Branding"],
-  link: "https://www.justynarodziewicz.pl/",
-  obraz: "/portfolio/justyna.jpg",
-};
+// --- PROJEKTY WYRÓŻNIONE (prawdziwi klienci!) ---
+// Wyświetlają się jako duże karty NAD siatką portfolio (jedna pod drugą,
+// co druga ma odbity układ — obraz po lewej).
+// ⭐ Miniatury podmienisz, wrzucając zrzut ekranu strony do pliku
+//    z folderu public/portfolio/ (ta sama nazwa co w polu „obraz"!)
+export const projektyWyroznione = [
+  {
+    odznaka: "Real client",
+    tytul: "Justyna Rodziewicz — Premium Real Estate",
+    podtytul: "An elegant website for a premium real estate agency from Poland",
+    opis: "A complete brand website for a licensed real estate agent. Minimalist, luxurious design (beige + black palette), numbered sections, a filterable property listing, a property-selling form and podcast integration. Responsive, polished, built to inspire trust and prestige.",
+    tagi: ["Web Design", "Real Estate", "Branding"],
+    link: "https://www.justynarodziewicz.pl/",
+    obraz: "/portfolio/justyna.jpg",
+  },
+  {
+    odznaka: "Real client",
+    tytul: "Marcin Sieciński — Law Firm",
+    podtytul: "A dignified website for an attorney with 30 years of experience",
+    opis: "A complete online presence for an established law office from Poland. Dark, elegant palette with gold accents and classic serif typography, six clearly presented practice areas, animated achievement counters, client testimonials and a contact form. Every detail designed to communicate professionalism and build the trust a law practice depends on.",
+    tagi: ["Web Design", "Legal", "Branding"],
+    link: "https://www.kancelaria-adwokacka-marcin-siecinski.pl/",
+    obraz: "/portfolio/kancelaria.jpg",
+  },
+];
 
 // --- SEKCJA 3: PORTFOLIO (6 kart w siatce bento) ---
 // „uklad" decyduje o rozmiarze kafelka: "szeroki" = 2 kolumny, "waski" = 1 kolumna

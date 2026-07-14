@@ -5,13 +5,16 @@
 // ============================================================
 
 import Reveal from "./Reveal";
+import OzdobyKosmos from "./OzdobyKosmos";
 import { IkonaGwiazdka } from "./Ikony";
 import { opinie } from "@/lib/dane";
 
 export default function Testimonials() {
   return (
-    <section id="opinie" className="scroll-mt-20 bg-zinc-50 px-5 py-24 md:px-8 md:py-32 dark:bg-zinc-900/40">
-      <div className="mx-auto max-w-6xl">
+    <section id="opinie" className="relative scroll-mt-20 bg-zinc-50 px-5 py-24 md:px-8 md:py-32 dark:bg-zinc-900/40">
+      {/* Kosmiczne smaczki w tle sekcji (dekoracja) */}
+      <OzdobyKosmos wariant="opinie" />
+      <div className="relative mx-auto max-w-6xl">
         {/* Nagłówek sekcji */}
         <Reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-akcent">

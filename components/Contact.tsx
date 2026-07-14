@@ -6,13 +6,16 @@
 // ============================================================
 
 import Reveal from "./Reveal";
+import OzdobyKosmos from "./OzdobyKosmos";
 import { IkonaStrzalka, IkonaKoperta } from "./Ikony";
 import { kontakt, linki } from "@/lib/dane";
 
 export default function Contact() {
   return (
-    <section id="kontakt" className="scroll-mt-20 px-5 pb-24 md:px-8 md:pb-32">
-      <div className="mx-auto max-w-6xl">
+    <section id="kontakt" className="relative scroll-mt-20 px-5 pb-24 md:px-8 md:pb-32">
+      {/* Kosmiczne smaczki w tle sekcji (dekoracja) */}
+      <OzdobyKosmos wariant="kontakt" />
+      <div className="relative mx-auto max-w-6xl">
         <Reveal>
           {/* Ciemna karta CTA (ciemna w obu motywach — celowo, dla kontrastu) */}
           <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-950 px-6 py-20 text-center md:px-12 md:py-28 dark:bg-zinc-900">

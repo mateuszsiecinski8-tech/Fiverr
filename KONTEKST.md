@@ -115,6 +115,34 @@ kolumna jest wysoka-wąska) — dlatego promień orbity księżyca jest mały,
   po prawej pływająca SZKLANA PIGUŁKA (backdrop-blur) z linkami,
   przełącznikiem motywu i akcentowym przyciskiem „Hire me".
 
+**Etap 10 — dopracowanie sceny, drugi klient, mockupy, dark-only.**
+- SŁOŃCE w hero przesunięte wyżej i w lewo: `slonce.position.set(-4.6, 3.4, -7)`
+  w `Scena3D.tsx` (kierunek wskazany przez właściciela strzałką).
+- JASNY MOTYW USUNIĘTY całkowicie (decyzja designerska: kosmiczna scena
+  działa tylko na ciemnym tle; jeden mocny motyw > dwa przeciętne).
+  Klasa `dark` na stałe w `layout.tsx`, `ThemeToggle.tsx` skasowany,
+  `color-scheme: dark` w globals.css. Style `dark:` w komponentach zostały
+  (są zawsze aktywne) — NIE czyścić masowo, za duże ryzyko regresji.
+- BUG naprawiony: chipy-gwiazdy zaczynają się POD navbarem
+  (`top-20` w Ozdoby3D.tsx) — „Tailwind CSS" nachodził na menu.
+- STRONY-DEMO w `public/prace/` przetłumaczone NA ANGIELSKI (spójność
+  z resztą strony; ceny w $). Komentarze w kodzie zostały po polsku.
+- DRUGI PRAWDZIWY KLIENT: Kancelaria Adwokacka Marcin Sieciński
+  (kancelaria-adwokacka-marcin-siecinski.pl). `projektWyrozniony` w dane.ts
+  zamieniony na TABLICĘ `projektyWyroznione` (Justyna + kancelaria);
+  Portfolio.tsx renderuje karty naprzemiennie (co druga: obraz po lewej).
+- MINIATURY przerobione na PRAWDZIWE zrzuty ekranu w mockupach:
+  okno przeglądarki z PASKIEM ZAKŁADEK (Home/Pricing/…) + nakładający się
+  telefon z wersją mobilną, na kosmicznym gradiencie w kolorach marki.
+  Generator: szablon + skrypt PowerShell + headless Chrome (skrypty
+  w scratchpadzie sesji, łatwo odtworzyć; wymiary: szerokie 1680×760,
+  wąskie 1000×900, wyróżnione 1400×1000).
+- KOSMICZNE DEKORACJE SEKCJI: nowy komponent `OzdobyKosmos.tsx` —
+  dryfujące chipy technologii (animacja `dryf`), mini-planetki
+  z pierścieniem, komety (animacja `kometa-lot`), migoczące gwiazdki.
+  Wpięty w Services/Portfolio/Process/Testimonials/Contact (hero BEZ zmian
+  — tam chipy tylko odskakują od kursora). Czysty CSS, zero JS.
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.
@@ -127,12 +155,8 @@ kolumna jest wysoka-wąska) — dlatego promień orbity księżyca jest mały,
 
 ## 4. Do zrobienia (checklista właściciela)
 
-- [ ] **Vercel:** vercel.com → Add New → Project → Import repo „Fiverr"
-      → Deploy. Potem każdy push sam aktualizuje stronę.
-- [ ] **Miniatura Justyny 1:1:** zrób zrzut justynarodziewicz.pl (bez paska
-      przeglądarki), zapisz jako `public/portfolio/justyna.jpg`, commit+push.
-      (Obecnie jest tam wierna rekonstrukcja hero zrobiona kodem — OK,
-      ale prawdziwy zrzut ze zdjęciem klientki będzie lepszy.)
+- [x] **Miniatura Justyny 1:1** — zrobione: prawdziwy zrzut
+      justynarodziewicz.pl w mockupie przeglądarki (etap 10).
 - [ ] **Email:** w `lib/dane.ts` podmień `twoj@email.com` na prawdziwy.
 - [ ] **Zdjęcia AI (opcjonalnie):** w bibliotece Higgsfield czekają 2 zdjęcia
       (kawiarnia + kosmetyki). Pobierz i zapisz jako

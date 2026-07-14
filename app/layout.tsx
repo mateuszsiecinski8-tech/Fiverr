@@ -1,7 +1,6 @@
 // ============================================================
 // SZKIELET CAŁEJ STRONY (layout)
-// Tu podpinamy font, style globalne, meta-dane (SEO)
-// i skrypt, który zapamiętuje wybrany motyw (jasny/ciemny).
+// Tu podpinamy font, style globalne i meta-dane (SEO).
 // ============================================================
 
 import type { Metadata } from "next";
@@ -24,31 +23,13 @@ export const metadata: Metadata = {
     "Freelance designer & developer: websites and landing pages, graphics and branding, UI/UX design. Premium-class projects that sell.",
 };
 
-// Malutki skrypt uruchamiany PRZED wyświetleniem strony.
-// Sprawdza zapisany motyw (albo ustawienie systemu) i od razu
-// włącza tryb ciemny — dzięki temu strona nie błyska bielą.
-const skryptMotywu = `
-(function () {
-  try {
-    var zapisany = localStorage.getItem("motyw");
-    var systemCiemny = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (zapisany === "ciemny" || (!zapisany && systemCiemny)) {
-      document.documentElement.classList.add("dark");
-    }
-  } catch (e) {}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // suppressHydrationWarning — potrzebne, bo klasę "dark" dodaje skrypt,
-    // a React nie powinien się tym przejmować.
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: skryptMotywu }} />
-      </head>
+    // Strona ma JEDEN motyw: ciemny, kosmiczny (klasa "dark" na stałe).
+    // Jasny motyw usunęliśmy — nocne niebo z planetami to tożsamość strony.
+    <html lang="en" className="dark">
       <body className={`${inter.variable} font-sans`}>{children}</body>
     </html>
   );

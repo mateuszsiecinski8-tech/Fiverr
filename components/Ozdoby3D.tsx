@@ -30,7 +30,7 @@ const gwiazdy = [
   { top: "6%",  left: "72%", s: 0.9,  o: 0.7,  migocze: false, mobil: false },
   { top: "10%", left: "88%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
   // — luki między planetami a tekstem —
-  { top: "18%", left: "91%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
+  { top: "13%", left: "91%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
   { top: "22%", left: "70%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
   { top: "50%", left: "41%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
   { top: "66%", left: "38%", s: 0.8,  o: 0.45, migocze: false, mobil: false },
@@ -60,7 +60,9 @@ export default function Ozdoby3D() {
   }
 
   return (
-    <div aria-hidden="true" className="absolute inset-0 z-0">
+    // top-20 (80px) = wysokość navbaru — gwiazdy zaczynają się POD nim,
+    // żeby żaden chip nie nachodził na menu (poprawka błędu).
+    <div aria-hidden="true" className="absolute inset-x-0 bottom-0 top-20 z-0">
       {gwiazdy.map((gwiazda, i) => {
         const nazwa = technologie[i % technologie.length];
         return (

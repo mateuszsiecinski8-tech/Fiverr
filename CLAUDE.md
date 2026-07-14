@@ -18,12 +18,15 @@ są w pliku `KONTEKST.md` — przy większych zadaniach przeczytaj go najpierw.
   (wjazd, marquee, spotlight, błysk, ziarno).
 - `components/` — sekcje strony (Hero, Services, Portfolio, Process,
   Testimonials, Pricing, Contact, Footer) + pomocnicy (Reveal = animacja
-  przy scrollu, KartaSpotlight, ThemeToggle, Marquee, ScrollProgress).
+  przy scrollu, KartaSpotlight, Marquee, ScrollProgress, OzdobyKosmos =
+  kosmiczne dekoracje sekcji: dryfujące chipy, planetki, komety, gwiazdki).
 - `public/prace/*.html` — samodzielne strony-demo projektów pokazowych
-  (spec work); klik w kafelek portfolio otwiera je w nowej karcie.
-- `public/portfolio/*.jpg` — miniatury kafelków portfolio.
-  `justyna.jpg` to miniatura PRAWDZIWEGO klienta (Justyna Rodziewicz,
-  justynarodziewicz.pl) — podmiana pliku = nowa miniatura, bez zmian w kodzie.
+  (spec work, treść PO ANGIELSKU); klik w kafelek portfolio otwiera je
+  w nowej karcie.
+- `public/portfolio/*.jpg` — miniatury kafelków portfolio (mockupy:
+  okno przeglądarki z zakładkami + telefon z wersją mobilną).
+  `justyna.jpg` i `kancelaria.jpg` to PRAWDZIWI klienci (prawdziwe zrzuty
+  ich stron) — podmiana pliku = nowa miniatura, bez zmian w kodzie.
 - `FIVERR.md` — gotowe teksty do profilu i gigów na Fiverr.
 
 ## Konwencje
@@ -31,8 +34,9 @@ są w pliku `KONTEKST.md` — przy większych zadaniach przeczytaj go najpierw.
 - Styl: minimalistyczny premium; jeden akcent kolorystyczny (fiolet
   `--color-akcent`); animacje subtelne, zawsze z fallbackiem
   `prefers-reduced-motion`.
-- Tryb ciemny: klasa `dark` na `<html>`, przełącznik w Navbarze,
-  zapis w localStorage (klucz `motyw`).
+- Motyw: TYLKO ciemny (kosmiczny) — klasa `dark` na stałe na `<html>`
+  w `app/layout.tsx`. Jasny motyw i przełącznik usunięte CELOWO
+  (nocna scena kosmiczna to tożsamość strony).
 - Zero dodatkowych bibliotek bez wyraźnej potrzeby — animacje robimy
   czystym CSS + IntersectionObserver. Jedyny wyjątek: `three` (planeta 3D
   w hero) — ładowany leniwie, tylko na desktopie.

@@ -5,12 +5,15 @@
 // ============================================================
 
 import Reveal from "./Reveal";
+import OzdobyKosmos from "./OzdobyKosmos";
 import { proces } from "@/lib/dane";
 
 export default function Process() {
   return (
-    <section id="proces" className="scroll-mt-20 px-5 py-24 md:px-8 md:py-32">
-      <div className="mx-auto max-w-6xl">
+    <section id="proces" className="relative scroll-mt-20 px-5 py-24 md:px-8 md:py-32">
+      {/* Kosmiczne smaczki w tle sekcji (dekoracja) */}
+      <OzdobyKosmos wariant="proces" />
+      <div className="relative mx-auto max-w-6xl">
         {/* Nagłówek sekcji */}
         <Reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-akcent">

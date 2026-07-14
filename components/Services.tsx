@@ -6,6 +6,7 @@
 
 import Reveal from "./Reveal";
 import KartaSpotlight from "./KartaSpotlight";
+import OzdobyKosmos from "./OzdobyKosmos";
 import { IkonaMonitor, IkonaPaleta, IkonaWarstwy, IkonaPtaszek } from "./Ikony";
 import { uslugi } from "@/lib/dane";
 
@@ -19,8 +20,10 @@ const ikony = {
 export default function Services() {
   return (
     // scroll-mt-20 = po kliknięciu w menu sekcja nie chowa się pod navbar
-    <section id="uslugi" className="scroll-mt-20 px-5 py-24 md:px-8 md:py-32">
-      <div className="mx-auto max-w-6xl">
+    <section id="uslugi" className="relative scroll-mt-20 px-5 py-24 md:px-8 md:py-32">
+      {/* Kosmiczne smaczki w tle sekcji (dekoracja) */}
+      <OzdobyKosmos wariant="uslugi" />
+      <div className="relative mx-auto max-w-6xl">
         {/* Nagłówek sekcji */}
         <Reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-akcent">

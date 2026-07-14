@@ -265,11 +265,13 @@ export default function Scena3D() {
         scena.add(poswiataRoz);
 
         /* ========== SŁOŃCE W ODDALI (prawie biała kula + żółta poświata) ========== */
+        // Pozycja: wysoko w górnym-lewym rogu sceny (z dala od planet);
+        // dobrana tak, żeby poświata nie ucinała się na węższych ekranach.
         const slonce = new THREE.Mesh(
           new THREE.SphereGeometry(0.32, 32, 32),
           new THREE.MeshBasicMaterial({ color: 0xfffdf2 })
         );
-        slonce.position.set(-2.6, 2.15, -7);
+        slonce.position.set(-4.6, 3.4, -7);
         scena.add(slonce);
         const halo = new THREE.Sprite(
           new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(namalujPoswiate("255,236,150")), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
