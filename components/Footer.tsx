@@ -24,7 +24,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
         {/* Podpis + copyright */}
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          © {rok} {stopka.nazwa}. Wszystkie prawa zastrzeżone.
+          © {rok} {stopka.nazwa}. All rights reserved.
         </p>
 
         {/* Linki social media */}

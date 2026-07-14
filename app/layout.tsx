@@ -19,9 +19,9 @@ const inter = Inter({
 // Meta-dane strony — to widzą Google i podgląd linku na social media.
 // ✏️ Podmień tytuł i opis na swoje!
 export const metadata: Metadata = {
-  title: "Maty — Design & Web | Strony, Branding, UI/UX",
+  title: "Maty — Web Design | Websites, Branding, UI/UX",
   description:
-    "Freelancer: projektowanie stron i landing page, grafika i branding, UI/UX design. Projekty klasy premium, które sprzedają.",
+    "Freelance designer & developer: websites and landing pages, graphics and branding, UI/UX design. Premium-class projects that sell.",
 };
 
 // Malutki skrypt uruchamiany PRZED wyświetleniem strony.
@@ -45,7 +45,7 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning — potrzebne, bo klasę "dark" dodaje skrypt,
     // a React nie powinien się tym przejmować.
-    <html lang="pl" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: skryptMotywu }} />
       </head>

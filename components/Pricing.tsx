@@ -16,10 +16,10 @@ export default function Pricing() {
         {/* Nagłówek sekcji */}
         <Reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-akcent">
-            05 — Cennik
+            05 — Pricing
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
-            Przejrzyste pakiety, zero ukrytych kosztów
+            Clear packages, zero hidden costs
           </h2>
         </Reveal>
 
@@ -36,10 +36,10 @@ export default function Pricing() {
                     : "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-700"
                 }`}
               >
-                {/* Odznaka „Najczęściej wybierany" nad wyróżnioną kartą */}
+                {/* Odznaka „Most popular" nad wyróżnioną kartą */}
                 {pakiet.wyrozniony && (
                   <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-akcent px-4 py-1 text-xs font-bold text-white shadow-lg shadow-akcent/30">
-                    Najczęściej wybierany
+                    Most popular
                   </span>
                 )}
 
@@ -72,7 +72,7 @@ export default function Pricing() {
                       : "border border-zinc-300 text-zinc-800 hover:border-akcent hover:text-akcent dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-akcent dark:hover:text-akcent"
                   }`}
                 >
-                  Wybieram {pakiet.nazwa}
+                  Choose {pakiet.nazwa}
                 </a>
               </article>
               </KartaSpotlight>
@@ -83,7 +83,7 @@ export default function Pricing() {
         {/* Dopisek pod cennikiem */}
         <Reveal opoznienie={0.2}>
           <p className="mt-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
-            Potrzebujesz czegoś nietypowego? Napisz — przygotuję wycenę pod Twój projekt.
+            Need something custom? Message me — I&apos;ll prepare a quote for your project.
           </p>
         </Reveal>
       </div>

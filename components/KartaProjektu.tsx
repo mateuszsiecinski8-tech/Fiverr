@@ -103,7 +103,7 @@ export default function KartaProjektu({ projekt }: { projekt: Projekt }) {
             src={projekt.link}
             tabIndex={-1}
             aria-hidden="true"
-            title={`Podgląd: ${projekt.tytul}`}
+            title={`Preview: ${projekt.tytul}`}
             className="pointer-events-none origin-top-left border-0"
             style={{
               width: 1280,
@@ -143,7 +143,7 @@ export default function KartaProjektu({ projekt }: { projekt: Projekt }) {
             <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400" />
           </span>
-          Podgląd na żywo
+          Live preview
         </span>
       )}
     </a>

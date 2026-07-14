@@ -25,13 +25,13 @@ export default function Portfolio() {
             02 — Portfolio
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
-            Wybrane projekty{" "}
+            Selected work{" "}
             <sup className="text-lg font-semibold text-akcent md:text-xl">
               ({String(portfolio.length + 1).padStart(2, "0")})
             </sup>
           </h2>
           <p className="mt-4 max-w-xl text-zinc-600 dark:text-zinc-400">
-            Kliknij dowolny projekt, żeby zobaczyć go na żywo.
+            Click any project to see it live.
           </p>
         </Reveal>
 
@@ -77,7 +77,7 @@ export default function Portfolio() {
 
               {/* „Przycisk" (cała karta jest linkiem) */}
               <span className="mt-7 inline-flex w-fit items-center gap-2 rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition-colors duration-300 group-hover:bg-akcent dark:bg-white dark:text-zinc-900 dark:group-hover:bg-akcent dark:group-hover:text-white">
-                Zobacz na żywo
+                View live
                 <IkonaStrzalka className="h-4 w-4 -rotate-45 transition-transform duration-300 group-hover:rotate-0" />
               </span>
             </div>

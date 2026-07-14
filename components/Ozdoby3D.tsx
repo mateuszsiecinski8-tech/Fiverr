@@ -15,25 +15,32 @@
 import { technologie } from "@/lib/dane";
 
 // Pozycje „gwiazd" na ekranie hero (w % szerokości/wysokości sekcji).
-// Chipy trzymają się GÓRNEGO i DOLNEGO pasa hero (tam jest pusto),
-// żeby nie nachodzić ani na tekst (lewy środek), ani na planety (prawa
-// strona) — jak gwiazdy oprawiające scenę.
+// Chipy rozrzucone po CAŁYM hero jak gwiazdy na niebie — równomiernie,
+// ale NIE równo (różne odstępy, rozmiary i jasności). Pozycje omijają
+// blok tekstu (lewy środek), planetę z pierścieniami (środek-prawo),
+// różową planetę (prawy górny róg) i słońce — chipy siedzą w „pustym
+// kosmosie" pomiędzy nimi.
 // s = skala (rozmiar), o = jasność, migocze = czy ma pulsować
 const gwiazdy = [
-  // — górny pas (poniżej navbara, nad treścią) —
-  { top: "13%", left: "6%",  s: 0.9,  o: 0.7,  migocze: false, mobil: true },
-  { top: "11%", left: "22%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
-  { top: "15%", left: "40%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
-  { top: "12%", left: "55%", s: 0.8,  o: 0.5,  migocze: true,  mobil: true },
-  { top: "15%", left: "68%", s: 0.9,  o: 0.65, migocze: false, mobil: false },
-  // — dolny pas (pod treścią) —
-  { top: "92%", left: "8%",  s: 0.85, o: 0.6,  migocze: true,  mobil: false },
-  { top: "90%", left: "22%", s: 0.95, o: 0.8,  migocze: false, mobil: true },
-  { top: "94%", left: "37%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
-  { top: "91%", left: "52%", s: 0.85, o: 0.65, migocze: false, mobil: false },
-  { top: "94%", left: "67%", s: 0.8,  o: 0.5,  migocze: true,  mobil: true },
-  { top: "90%", left: "80%", s: 0.9,  o: 0.7,  migocze: false, mobil: false },
-  { top: "93%", left: "91%", s: 0.8,  o: 0.55, migocze: true,  mobil: false },
+  // — niebo u góry —
+  { top: "6%",  left: "7%",  s: 0.9,  o: 0.75, migocze: false, mobil: true },
+  { top: "10%", left: "24%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "5%",  left: "40%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
+  { top: "9%",  left: "57%", s: 0.8,  o: 0.45, migocze: true,  mobil: true },
+  { top: "6%",  left: "72%", s: 0.9,  o: 0.7,  migocze: false, mobil: false },
+  { top: "10%", left: "88%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  // — luki między planetami a tekstem —
+  { top: "18%", left: "91%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
+  { top: "22%", left: "70%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "50%", left: "41%", s: 0.85, o: 0.55, migocze: true,  mobil: false },
+  { top: "66%", left: "38%", s: 0.8,  o: 0.45, migocze: false, mobil: false },
+  { top: "62%", left: "92%", s: 0.85, o: 0.6,  migocze: true,  mobil: false },
+  // — niebo na dole —
+  { top: "93%", left: "10%", s: 0.9,  o: 0.7,  migocze: false, mobil: true },
+  { top: "90%", left: "26%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "88%", left: "60%", s: 0.9,  o: 0.65, migocze: false, mobil: true },
+  { top: "92%", left: "74%", s: 0.8,  o: 0.5,  migocze: true,  mobil: false },
+  { top: "86%", left: "90%", s: 0.85, o: 0.6,  migocze: false, mobil: false },
 ];
 
 export default function Ozdoby3D() {

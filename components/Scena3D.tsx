@@ -28,7 +28,7 @@ function Spinner() {
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
       <div className="h-10 w-10 animate-spin rounded-full border-4 border-akcent/20 border-t-akcent" />
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
-        Ładowanie sceny 3D…
+        Loading 3D scene…
       </p>
     </div>
   );
@@ -54,102 +54,48 @@ function Fallback() {
   );
 }
 
-/* --- Rysuje „kleks" (blobby, nieregularny kształt) — używane do
-       kontynentów i wysp. Zwraca ścieżkę zamkniętą w kontekście. --- */
-function ladPath(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  R: number,
-  ziarno: number
-) {
-  const pkt = 26;
-  ctx.beginPath();
-  for (let i = 0; i <= pkt; i++) {
-    const a = (i / pkt) * Math.PI * 2;
-    // trzy nakładające się fale = nieregularny, „organiczny" brzeg
-    const n =
-      0.6 +
-      0.2 * Math.sin(a * 3 + ziarno) +
-      0.12 * Math.sin(a * 5 + ziarno * 2.3) +
-      0.09 * Math.sin(a * 8 + ziarno * 1.7);
-    const r = R * n;
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r * 0.82; // lekko spłaszczone
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-}
-
-/* --- Tekstura planety głównej: ocean + kontynenty + czapy polarne --- */
+/* --- Tekstura planety głównej: gazowy olbrzym (pasy kolorów + smugi
+       „chmur" + turkusowe burze) — wygląd, który podobał się najbardziej --- */
 function namalujPlanete(): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  const W = 1024,
-    H = 512;
-  c.width = W;
-  c.height = H;
+  c.width = 1024;
+  c.height = 512;
   const ctx = c.getContext("2d")!;
 
-  // OCEAN — pionowy gradient (bieguny ciemniejsze, równik jaśniejszy)
-  const ocean = ctx.createLinearGradient(0, 0, 0, H);
-  ocean.addColorStop(0.0, "#1d1550");
-  ocean.addColorStop(0.5, "#4334b8");
-  ocean.addColorStop(1.0, "#1d1550");
-  ctx.fillStyle = ocean;
-  ctx.fillRect(0, 0, W, H);
+  // pionowy gradient pasów (od bieguna do bieguna)
+  const grad = ctx.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0.0, "#2a1e63");
+  grad.addColorStop(0.18, "#5b47d6");
+  grad.addColorStop(0.34, "#8b7cf7");
+  grad.addColorStop(0.46, "#d17ce8");
+  grad.addColorStop(0.58, "#f0a6d8");
+  grad.addColorStop(0.7, "#6d5dfc");
+  grad.addColorStop(0.85, "#3b2f8f");
+  grad.addColorStop(1.0, "#221a52");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1024, 512);
 
-  // KONTYNENTY — kilka dużych lądów w barwach strony.
-  // Rysujemy też „owinięcia" przy krawędziach (mapa zawija się w poziomie).
-  const kontynenty = [
-    { x: 180, y: 210, R: 120, ziarno: 1.3 },
-    { x: 470, y: 300, R: 95, ziarno: 3.7 },
-    { x: 700, y: 180, R: 130, ziarno: 5.1 },
-    { x: 900, y: 330, R: 100, ziarno: 2.2 },
-    { x: 360, y: 380, R: 70, ziarno: 4.4 },
-  ];
-  for (const k of kontynenty) {
-    for (const dx of [-W, 0, W]) {
-      // ląd: gradient od jaśniejszego środka do ciemniejszego brzegu
-      const g = ctx.createRadialGradient(k.x + dx, k.y, 10, k.x + dx, k.y, k.R);
-      g.addColorStop(0, "#a98bff");
-      g.addColorStop(0.55, "#8b7cf7");
-      g.addColorStop(1, "#6d5dfc");
-      ladPath(ctx, k.x + dx, k.y, k.R, k.ziarno);
-      ctx.fillStyle = g;
-      ctx.fill();
-      // rozświetlony brzeg (linia brzegowa)
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "rgba(224,196,255,0.5)";
-      ctx.stroke();
+  // faliste, półprzezroczyste smugi chmur — dodają „życia" powierzchni
+  for (let i = 0; i < 26; i++) {
+    const y = Math.random() * 512;
+    const wys = 3 + Math.random() * 14;
+    ctx.fillStyle = `rgba(255,255,255,${0.03 + Math.random() * 0.07})`;
+    ctx.beginPath();
+    for (let x = 0; x <= 1024; x += 16) {
+      const fala = Math.sin(x / 90 + i * 2.1) * 7;
+      x === 0 ? ctx.moveTo(x, y + fala) : ctx.lineTo(x, y + fala);
     }
-  }
-
-  // WYSPY — kilka małych lądów dla urozmaicenia
-  for (let i = 0; i < 14; i++) {
-    const x = Math.random() * W;
-    const y = 90 + Math.random() * 330;
-    ladPath(ctx, x, y, 10 + Math.random() * 20, Math.random() * 6);
-    ctx.fillStyle = "#9a86ff";
+    for (let x = 1024; x >= 0; x -= 16) {
+      const fala = Math.sin(x / 90 + i * 2.1) * 7;
+      ctx.lineTo(x, y + wys + fala);
+    }
     ctx.fill();
   }
-
-  // CZAPY POLARNE — jaśniejsze „lody" przy górnej i dolnej krawędzi
-  const gora = ctx.createLinearGradient(0, 0, 0, 70);
-  gora.addColorStop(0, "rgba(233,228,255,0.85)");
-  gora.addColorStop(1, "rgba(233,228,255,0)");
-  ctx.fillStyle = gora;
-  ctx.fillRect(0, 0, W, 70);
-  const dol = ctx.createLinearGradient(0, H - 70, 0, H);
-  dol.addColorStop(0, "rgba(233,228,255,0)");
-  dol.addColorStop(1, "rgba(233,228,255,0.85)");
-  ctx.fillStyle = dol;
-  ctx.fillRect(0, H - 70, W, 70);
-
-  // delikatna mgiełka atmosfery (turkusowe smugi nad oceanem)
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = `rgba(79,209,197,${0.04 + Math.random() * 0.05})`;
+  // turkusowe „burze"
+  for (let i = 0; i < 10; i++) {
+    ctx.fillStyle = `rgba(79,209,197,${0.05 + Math.random() * 0.1})`;
     ctx.beginPath();
-    ctx.ellipse(Math.random() * W, 150 + Math.random() * 220, 60 + Math.random() * 90, 8 + Math.random() * 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(Math.random() * 1024, 120 + Math.random() * 280, 26 + Math.random() * 60, 7 + Math.random() * 12, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   return c;
@@ -258,8 +204,9 @@ export default function Scena3D() {
         scena.add(swiatloSlonca);
 
         /* ========== PLANETA GŁÓWNA (z pierścieniami) ========== */
+        // Pozycja: lekko w górę i w prawo — pierścienie mieszczą się W CAŁOŚCI
         const uklad = new THREE.Group();
-        uklad.position.set(-0.1, -0.35, 0); // lekko w dół, robi miejsce różowej
+        uklad.position.set(0.35, 0.1, 0);
         uklad.rotation.z = 0.16;
         scena.add(uklad);
 
@@ -297,7 +244,7 @@ export default function Scena3D() {
           new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(namalujPoswiate("139,124,247")), transparent: true, depthWrite: false })
         );
         poswiata.scale.set(5.6, 5.6, 1);
-        poswiata.position.set(-0.3, -0.35, -1.6);
+        poswiata.position.set(0.35, 0.1, -1.6);
         scena.add(poswiata);
 
         /* ========== RÓŻOWA PLANETA (prawy górny róg, bez pierścieni) ========== */
@@ -307,14 +254,14 @@ export default function Scena3D() {
           new THREE.SphereGeometry(0.52, 48, 48),
           new THREE.MeshStandardMaterial({ map: teksturaRozowej, roughness: 0.8 })
         );
-        rozowa.position.set(2.25, 1.75, -0.4);
+        rozowa.position.set(2.7, 2.0, -0.6); // prawy górny róg sceny
         scena.add(rozowa);
         // subtelna różowa poświata
         const poswiataRoz = new THREE.Sprite(
           new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(namalujPoswiate("240,111,174")), transparent: true, depthWrite: false })
         );
         poswiataRoz.scale.set(2.1, 2.1, 1);
-        poswiataRoz.position.set(2.25, 1.75, -0.6);
+        poswiataRoz.position.set(2.7, 2.0, -0.8);
         scena.add(poswiataRoz);
 
         /* ========== SŁOŃCE W ODDALI (prawie biała kula + żółta poświata) ========== */

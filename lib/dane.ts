@@ -17,22 +17,23 @@ export const linki = {
 };
 
 // --- SEKCJA 1: HERO (góra strony) ---
+// Strona jest PO ANGIELSKU (klienci z Fiverr) — teksty edytuj po angielsku.
 export const hero = {
-  dostepnosc: "Dostępny do nowych projektów",
+  dostepnosc: "Available for new projects",
   // Imię lub nick — wyświetla się bardzo dużą czcionką
   imie: "Maty",
   // Druga linijka nagłówka (ta z kolorowym gradientem)
   imieAkcent: "Web Design",
   // Jedno zdanie o Tobie
   opis:
-    "Projektuję strony, marki i interfejsy, które wyglądają premium i sprzedają. Od pomysłu do gotowego projektu — bez kompromisów.",
-  przyciskPrace: "Zobacz prace",
-  przyciskKontakt: "Napisz do mnie",
+    "I design websites, brands and interfaces that look premium and sell. From idea to finished product — no compromises.",
+  przyciskPrace: "View my work",
+  przyciskKontakt: "Get in touch",
   // Trzy liczby pod przyciskami — buduj wiarygodność (edytuj śmiało!)
   statystyki: [
-    { liczba: "6+", opis: "projektów w portfolio" },
-    { liczba: "<24h", opis: "odpowiedź na wiadomości" },
-    { liczba: "100%", opis: "terminowych realizacji" },
+    { liczba: "6+", opis: "projects in portfolio" },
+    { liczba: "<24h", opis: "response time" },
+    { liczba: "100%", opis: "on-time delivery" },
   ],
 };
 
@@ -48,65 +49,65 @@ export const technologie = [
   "🧠 TypeScript",
   "✏️ Branding",
   "🔍 SEO",
-  "✨ Animacje",
-  "🚀 Landing Page",
+  "✨ Animations",
+  "🚀 Landing Pages",
   "🛍️ E-commerce",
   "🖌️ Photoshop",
   "📐 Illustrator",
   "📱 Mobile-first",
-  "🧩 Design System",
+  "🧩 Design Systems",
 ];
 
 // --- PASEK PRZEWIJANYCH HASEŁ (marquee, pod sekcją hero) ---
 export const marquee = [
-  "Strony WWW",
-  "Landing Page",
+  "Websites",
+  "Landing Pages",
   "Branding",
-  "Logo",
+  "Logo Design",
   "UI/UX Design",
   "Figma",
   "Next.js",
-  "Animacje",
-  "Grafika Social Media",
+  "Animations",
+  "Social Media Graphics",
 ];
 
 // --- SEKCJA 2: USŁUGI (3 karty) ---
 export const uslugi = [
   {
     ikona: "monitor", // nie zmieniaj — to nazwa ikony
-    tytul: "Strony & Landing Page",
+    tytul: "Websites & Landing Pages",
     opis:
-      "Nowoczesne, szybkie strony, które robią wrażenie od pierwszej sekundy i zamieniają odwiedzających w klientów.",
+      "Modern, fast websites that impress from the first second and turn visitors into customers.",
     // Co klient dostaje (lista z „ptaszkami")
     zawiera: [
-      "Projekt + wdrożenie strony",
-      "Pełna responsywność (mobile-first)",
-      "Optymalizacja szybkości i SEO",
-      "Gotowe do publikacji",
+      "Design + development",
+      "Fully responsive (mobile-first)",
+      "Speed & SEO optimization",
+      "Ready to publish",
     ],
   },
   {
     ikona: "paleta",
-    tytul: "Grafika & Branding",
+    tytul: "Graphics & Branding",
     opis:
-      "Spójna identyfikacja wizualna, dzięki której Twoja marka będzie wyglądać profesjonalnie w każdym miejscu.",
+      "A consistent visual identity that makes your brand look professional everywhere it appears.",
     zawiera: [
-      "Logo + księga znaku",
-      "Paleta kolorów i typografia",
-      "Grafiki social media",
-      "Materiały do druku",
+      "Logo + brand guidelines",
+      "Color palette & typography",
+      "Social media graphics",
+      "Print-ready materials",
     ],
   },
   {
     ikona: "warstwy",
     tytul: "UI/UX Design",
     opis:
-      "Interfejsy aplikacji i serwisów zaprojektowane tak, żeby były piękne, intuicyjne i wygodne w użyciu.",
+      "App and website interfaces designed to be beautiful, intuitive and a pleasure to use.",
     zawiera: [
-      "Makiety i prototypy (Figma)",
-      "Projekt całego interfejsu",
-      "Design system dla developerów",
-      "Testy użyteczności",
+      "Wireframes & prototypes (Figma)",
+      "Full interface design",
+      "Design system for developers",
+      "Usability testing",
     ],
   },
 ];
@@ -116,10 +117,10 @@ export const uslugi = [
 // ⭐ Miniaturę podmienisz, wrzucając zrzut ekranu strony
 //    do pliku: public/portfolio/justyna.jpg (ta sama nazwa!)
 export const projektWyrozniony = {
-  odznaka: "Prawdziwy klient",
-  tytul: "Justyna Rodziewicz — Nieruchomości Premium",
-  podtytul: "Elegancka strona dla biura nieruchomości premium z Olsztyna",
-  opis: "Kompletna strona-wizytówka dla licencjonowanej pośredniczki nieruchomości. Minimalistyczny, luksusowy design (paleta beż + czerń), numerowane sekcje, filtrowana baza ofert, formularz sprzedaży nieruchomości i integracja z podcastem. Responsywna, dopracowana, budująca zaufanie i prestiż marki.",
+  odznaka: "Real client",
+  tytul: "Justyna Rodziewicz — Premium Real Estate",
+  podtytul: "An elegant website for a premium real estate agency from Poland",
+  opis: "A complete brand website for a licensed real estate agent. Minimalist, luxurious design (beige + black palette), numbered sections, a filterable property listing, a property-selling form and podcast integration. Responsive, polished, built to inspire trust and prestige.",
   tagi: ["Web Design", "Real Estate", "Branding"],
   link: "https://www.justynarodziewicz.pl/",
   obraz: "/portfolio/justyna.jpg",
@@ -131,43 +132,43 @@ export const projektWyrozniony = {
 // „link"   = dokąd prowadzi klik (strony-demo leżą w public/prace/)
 export const portfolio = [
   {
-    tytul: "Flowly — landing SaaS",
-    kategoria: "Strona WWW",
+    tytul: "Flowly — SaaS landing page",
+    kategoria: "Website",
     uklad: "szeroki",
     obraz: "/portfolio/flowly.jpg",
     link: "/prace/flowly.html",
   },
   {
-    tytul: "Calmo — aplikacja do medytacji",
+    tytul: "Calmo — meditation app",
     kategoria: "UI/UX",
     uklad: "waski",
     obraz: "/portfolio/calmo.jpg",
     link: "/prace/calmo.html",
   },
   {
-    tytul: "Palona — identyfikacja kawiarni",
+    tytul: "Palona — café brand identity",
     kategoria: "Branding",
     uklad: "waski",
     obraz: "/portfolio/palona-brand.jpg",
     link: "/prace/palona-brand.html",
   },
   {
-    tytul: "PULS Studio — strona fitness",
-    kategoria: "Strona WWW",
+    tytul: "PULS Studio — fitness website",
+    kategoria: "Website",
     uklad: "szeroki",
     obraz: "/portfolio/puls.jpg",
     link: "/prace/puls.html",
   },
   {
-    tytul: "NOIA — marka kosmetyków",
-    kategoria: "Strona WWW",
+    tytul: "NOIA — cosmetics brand",
+    kategoria: "Website",
     uklad: "szeroki",
     obraz: "/portfolio/noia.jpg",
     link: "/prace/noia.html",
   },
   {
-    tytul: "Palona — strona kawiarni",
-    kategoria: "Strona WWW",
+    tytul: "Palona — café website",
+    kategoria: "Website",
     uklad: "waski",
     obraz: "/portfolio/palona-www.jpg",
     link: "/prace/palona.html",
@@ -178,19 +179,19 @@ export const portfolio = [
 export const proces = [
   {
     tytul: "Brief",
-    opis: "Opowiadasz mi o swoim projekcie, celach i stylu, który Ci się podoba. Zadaję pytania, żeby wszystko dobrze zrozumieć.",
+    opis: "You tell me about your project, your goals and the style you love. I ask questions to understand everything perfectly.",
   },
   {
-    tytul: "Projekt",
-    opis: "Zabieram się do pracy. Dostajesz pierwszą wersję projektu w ustalonym terminie — bez niespodzianek.",
+    tytul: "Design",
+    opis: "I get to work. You receive the first version of the design on the agreed date — no surprises.",
   },
   {
-    tytul: "Poprawki",
-    opis: "Wspólnie dopracowujemy detale. Twoje uwagi wprowadzam szybko, aż wszystko będzie w punkt.",
+    tytul: "Revisions",
+    opis: "Together we polish the details. I apply your feedback quickly, until everything feels just right.",
   },
   {
-    tytul: "Gotowe",
-    opis: "Odbierasz finalne pliki gotowe do użycia. Zostaję do dyspozycji, gdybyś czegoś jeszcze potrzebował.",
+    tytul: "Delivery",
+    opis: "You receive the final, ready-to-use files. And I stay around in case you need anything else.",
   },
 ];
 
@@ -198,21 +199,21 @@ export const proces = [
 export const opinie = [
   {
     imie: "Anna K.",
-    rola: "Właścicielka sklepu online",
+    rola: "Online store owner",
     tresc:
-      "Współpraca na najwyższym poziomie. Strona wygląda lepiej, niż sobie wyobrażałam, a całość była gotowa przed terminem. Polecam każdemu!",
+      "Top-level collaboration. The website looks better than I imagined, and everything was ready ahead of schedule. I recommend him to everyone!",
   },
   {
-    imie: "Tomasz W.",
-    rola: "Founder, startup SaaS",
+    imie: "Thomas W.",
+    rola: "Founder, SaaS startup",
     tresc:
-      "Świetny kontakt i pełen profesjonalizm. Landing page, który dostaliśmy, podwoił naszą konwersję w pierwszym miesiącu.",
+      "Great communication and full professionalism. The landing page we received doubled our conversion rate in the first month.",
   },
   {
-    imie: "Karolina M.",
+    imie: "Caroline M.",
     rola: "Marketing manager",
     tresc:
-      "Branding, który w końcu wygląda spójnie. Szybkie poprawki, zero problemów z komunikacją. Na pewno wrócę z kolejnymi projektami.",
+      "Branding that finally looks consistent. Fast revisions, zero communication problems. I'll definitely be back with more projects.",
   },
 ];
 
@@ -220,52 +221,52 @@ export const opinie = [
 export const cennik = [
   {
     nazwa: "Basic",
-    cena: "od 500 zł",
-    opis: "Idealny na start — pojedynczy projekt graficzny lub prosta strona.",
+    cena: "from $120",
+    opis: "Perfect to start — a single graphic design or a simple landing page.",
     wyrozniony: false, // false = zwykła karta
     zawiera: [
-      "1 projekt (logo lub landing page)",
-      "2 rundy poprawek",
-      "Pliki źródłowe",
-      "Realizacja do 7 dni",
+      "1 design (logo or landing page)",
+      "2 revision rounds",
+      "Source files",
+      "Delivery within 7 days",
     ],
   },
   {
     nazwa: "Standard",
-    cena: "od 1500 zł",
-    opis: "Najczęściej wybierany — kompletna strona lub mini-branding.",
+    cena: "from $350",
+    opis: "Most popular — a complete website or a mini brand identity.",
     wyrozniony: true, // true = wyróżniona karta (kolorowa ramka + odznaka)
     zawiera: [
-      "Strona do 5 podstron lub branding",
-      "4 rundy poprawek",
-      "Wersja mobilna + optymalizacja",
-      "Pliki źródłowe + instrukcja",
-      "Realizacja do 14 dni",
+      "Website up to 5 pages or branding",
+      "4 revision rounds",
+      "Mobile version + optimization",
+      "Source files + handover guide",
+      "Delivery within 14 days",
     ],
   },
   {
     nazwa: "Premium",
-    cena: "od 3500 zł",
-    opis: "Pełen pakiet — strona, branding i wsparcie w jednym.",
+    cena: "from $800",
+    opis: "The full package — website, branding and support in one.",
     wyrozniony: false,
     zawiera: [
-      "Strona + pełna identyfikacja wizualna",
-      "Nielimitowane poprawki",
-      "Grafiki social media na start",
-      "30 dni wsparcia po wdrożeniu",
-      "Priorytetowa realizacja",
+      "Website + full brand identity",
+      "Unlimited revisions",
+      "Social media graphics starter pack",
+      "30 days of post-launch support",
+      "Priority delivery",
     ],
   },
 ];
 
 // --- SEKCJA 7: KONTAKT / CTA ---
 export const kontakt = {
-  naglowek: "Masz projekt? Zróbmy coś świetnego.",
-  opis: "Napisz do mnie na Fiverr lub mailowo — odpowiadam zwykle w ciągu kilku godzin. Pierwsza wycena zawsze za darmo.",
-  przycisk: "Napisz na Fiverr",
+  naglowek: "Got a project? Let's make something great.",
+  opis: "Message me on Fiverr or by email — I usually reply within a few hours. The first quote is always free.",
+  przycisk: "Message me on Fiverr",
 };
 
 // --- STOPKA ---
 export const stopka = {
-  nazwa: "Maty — Design & Web", // podpis w stopce
+  nazwa: "Maty — Web Design", // podpis w stopce
 };

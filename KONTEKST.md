@@ -101,6 +101,20 @@ UWAGA na przyszłość: kanwa 3D bywa wąska (na szerokich monitorach prawa
 kolumna jest wysoka-wąska) — dlatego promień orbity księżyca jest mały,
 żeby księżyc nie wychodził poza kadr.
 
+**Etap 9 — kompozycja sceny, angielski, szklany navbar.**
+- Planeta główna wróciła do wyglądu GAZOWEGO OLBRZYMA (pasy fiolet→róż
+  + faliste smugi chmur + turkusowe burze) — właściciel wolał go od
+  kontynentów. Pozycja (0.35, 0.1): pierścienie widoczne W CAŁOŚCI.
+- Różowa planeta w prawym górnym rogu (2.7, 2.0, −0.6); słońce bez zmian.
+- Chipy-gwiazdy rozrzucone po CAŁYM hero (16 szt., nierówno, w lukach
+  między planetami/słońcem/tekstem — pozycje w Ozdoby3D.tsx).
+- CAŁA strona przetłumaczona na ANGIELSKI (klienci z Fiverr!) —
+  treści w lib/dane.ts po angielsku, lang="en", ceny w cenniku w $.
+  Strony-demo w public/prace/ zostały po polsku (osobne projekty).
+- NOWY NAVBAR: bez ciężkiego paska — logo „Maty." maksymalnie po lewej,
+  po prawej pływająca SZKLANA PIGUŁKA (backdrop-blur) z linkami,
+  przełącznikiem motywu i akcentowym przyciskiem „Hire me".
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.
