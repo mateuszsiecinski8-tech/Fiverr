@@ -18,7 +18,7 @@ export default function Testimonials() {
             04 — Reviews
           </p>
           <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight md:text-5xl">
-            What clients say
+            What Clients Say
           </h2>
         </Reveal>
 
