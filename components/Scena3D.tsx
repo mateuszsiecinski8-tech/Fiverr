@@ -6,8 +6,9 @@
 //  • dużą planetę z PIERŚCIENIAMI i wymyślonymi KONTYNENTAMI
 //    (tekstura „malowana" kodem: ocean + lądy + czapy polarne),
 //    powoli obracającą się wokół własnej osi,
-//  • KSIĘŻYC krążący po prawdziwej orbicie (w płaszczyźnie pierścieni,
-//    poza nimi — nigdy nie przelatuje przez planetę),
+//  • DWA KSIĘŻYCE (jeden mniejszy) krążące po prawdziwej orbicie
+//    (w płaszczyźnie pierścieni — nigdy nie przelatują przez planetę),
+//    z teksturą delikatnych kraterów,
 //  • drugą, mniejszą RÓŻOWĄ planetę bez pierścieni (prawy górny róg),
 //    też się obraca,
 //  • jasne SŁOŃCE w oddali — prawie biała kula z żółtą poświatą.
@@ -75,28 +76,39 @@ function namalujPlanete(): HTMLCanvasElement {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 1024, 512);
 
-  // faliste, półprzezroczyste smugi chmur — dodają „życia" powierzchni
+  // Faliste, półprzezroczyste smugi chmur — dodają „życia" powierzchni.
+  // WAŻNE: fala musi być OKRESOWA na szerokości 1024 px, żeby lewa i prawa
+  // krawędź tekstury się zgadzały — inaczej na kuli widać pionowy „szew".
+  // Dlatego zamiast x/90 używamy pełnych cykli (2*PI*k*x/1024).
   for (let i = 0; i < 26; i++) {
     const y = Math.random() * 512;
     const wys = 3 + Math.random() * 14;
+    const cykle = 2 + (i % 2); // 2 lub 3 pełne fale na obwód — zawsze się domykają
+    const faza = i * 2.1;
+    const fala = (x: number) => Math.sin((x / 1024) * Math.PI * 2 * cykle + faza) * 7;
     ctx.fillStyle = `rgba(255,255,255,${0.03 + Math.random() * 0.07})`;
     ctx.beginPath();
     for (let x = 0; x <= 1024; x += 16) {
-      const fala = Math.sin(x / 90 + i * 2.1) * 7;
-      x === 0 ? ctx.moveTo(x, y + fala) : ctx.lineTo(x, y + fala);
+      x === 0 ? ctx.moveTo(x, y + fala(x)) : ctx.lineTo(x, y + fala(x));
     }
     for (let x = 1024; x >= 0; x -= 16) {
-      const fala = Math.sin(x / 90 + i * 2.1) * 7;
-      ctx.lineTo(x, y + wys + fala);
+      ctx.lineTo(x, y + wys + fala(x));
     }
     ctx.fill();
   }
-  // turkusowe „burze"
+  // Turkusowe „burze" — każdą rysujemy też w kopii przesuniętej o ±1024 px,
+  // żeby te przy krawędzi płynnie „owijały się" przez szew (bez ucięcia).
   for (let i = 0; i < 10; i++) {
+    const cx = Math.random() * 1024;
+    const cy = 120 + Math.random() * 280;
+    const rx = 26 + Math.random() * 60;
+    const ry = 7 + Math.random() * 12;
     ctx.fillStyle = `rgba(79,209,197,${0.05 + Math.random() * 0.1})`;
-    ctx.beginPath();
-    ctx.ellipse(Math.random() * 1024, 120 + Math.random() * 280, 26 + Math.random() * 60, 7 + Math.random() * 12, 0, 0, Math.PI * 2);
-    ctx.fill();
+    for (const przesun of [-1024, 0, 1024]) {
+      ctx.beginPath();
+      ctx.ellipse(cx + przesun, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   return c;
 }
@@ -139,6 +151,37 @@ function namalujPierscienie(): HTMLCanvasElement {
     ctx.strokeStyle = `rgba(${kolor},${alfa.toFixed(3)})`;
     ctx.beginPath();
     ctx.arc(srodek, srodek, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  return c;
+}
+
+/* --- Tekstura księżyca: baza + delikatne kratery (ciemniejsze kółka
+       z cienkim jasnym rantem od strony światła, żeby wyglądały na wklęsłe) --- */
+function namalujKsiezyc(kolorBazowy: string): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = kolorBazowy;
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 24; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const r = 5 + Math.random() * 16;
+    const cien = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
+    cien.addColorStop(0, "rgba(50,45,80,0.5)");
+    cien.addColorStop(0.75, "rgba(50,45,80,0.18)");
+    cien.addColorStop(1, "rgba(50,45,80,0)");
+    ctx.fillStyle = cien;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    // cienki jasny rant (górna-lewa krawędź krateru „łapie" światło)
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.lineWidth = Math.max(1, r * 0.1);
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.94, Math.PI * 0.65, Math.PI * 1.55);
     ctx.stroke();
   }
   return c;
@@ -232,12 +275,25 @@ export default function Scena3D() {
         pierscienie.rotation.x = PRZECHYL;
         uklad.add(pierscienie);
 
-        // księżyc (jaśniejszy, żeby wyraźnie odcinał się od planety)
+        // księżyc (jaśniejszy, żeby wyraźnie odcinał się od planety) —
+        // z teksturą delikatnych kraterów
+        const teksturaKsiezyca = new THREE.CanvasTexture(namalujKsiezyc("#e8e4ff"));
+        teksturaKsiezyca.colorSpace = THREE.SRGBColorSpace;
         const ksiezyc = new THREE.Mesh(
           new THREE.SphereGeometry(0.14, 32, 32),
-          new THREE.MeshStandardMaterial({ color: 0xe8e4ff, roughness: 0.6, emissive: 0x2a2540 })
+          new THREE.MeshStandardMaterial({ map: teksturaKsiezyca, roughness: 0.6, emissive: 0x2a2540 })
         );
         uklad.add(ksiezyc);
+
+        // drugi, MNIEJSZY księżyc (życzenie właściciela) — ta sama płaszczyzna
+        // orbity co pierwszy, ale własny promień i tempo, żeby się nigdy nie mijały
+        const teksturaKsiezyca2 = new THREE.CanvasTexture(namalujKsiezyc("#d3cdf2"));
+        teksturaKsiezyca2.colorSpace = THREE.SRGBColorSpace;
+        const ksiezyc2 = new THREE.Mesh(
+          new THREE.SphereGeometry(0.085, 28, 28),
+          new THREE.MeshStandardMaterial({ map: teksturaKsiezyca2, roughness: 0.6, emissive: 0x241f3a })
+        );
+        uklad.add(ksiezyc2);
 
         // poświata za planetą
         const poswiata = new THREE.Sprite(
@@ -284,24 +340,35 @@ export default function Scena3D() {
         /* — pętla animacji — */
         const zegar = new THREE.Clock();
         let kat = Math.random() * Math.PI * 2;
+        let kat2 = Math.random() * Math.PI * 2;
         // Promień dobrany tak, by księżyc mieścił się w kadrze także na
         // wąskich kanwach, a jednocześnie był wyraźnie POZA planetą (1.35).
         const R_KSIEZYCA = 1.95;
+        const R_KSIEZYCA2 = 2.35; // drugi księżyc krąży dalej — nigdy nie mija się z pierwszym
         function animuj() {
           const dt = zegar.getDelta();
           planeta.rotation.y += dt * 0.2;
           pierscienie.rotation.z += dt * 0.02;
           rozowa.rotation.y += dt * 0.4; // różowa obraca się szybciej
 
-          // Księżyc: prawdziwa orbita w PŁASZCZYŹNIE pierścieni.
-          // Odległość od środka jest zawsze = R_KSIEZYCA, więc księżyc
-          // nigdy nie przechodzi przez planetę (poprawka błędu).
+          // Oba księżyce: prawdziwa orbita w PŁASZCZYŹNIE pierścieni, w TĘ
+          // SAMĄ stronę (kat i kat2 rosną) — a więc PRZECIWNIE do księżyca
+          // małej turkusowej planety w Ozdoby3D.tsx (tam animacja jest
+          // odwrócona). Różne promienie i tempo, żeby się nie mijały.
           kat += dt * 0.4;
           const s = Math.sin(kat);
           ksiezyc.position.set(
             Math.cos(kat) * R_KSIEZYCA,
             s * R_KSIEZYCA * Math.cos(PRZECHYL),
             s * R_KSIEZYCA * Math.sin(PRZECHYL)
+          );
+
+          kat2 += dt * 0.55;
+          const s2 = Math.sin(kat2);
+          ksiezyc2.position.set(
+            Math.cos(kat2) * R_KSIEZYCA2,
+            s2 * R_KSIEZYCA2 * Math.cos(PRZECHYL),
+            s2 * R_KSIEZYCA2 * Math.sin(PRZECHYL)
           );
 
           renderer.render(scena, kamera);

@@ -162,6 +162,21 @@ body {
   animation: kometa-lot 16s linear infinite;
 }
 
+/* --- SPADAJĄCA GWIAZDA (hero): dłuższa smuga przelatuje przez niebo
+   W PĘTLI co ~13 s — nie tylko raz przy wczytaniu strony
+   (używa components/Ozdoby3D.tsx). Widoczna jest tylko przez pierwsze
+   ~10% czasu animacji, resztę cyklu "czeka" niewidoczna. --- */
+@keyframes spadajaca-gwiazda {
+  0%   { opacity: 0; transform: translate(0, 0); }
+  2%   { opacity: 0.9; }
+  10%  { opacity: 0; transform: translate(440px, 273px); }
+  100% { opacity: 0; transform: translate(440px, 273px); }
+}
+.spadajaca-gwiazda {
+  opacity: 0;
+  animation: spadajaca-gwiazda 13s linear infinite;
+}
+
 /* --- ORBITA: księżyc turkusowej mini-planety w hero krąży po elipsie
    (używa components/Ozdoby3D.tsx). Osiem klatek = punkty elipsy co 45°
    (70 px w poziomie, 30 px w pionie). Skala i jasność rosną w dolnej
@@ -280,6 +295,7 @@ body {
   .pulsuje,
   .dryf,
   .kometa,
+  .spadajaca-gwiazda,
   .orbituj,
   .marquee {
     animation: none;
@@ -288,8 +304,9 @@ body {
     /* bez animacji księżyc stoi spokojnie obok planety */
     transform: translate(70px, 0);
   }
-  .kometa {
-    display: none; /* kometa bez animacji to tylko dziwna kreska — chowamy */
+  .kometa,
+  .spadajaca-gwiazda {
+    display: none; /* smuga bez animacji to tylko dziwna kreska — chowamy */
   }
   .blysk::after {
     display: none;
