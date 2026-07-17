@@ -103,6 +103,7 @@ export default function OzdobyKosmos({
           <Punkt className="right-[6%] top-16 hidden opacity-70 lg:block"><Planetka rozmiar={46} odcien="roz" /></Punkt>
           <Punkt className="left-[4%] top-[58%] hidden lg:block"><Chip nazwa="✨ Animations" czas={26} /></Punkt>
           <Punkt className="right-[13%] bottom-16 hidden lg:block"><Chip nazwa="⚡ Next.js" czas={21} opoznienie={-8} /></Punkt>
+          <Punkt className="left-[10%] bottom-8 hidden lg:block"><Chip nazwa="🔍 SEO" czas={24} opoznienie={-15} /></Punkt>
           <Punkt className="left-[16%] top-14"><Gwiazdka jasnosc={0.5} /></Punkt>
           <Punkt className="left-[38%] top-24"><Gwiazdka opoznienie={1.4} jasnosc={0.35} /></Punkt>
           <Punkt className="right-[28%] top-[30%]"><Gwiazdka opoznienie={2.6} jasnosc={0.45} /></Punkt>
@@ -115,6 +116,8 @@ export default function OzdobyKosmos({
           <Punkt className="left-[5%] top-24 hidden opacity-60 lg:block"><Ksiezycek rozmiar={30} /></Punkt>
           <Punkt className="right-[4%] top-[36%] hidden lg:block"><Chip nazwa="🎨 UI/UX" czas={24} opoznienie={-5} /></Punkt>
           <Punkt className="left-[6%] bottom-[22%] hidden lg:block"><Chip nazwa="🚀 Landing Pages" czas={28} opoznienie={-12} /></Punkt>
+          <Punkt className="left-[3%] top-[54%] hidden lg:block"><Chip nazwa="🛍️ E-commerce" czas={26} opoznienie={-18} /></Punkt>
+          <Punkt className="right-[6%] bottom-[6%] hidden lg:block"><Chip nazwa="📐 Illustrator" czas={22} opoznienie={-9} /></Punkt>
           <Punkt className="right-[18%] top-16"><Gwiazdka jasnosc={0.4} /></Punkt>
           <Punkt className="right-[9%] bottom-24"><Gwiazdka opoznienie={2} jasnosc={0.5} /></Punkt>
           <Punkt className="left-[30%] top-12"><Gwiazdka opoznienie={3.2} jasnosc={0.3} /></Punkt>
@@ -127,6 +130,7 @@ export default function OzdobyKosmos({
           <Punkt className="right-[5%] top-20 hidden opacity-70 lg:block"><Planetka rozmiar={56} /></Punkt>
           <Punkt className="left-[5%] top-[42%] hidden lg:block"><Chip nazwa="🧠 TypeScript" czas={25} opoznienie={-3} /></Punkt>
           <Punkt className="left-[22%] bottom-10 hidden lg:block"><Chip nazwa="✦ Figma" czas={20} opoznienie={-10} /></Punkt>
+          <Punkt className="right-[9%] bottom-[30%] hidden lg:block"><Chip nazwa="📱 Mobile-first" czas={27} opoznienie={-14} /></Punkt>
           <Punkt className="left-[42%] top-16"><Gwiazdka jasnosc={0.45} /></Punkt>
           <Punkt className="right-[26%] bottom-16"><Gwiazdka opoznienie={1.8} jasnosc={0.35} /></Punkt>
           <Punkt className="left-[10%] top-16 hidden lg:block"><Kometa opoznienie={3} /></Punkt>
@@ -137,7 +141,9 @@ export default function OzdobyKosmos({
         <>
           <Punkt className="left-[4%] top-[30%] hidden opacity-60 lg:block"><Planetka rozmiar={38} odcien="roz" /></Punkt>
           <Punkt className="right-[5%] top-24 hidden lg:block"><Chip nazwa="🌊 Tailwind CSS" czas={27} opoznienie={-6} /></Punkt>
-          <Punkt className="right-[10%] bottom-14 hidden opacity-60 lg:block"><Ksiezycek rozmiar={22} /></Punkt>
+          {/* (był tu drugi półksiężyc — usunięty: siedział za blisko tego
+              z sekcji Kontakt tuż niżej i razem wyglądały źle) */}
+          <Punkt className="left-[7%] bottom-12 hidden lg:block"><Chip nazwa="✏️ Branding" czas={23} opoznienie={-11} /></Punkt>
           <Punkt className="left-[24%] top-14"><Gwiazdka opoznienie={0.8} jasnosc={0.4} /></Punkt>
           <Punkt className="right-[32%] top-20"><Gwiazdka opoznienie={2.4} jasnosc={0.5} /></Punkt>
           <Punkt className="left-[12%] bottom-20"><Gwiazdka opoznienie={3.6} jasnosc={0.3} /></Punkt>
@@ -149,6 +155,7 @@ export default function OzdobyKosmos({
           {/* Kontakt ma w środku ciemną kartę — ozdoby siedzą na marginesach */}
           <Punkt className="left-[3%] top-[38%] hidden lg:block"><Chip nazwa="⚛ React" czas={23} opoznienie={-4} /></Punkt>
           <Punkt className="right-[3%] top-[24%] hidden opacity-70 lg:block"><Ksiezycek rozmiar={26} /></Punkt>
+          <Punkt className="right-[4%] bottom-[14%] hidden lg:block"><Chip nazwa="🧩 Design Systems" czas={25} opoznienie={-7} /></Punkt>
           <Punkt className="right-[6%] bottom-[30%]"><Gwiazdka opoznienie={1.2} jasnosc={0.45} /></Punkt>
           <Punkt className="left-[8%] top-[18%]"><Gwiazdka opoznienie={2.8} jasnosc={0.35} /></Punkt>
         </>
