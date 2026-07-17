@@ -9,6 +9,9 @@ import ScrollProgress from "@/components/ScrollProgress";
 import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
 import Services from "@/components/Services";
+// EKSPERYMENT „ZUI Space Scroll": na desktopie hero+usługi zastępuje
+// kosmiczna podróż scrollem; na mobile/reduced-motion zostaje klasyka.
+import TrybStrony from "@/components/lot/TrybStrony";
 import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
 import Testimonials from "@/components/Testimonials";
@@ -24,9 +27,17 @@ export default function Strona() {
       <ScrollProgress />  {/* Kolorowy pasek postępu na górze ekranu */}
       <Navbar />
       <main>
-        <Hero />          {/* 1. Duże imię + przyciski */}
-        <Marquee />       {/* Przewijany pasek haseł */}
-        <Services />      {/* 2. Trzy karty usług */}
+        {/* Prototyp podróży: Hero → lądowanie na księżycu (Usługi).
+            Wersja klasyczna poniżej służy jako fallback (mobile itd.). */}
+        <TrybStrony
+          klasyka={
+            <>
+              <Hero />
+              <Marquee />
+              <Services />
+            </>
+          }
+        />
         <Portfolio />     {/* 3. Siatka bento z projektami */}
         <Process />       {/* 4. Cztery kroki współpracy */}
         <Testimonials />  {/* 5. Opinie klientów */}
