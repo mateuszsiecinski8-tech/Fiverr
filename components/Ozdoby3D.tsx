@@ -24,8 +24,10 @@ const gwiazdy = [
 /* --- Turkusowa mini-planeta z orbitującym księżycem (czysty CSS) --- */
 function PlanetkaTurkusowa() {
   return (
-    // top-[87%] = sam dolny pas hero, PONIŻEJ rzędu statystyk („6+" itd.)
-    <span className="absolute left-[3.5%] top-[87%] hidden lg:block">
+    // Prawa krawędź hero, tuż ZA pierścieniami dużej planety (życzenie
+    // właściciela). right-[6%] zostawia zapas, żeby elipsa orbity księżyca
+    // (±70 px) nie ucinała się na krawędzi ekranu.
+    <span className="absolute right-[6%] top-[46%] hidden lg:block">
       {/* delikatna poświata za planetą */}
       <span className="absolute -inset-5 rounded-full bg-teal-400/15 blur-xl" />
       {/* kula planety (56 px) — gradient jak na pozostałych planetkach */}
