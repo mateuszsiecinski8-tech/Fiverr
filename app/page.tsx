@@ -27,22 +27,24 @@ export default function Strona() {
       <ScrollProgress />  {/* Kolorowy pasek postępu na górze ekranu */}
       <Navbar />
       <main>
-        {/* Prototyp podróży: Hero → lądowanie na księżycu (Usługi).
-            Wersja klasyczna poniżej służy jako fallback (mobile itd.). */}
+        {/* EKSPERYMENT „ZUI Space Scroll": na komputerze CAŁA strona to
+            podróż kosmiczna (kamera leci między sekcjami-planetami).
+            Na telefonie / przy „ograniczeniu animacji" — klasyczna
+            wersja poniżej (pełna lista sekcji, bez zmian). */}
         <TrybStrony
           klasyka={
             <>
               <Hero />
               <Marquee />
               <Services />
+              <Portfolio />     {/* 3. Siatka bento z projektami */}
+              <Process />       {/* 4. Cztery kroki współpracy */}
+              <Testimonials />  {/* 5. Opinie klientów */}
+              {/* <Pricing /> — cennik chwilowo ukryty */}
+              <Contact />       {/* 6. Wezwanie do działania */}
             </>
           }
         />
-        <Portfolio />     {/* 3. Siatka bento z projektami */}
-        <Process />       {/* 4. Cztery kroki współpracy */}
-        <Testimonials />  {/* 5. Opinie klientów */}
-        {/* <Pricing /> — cennik chwilowo ukryty */}
-        <Contact />       {/* 6. Wezwanie do działania */}
       </main>
       <Footer />          {/* 8. Stopka z social media */}
     </>

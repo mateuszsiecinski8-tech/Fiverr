@@ -312,3 +312,25 @@ body {
     display: none;
   }
 }
+
+/* ============================================================
+   TRYB LOTU (eksperyment „ZUI Space Scroll") — desktop
+   Sekcje strony przewijają się nad prawdziwym kosmosem 3D, więc:
+   1) każda sekcja z id dostaje ciemną „mgiełkę" pod treścią
+      (czytelność na tle jasnych planet), miękko rozmytą na
+      górnej i dolnej krawędzi — kosmos prześwituje w przerwach;
+   2) chowamy CSS-owe ozdoby sekcji (planetki, komety, chipy) —
+      dublowałyby się z prawdziwymi planetami 3D w tle.
+   ============================================================ */
+.tryb-lot section[id] {
+  background: linear-gradient(
+    180deg,
+    rgba(3, 3, 8, 0) 0%,
+    rgba(3, 3, 8, 0.66) 7%,
+    rgba(3, 3, 8, 0.66) 93%,
+    rgba(3, 3, 8, 0) 100%
+  ) !important; /* !important: wygrywa z bg-zinc-900/40 Portfolio i Opinii */
+}
+.tryb-lot .ozdoby-kosmos {
+  display: none;
+}

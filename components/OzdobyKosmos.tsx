@@ -85,7 +85,9 @@ export default function OzdobyKosmos({
   wariant: "uslugi" | "portfolio" | "proces" | "opinie" | "kontakt";
 }) {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+    // klasa „ozdoby-kosmos": w trybie lotu (ZUI) te ozdoby są chowane,
+    // bo w tle jest wtedy prawdziwy kosmos 3D — patrz app/globals.css
+    <div aria-hidden="true" className="ozdoby-kosmos pointer-events-none absolute inset-0 overflow-hidden">
       {wariant === "uslugi" && (
         <>
           <Punkt className="right-[6%] top-16 hidden opacity-70 lg:block"><Planetka rozmiar={46} odcien="roz" /></Punkt>
