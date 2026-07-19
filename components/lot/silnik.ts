@@ -27,91 +27,165 @@ import { Lensflare, LensflareElement } from "three/addons/objects/Lensflare.js";
 
 /* ============ MALOWANIE TEKSTUR (canvas 2D — zero plików) ============ */
 
-/* Gazowy olbrzym — pasy fiolet→róż, okresowe chmury (bez szwu), burze. */
+/* --- POMOCNIK: faliste, ROZMYTE pasmo chmur (okresowe — bez szwu).
+   Rysujemy z ctx.filter = blur(...), więc pasma mają miękkie,
+   warstwowe przejścia zamiast ostrych, „tanich" krawędzi. --- */
+function pasmoChmur(
+  ctx: CanvasRenderingContext2D,
+  szer: number,
+  y: number,
+  wys: number,
+  kolor: string,
+  rozmycie: number,
+  cykle: number,
+  faza: number,
+  amplituda: number
+) {
+  ctx.save();
+  ctx.filter = `blur(${rozmycie}px)`;
+  ctx.fillStyle = kolor;
+  const fala = (x: number) => Math.sin((x / szer) * Math.PI * 2 * cykle + faza) * amplituda;
+  ctx.beginPath();
+  for (let x = -40; x <= szer + 40; x += 24) {
+    x === -40 ? ctx.moveTo(x, y + fala(x)) : ctx.lineTo(x, y + fala(x));
+  }
+  for (let x = szer + 40; x >= -40; x -= 24) ctx.lineTo(x, y + wys + fala(x));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* Gazowy olbrzym — żywe fiolety i róże, kilka WARSTW miękkich chmur. */
 function namalujPlanete(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 2048;
   c.height = 1024;
   const ctx = c.getContext("2d")!;
+  // baza: nasycony pionowy gradient pasów
   const grad = ctx.createLinearGradient(0, 0, 0, 1024);
-  grad.addColorStop(0.0, "#2a1e63");
-  grad.addColorStop(0.18, "#5b47d6");
-  grad.addColorStop(0.34, "#8b7cf7");
-  grad.addColorStop(0.46, "#d17ce8");
-  grad.addColorStop(0.58, "#f0a6d8");
-  grad.addColorStop(0.7, "#6d5dfc");
-  grad.addColorStop(0.85, "#3b2f8f");
-  grad.addColorStop(1.0, "#221a52");
+  grad.addColorStop(0.0, "#332075");
+  grad.addColorStop(0.16, "#6247e8");
+  grad.addColorStop(0.32, "#9b7ffd");
+  grad.addColorStop(0.45, "#e07ef2");
+  grad.addColorStop(0.57, "#ffa9e2");
+  grad.addColorStop(0.68, "#7e63ff");
+  grad.addColorStop(0.84, "#46309f");
+  grad.addColorStop(1.0, "#271b60");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 2048, 1024);
 
-  for (let i = 0; i < 40; i++) {
-    const y = Math.random() * 1024;
-    const wys = 5 + Math.random() * 26;
-    const cykle = 2 + (i % 3); // pełne cykle → tekstura domyka się na szwie
-    const faza = i * 2.1;
-    const fala = (x: number) => Math.sin((x / 2048) * Math.PI * 2 * cykle + faza) * 13;
-    ctx.fillStyle = `rgba(255,255,255,${0.03 + Math.random() * 0.06})`;
-    ctx.beginPath();
-    for (let x = 0; x <= 2048; x += 24) {
-      x === 0 ? ctx.moveTo(x, y + fala(x)) : ctx.lineTo(x, y + fala(x));
-    }
-    for (let x = 2048; x >= 0; x -= 24) ctx.lineTo(x, y + wys + fala(x));
-    ctx.fill();
+  // WARSTWA 1: szerokie, mocno rozmyte pasma (duże masy chmur)
+  for (let i = 0; i < 9; i++) {
+    const y = (i / 9) * 1024 + Math.random() * 60;
+    pasmoChmur(
+      ctx, 2048, y, 40 + Math.random() * 90,
+      i % 2 ? "rgba(255,235,250,0.10)" : "rgba(40,20,90,0.12)",
+      26, 2 + (i % 2), i * 2.3, 26
+    );
   }
-  for (let i = 0; i < 14; i++) {
+  // WARSTWA 2: średnie smugi (struktura pasów)
+  for (let i = 0; i < 22; i++) {
+    const y = Math.random() * 1024;
+    pasmoChmur(
+      ctx, 2048, y, 8 + Math.random() * 26,
+      `rgba(255,255,255,${0.05 + Math.random() * 0.07})`,
+      10, 2 + (i % 3), i * 1.7, 15
+    );
+  }
+  // WARSTWA 3: cienkie, ledwo rozmyte nitki (detal z bliska — Portfolio)
+  for (let i = 0; i < 26; i++) {
+    const y = Math.random() * 1024;
+    pasmoChmur(
+      ctx, 2048, y, 2 + Math.random() * 6,
+      `rgba(255,240,252,${0.04 + Math.random() * 0.05})`,
+      2.5, 3 + (i % 3), i * 2.9, 9
+    );
+  }
+  // turkusowe burze — owalne, miękkie, owinięte przez szew
+  ctx.save();
+  ctx.filter = "blur(7px)";
+  for (let i = 0; i < 12; i++) {
     const cx = Math.random() * 2048;
     const cy = 240 + Math.random() * 560;
-    const rx = 50 + Math.random() * 120;
-    const ry = 14 + Math.random() * 24;
-    ctx.fillStyle = `rgba(79,209,197,${0.05 + Math.random() * 0.1})`;
+    const rx = 46 + Math.random() * 110;
+    const ry = 13 + Math.random() * 22;
+    ctx.fillStyle = `rgba(64,224,208,${0.07 + Math.random() * 0.1})`;
     for (const przesun of [-2048, 0, 2048]) {
       ctx.beginPath();
       ctx.ellipse(cx + przesun, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.fill();
+      // jaśniejsze „oko" burzy
+      ctx.fillStyle = `rgba(210,255,250,${0.05 + Math.random() * 0.05})`;
+      ctx.beginPath();
+      ctx.ellipse(cx + przesun - rx * 0.2, cy - ry * 0.2, rx * 0.45, ry * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(64,224,208,${0.07 + Math.random() * 0.1})`;
     }
   }
+  ctx.restore();
   return c;
 }
 
-/* Różowa planeta — miękkie pasy. */
+/* Różowa planeta — żywy róż, warstwowe miękkie pasy (widok z orbity). */
 function namalujRozowa(): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 512;
-  c.height = 256;
+  c.width = 1024;
+  c.height = 512;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0.0, "#b0407e");
-  g.addColorStop(0.4, "#f06fae");
-  g.addColorStop(0.62, "#ffa6cf");
-  g.addColorStop(0.8, "#e86ba6");
-  g.addColorStop(1.0, "#9c3a72");
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0.0, "#c2337e");
+  g.addColorStop(0.28, "#ff64ab");
+  g.addColorStop(0.5, "#ffa2d0");
+  g.addColorStop(0.64, "#ffc4e2");
+  g.addColorStop(0.8, "#f45c9f");
+  g.addColorStop(1.0, "#a52c6b");
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 512, 256);
+  ctx.fillRect(0, 0, 1024, 512);
   for (let i = 0; i < 7; i++) {
-    ctx.fillStyle = `rgba(255,224,240,${0.1 + Math.random() * 0.14})`;
-    ctx.fillRect(0, Math.random() * 256, 512, 3 + Math.random() * 8);
+    pasmoChmur(
+      ctx, 1024, (i / 7) * 512 + Math.random() * 40, 18 + Math.random() * 44,
+      i % 2 ? "rgba(255,240,250,0.14)" : "rgba(150,30,90,0.12)",
+      14, 2 + (i % 2), i * 2.1, 12
+    );
+  }
+  for (let i = 0; i < 14; i++) {
+    pasmoChmur(
+      ctx, 1024, Math.random() * 512, 3 + Math.random() * 9,
+      `rgba(255,235,248,${0.06 + Math.random() * 0.08})`,
+      3, 2 + (i % 3), i * 1.9, 7
+    );
   }
   return c;
 }
 
-/* Turkusowa planeta (stonowana — jak w wersji produkcyjnej). */
+/* Turkusowa planeta — żywy niebiesko-turkusowy (prośba właściciela). */
 function namalujTurkusowa(): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 512;
-  c.height = 256;
+  c.width = 1024;
+  c.height = 512;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0.0, "#183e40");
-  g.addColorStop(0.35, "#3a6d69");
-  g.addColorStop(0.6, "#5f9a95");
-  g.addColorStop(0.82, "#3d7370");
-  g.addColorStop(1.0, "#14383a");
+  const g = ctx.createLinearGradient(0, 0, 0, 512);
+  g.addColorStop(0.0, "#0a4a6e");
+  g.addColorStop(0.25, "#1489b8");
+  g.addColorStop(0.45, "#2fc4d8");
+  g.addColorStop(0.6, "#63e2ea");
+  g.addColorStop(0.75, "#17a3c4");
+  g.addColorStop(1.0, "#083d5e");
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 512, 256);
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = `rgba(210,240,235,${0.06 + Math.random() * 0.08})`;
-    ctx.fillRect(0, Math.random() * 256, 512, 2 + Math.random() * 7);
+  ctx.fillRect(0, 0, 1024, 512);
+  for (let i = 0; i < 7; i++) {
+    pasmoChmur(
+      ctx, 1024, (i / 7) * 512 + Math.random() * 40, 16 + Math.random() * 40,
+      i % 2 ? "rgba(230,255,255,0.13)" : "rgba(8,50,90,0.14)",
+      14, 2 + (i % 2), i * 2.4, 12
+    );
+  }
+  for (let i = 0; i < 14; i++) {
+    pasmoChmur(
+      ctx, 1024, Math.random() * 512, 3 + Math.random() * 8,
+      `rgba(235,255,255,${0.06 + Math.random() * 0.08})`,
+      3, 2 + (i % 3), i * 2.2, 7
+    );
   }
   return c;
 }
@@ -439,7 +513,7 @@ export type SilnikLotu = {
 export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   /* — renderer + kolor filmowy — */
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(pojemnik.clientWidth, pojemnik.clientHeight);
   // BEZ filmowego mapowania tonów — produkcyjna scena hero renderowała
   // kolory liniowo i planety wyglądały żywiej (fiolet zamiast granatu).
@@ -488,6 +562,32 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   flara.addElement(new LensflareElement(flaraDuszek, 140, 0.55));
   flara.addElement(new LensflareElement(flaraDuszek, 70, 0.85));
   swiatloSlonca.add(flara);
+  // wielka, miękka korona słońca — z bliska (finał Kontakt) zalewa
+  // kadr światłem, z daleka (hero) daje delikatną łunę w rogu
+  const korona = document.createElement("canvas");
+  korona.width = 256;
+  korona.height = 256;
+  {
+    const kc = korona.getContext("2d")!;
+    const kg = kc.createRadialGradient(128, 128, 0, 128, 128, 128);
+    kg.addColorStop(0, "rgba(255,246,225,0.5)");
+    kg.addColorStop(0.3, "rgba(255,238,200,0.22)");
+    kg.addColorStop(0.65, "rgba(255,225,170,0.07)");
+    kg.addColorStop(1, "rgba(255,225,170,0)");
+    kc.fillStyle = kg;
+    kc.fillRect(0, 0, 256, 256);
+  }
+  const koronaSlonca = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(korona),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  koronaSlonca.scale.set(20, 20, 1);
+  koronaSlonca.position.copy(POZ_SLONCA);
+  scena.add(koronaSlonca);
 
   /* — FIOLETOWA PLANETA z pierścieniami (serce układu) — */
   const uklad = new THREE.Group();
@@ -519,14 +619,17 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   pierscienie.rotation.x = PRZECHYL;
   uklad.add(pierscienie);
 
-  /* — dwa małe księżyce na orbitach (jak na produkcji) — */
-  const tK1 = new THREE.CanvasTexture(namalujKsiezyc("#e8e4ff"));
-  tK1.colorSpace = THREE.SRGBColorSpace;
-  const ksiezycMaly1 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 32, 32),
-    new THREE.MeshStandardMaterial({ map: tK1, roughness: 0.9 })
-  );
-  uklad.add(ksiezycMaly1);
+  /* — dwa księżyce przy pierścieniach — */
+  // Pierwszy to „PUNKT WIDOKOWY" przystanku Usługi: NIE krąży (kamera
+  // na nim staje), ma prawdziwą rzeźbę kraterów, wisi tuż przy
+  // pierścieniach — z jego powierzchni planeta wypełnia niebo.
+  const ksiezycStacja = zrobKsiezycLadowania(0.26);
+  ksiezycStacja.position.set(1.712, -0.355, 0.864); // punkt dawnej orbity
+  uklad.add(ksiezycStacja);
+  const atmoStacji = atmosfera(0.26, new THREE.Color(0xbfc4ff), 0.5);
+  atmoStacji.position.copy(ksiezycStacja.position);
+  uklad.add(atmoStacji);
+  // drugi księżyc normalnie krąży (życie w kadrze hero)
   const tK2 = new THREE.CanvasTexture(namalujKsiezyc("#d3cdf2"));
   tK2.colorSpace = THREE.SRGBColorSpace;
   const ksiezycMaly2 = new THREE.Mesh(
@@ -534,19 +637,6 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     new THREE.MeshStandardMaterial({ map: tK2, roughness: 0.9 })
   );
   uklad.add(ksiezycMaly2);
-
-  /* — KSIĘŻYC LĄDOWANIA (przystanek 1 — Usługi) — */
-  // Nie krąży (kamera na nim „staje"). Wisi PONIŻEJ kadru hero —
-  // dzięki temu w hero widać turkusową planetę na jej dawnym miejscu,
-  // a zlot do Usług to filmowe OPADANIE w dół.
-  const POZ_LADOWANIA = new THREE.Vector3(1.8, -3.2, 3.0);
-  const R_LADOWANIA = 0.42;
-  const ksiezycLadowania = zrobKsiezycLadowania(R_LADOWANIA);
-  ksiezycLadowania.position.copy(POZ_LADOWANIA);
-  scena.add(ksiezycLadowania);
-  const atmoKsiezyca = atmosfera(R_LADOWANIA, new THREE.Color(0xbfc4ff), 0.5);
-  atmoKsiezyca.position.copy(POZ_LADOWANIA);
-  scena.add(atmoKsiezyca);
 
   /* — RÓŻOWA i TURKUSOWA planeta (dalsze przystanki — na razie tło) — */
   const tRoz = new THREE.CanvasTexture(namalujRozowa());
@@ -557,23 +647,50 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   );
   rozowa.position.set(7.5, 4.0, -7);
   scena.add(rozowa);
-  const atmoRoz = atmosfera(0.9, new THREE.Color(0xf06fae), 0.8);
+  const atmoRoz = atmosfera(0.9, new THREE.Color(0xff6fb2), 1.0);
   atmoRoz.position.copy(rozowa.position);
   scena.add(atmoRoz);
+  // różowa poświata — przy przystanku Opinie otoczenie różowieje
+  const poswiataRoz = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(namalujPoswiate("255,111,178")),
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  poswiataRoz.scale.set(5.2, 5.2, 1);
+  poswiataRoz.position.set(7.5, 4.0, -7.8);
+  scena.add(poswiataRoz);
 
-  // Turkusowa — na PIERWOTNYM miejscu z produkcji: na prawo od
-  // pierścieni dużej planety, z własnym mini-księżycem na orbicie.
+  // Turkusowa — WYRAŹNIE na prawo od pierścieni (nie nachodzi na nie
+  // w kadrze hero), z własnym mini-księżycem na orbicie.
   const tTurk = new THREE.CanvasTexture(namalujTurkusowa());
   tTurk.colorSpace = THREE.SRGBColorSpace;
   const turkusowa = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 56, 56),
-    new THREE.MeshStandardMaterial({ map: tTurk, roughness: 0.85 })
+    new THREE.SphereGeometry(0.5, 64, 64),
+    new THREE.MeshStandardMaterial({ map: tTurk, roughness: 0.8 })
   );
-  turkusowa.position.set(3.9, -0.1, -1.2);
+  turkusowa.position.set(4.7, 0.75, -2.3);
   scena.add(turkusowa);
-  const atmoTurk = atmosfera(0.5, new THREE.Color(0x5f9a95), 0.7);
+  const atmoTurk = atmosfera(0.5, new THREE.Color(0x37c8dc), 0.95);
   atmoTurk.position.copy(turkusowa.position);
   scena.add(atmoTurk);
+  // miękka niebieska poświata wokół — przy przystanku Proces całe
+  // otoczenie „łapie" kolor planety
+  const poswiataTurk = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(namalujPoswiate("47,196,216")),
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  poswiataTurk.scale.set(3.4, 3.4, 1);
+  poswiataTurk.position.set(4.7, 0.75, -2.9);
+  scena.add(poswiataTurk);
   // mini-księżyc turkusowej (jak w produkcyjnych Ozdobach 3D)
   const tKt = new THREE.CanvasTexture(namalujKsiezyc("#cfe9e4"));
   tKt.colorSpace = THREE.SRGBColorSpace;
@@ -584,7 +701,15 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   scena.add(ksiezycTurkusowej);
 
   /* — POST-PROCESSING: bloom (kinowe „rozlewanie" światła) — */
-  const composer = new EffectComposer(renderer);
+  // WAŻNE dla jakości: własny render target z MSAA (samples: 4).
+  // Domyślny target composera NIE ma antyaliasingu — to przez niego
+  // krawędzie planet wyglądały na postrzępione.
+  const celRenderu = new THREE.WebGLRenderTarget(
+    pojemnik.clientWidth,
+    pojemnik.clientHeight,
+    { samples: 4, type: THREE.HalfFloatType }
+  );
+  const composer = new EffectComposer(renderer, celRenderu);
   composer.addPass(new RenderPass(scena, kamera));
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(pojemnik.clientWidth, pojemnik.clientHeight),
@@ -602,19 +727,20 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const POZY = [
     // 0. HERO — szeroki plan układu (planeta w prawych 2/3 ekranu)
     { poz: new THREE.Vector3(-2.0, 0.9, 8.4), cel: new THREE.Vector3(-1.2, 0.35, 0), fov: 45 },
-    // 1. USŁUGI — opadanie i lądowanie na księżycu (grunt na dole kadru)
-    { poz: new THREE.Vector3(1.87, -2.7, 3.11), cel: new THREE.Vector3(0, 0.55, 0), fov: 58 },
+    // 1. USŁUGI — stoimy na kraterowym księżycu przy pierścieniach;
+    //    fioletowa planeta wypełnia niebo nad nami
+    { poz: new THREE.Vector3(1.843, 0.432, 0.914), cel: new THREE.Vector3(-0.2, 0.3, 0), fov: 58 },
     // 2. PORTFOLIO — wejście w atmosferę fioletowej planety (chmury tuż-tuż)
     { poz: new THREE.Vector3(0.35, -0.15, 2.05), cel: new THREE.Vector3(-0.8, 0.8, 0), fov: 50 },
-    // 3. PROCES — tuż nad OŚWIETLONĄ stroną turkusowej; fioletowa
-    //    z pierścieniami widoczna w oddali (patrzymy lekko w dół)
-    { poz: new THREE.Vector3(3.9, 0.44, -0.94), cel: new THREE.Vector3(0, -0.5, 0), fov: 55 },
-    // 4. OPINIE — nisko nad różową planetą (jej grunt na dole kadru),
-    //    słońce świeci w oddali
-    { poz: new THREE.Vector3(7.71, 5.07, -6.77), cel: new THREE.Vector3(-14, 9, -30), fov: 52 },
-    // 5. KONTAKT — finał: lot w stronę słońca; cel obniżony, żeby słońce
-    //    wisiało WYSOKO w kadrze (nad kartą kontaktu, nie za nią)
-    { poz: new THREE.Vector3(-6.8, 4.6, -14.5), cel: new THREE.Vector3(-14, 3.0, -30), fov: 50 },
+    // 3. PROCES — tuż nad atmosferą turkusowej (bliżej niż wcześniej),
+    //    otoczenie niebieszczeje od jej poświaty
+    { poz: new THREE.Vector3(4.7, 1.257, -2.029), cel: new THREE.Vector3(0, -0.3, 0), fov: 55 },
+    // 4. OPINIE — widok „ze stacji orbitalnej": różowa planeta POZIOMO
+    //    na dole kadru (krzywizna horyzontu), patrzymy nad nią w dal
+    { poz: new THREE.Vector3(7.5, 5.02, -7.0), cel: new THREE.Vector3(-14, 4.2, -30), fov: 52 },
+    // 5. KONTAKT — finał: WLOT W BLASK SŁOŃCA (kamera tuż przy koronie,
+    //    światło zalewa kadr; słońce wysoko, nad kartą kontaktu)
+    { poz: new THREE.Vector3(-9.9, 6.5, -20.2), cel: new THREE.Vector3(-14, 5.0, -30), fov: 50 },
   ];
   // Domyślne okna postoju (nadpisywane przez ustawOkna po zmierzeniu strony)
   let okna: { a: number; b: number }[] = POZY.map((_, i) => ({
@@ -675,22 +801,31 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   // nieba (górny środek kadru) — omija słońce, planety i tekst.
   function namalujSmuge(): HTMLCanvasElement {
     const c = document.createElement("canvas");
-    c.width = 256;
-    c.height = 32;
+    c.width = 512;
+    c.height = 96;
     const ctx = c.getContext("2d")!;
-    const g = ctx.createLinearGradient(0, 0, 256, 0);
-    g.addColorStop(0, "rgba(255,255,255,0)");
-    g.addColorStop(0.75, "rgba(255,255,255,0.35)");
-    g.addColorStop(0.92, "rgba(255,255,255,0.9)");
-    g.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 12, 256, 8);
-    // jaśniejsza „główka" meteoru na czele smugi
-    const gl = ctx.createRadialGradient(236, 16, 0, 236, 16, 14);
+    // WARKOCZ: seria coraz większych, coraz jaśniejszych kółek wzdłuż
+    // osi, całość lekko rozmyta → miękki, zwężający się ku końcowi ogon
+    ctx.save();
+    ctx.filter = "blur(3px)";
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60; // 0 = koniec ogona … 1 = głowa
+      const x = 24 + t * 420;
+      const r = 1.2 + t * t * 9;
+      ctx.fillStyle = `rgba(255,250,240,${(0.02 + t * t * 0.4).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(x, 48, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    // GŁOWA KOMETY: jasne jądro + ciepła poświata + chłodny rąbek
+    const gl = ctx.createRadialGradient(452, 48, 0, 452, 48, 34);
     gl.addColorStop(0, "rgba(255,255,255,0.95)");
-    gl.addColorStop(1, "rgba(255,255,255,0)");
+    gl.addColorStop(0.18, "rgba(255,244,220,0.6)");
+    gl.addColorStop(0.5, "rgba(190,210,255,0.18)");
+    gl.addColorStop(1, "rgba(190,210,255,0)");
     ctx.fillStyle = gl;
-    ctx.fillRect(210, 0, 46, 32);
+    ctx.fillRect(404, 0, 108, 96);
     return c;
   }
   const smugaMat = new THREE.SpriteMaterial({
@@ -701,11 +836,14 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     blending: THREE.AdditiveBlending,
   });
   const smuga = new THREE.Sprite(smugaMat);
-  smuga.scale.set(4.2, 0.5, 1);
+  smuga.scale.set(5.4, 1.0, 1);
   smuga.visible = false;
   scena.add(smuga);
   const gwiazdaStart = new THREE.Vector3();
+  const gwiazdaKontrol = new THREE.Vector3(); // punkt łuku (tor zakrzywiony)
   const gwiazdaKoniec = new THREE.Vector3();
+  const gwPunkt = new THREE.Vector3();
+  const gwPrzod = new THREE.Vector3();
   let gwiazdaZegar = 4; // pierwszy przelot ~4 s po wejściu na stronę
   const GWIAZDA_CO = 9; // kolejne co ~9 s (cyklicznie, ale rzadko)
   const GWIAZDA_TRWA = 1.5;
@@ -719,15 +857,28 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     };
     naSwiat(-0.16, 0.7, gwiazdaStart);
     naSwiat(0.32, 0.36, gwiazdaKoniec);
-    // obrót smugi zgodnie z kierunkiem lotu (w płaszczyźnie ekranu)
-    const dx = 0.48 * pojemnik.clientWidth;
-    const dy = 0.34 * pojemnik.clientHeight;
-    smugaMat.rotation = Math.atan2(-dy, dx);
+    // punkt kontrolny NAD prostą start→koniec → tor delikatnie
+    // wygięty w łuk (jak prawdziwy meteor), nie sztywna linia
+    gwiazdaKontrol
+      .addVectors(gwiazdaStart, gwiazdaKoniec)
+      .multiplyScalar(0.5)
+      .add(new THREE.Vector3(0, 1.4, 0));
+  }
+
+  /* Pozycja na łuku (krzywa Béziera 2. stopnia) */
+  function punktGwiazdy(f: number, out: THREE.Vector3) {
+    const a = (1 - f) * (1 - f);
+    const b = 2 * f * (1 - f);
+    const d = f * f;
+    out.set(
+      a * gwiazdaStart.x + b * gwiazdaKontrol.x + d * gwiazdaKoniec.x,
+      a * gwiazdaStart.y + b * gwiazdaKontrol.y + d * gwiazdaKoniec.y,
+      a * gwiazdaStart.z + b * gwiazdaKontrol.z + d * gwiazdaKoniec.z
+    );
   }
 
   /* — pętla renderowania — */
   const zegar = new THREE.Clock();
-  let kat1 = Math.random() * Math.PI * 2;
   let kat2 = Math.random() * Math.PI * 2;
   let kat3 = Math.random() * Math.PI * 2; // mini-księżyc turkusowej
   let klatka = 0;
@@ -749,16 +900,8 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     pierscienie.rotation.z += dt * 0.015;
     rozowa.rotation.y += dt * 0.12;
     turkusowa.rotation.y += dt * 0.1;
-    ksiezycLadowania.rotation.y += dt * 0.008; // ledwo zauważalny dryf gruntu
     gwiazdyDaleko.rotation.y += dt * 0.0035;
 
-    kat1 += dt * 0.12;
-    const s1 = Math.sin(kat1);
-    ksiezycMaly1.position.set(
-      Math.cos(kat1) * 1.95,
-      s1 * 1.95 * Math.cos(PRZECHYL),
-      s1 * 1.95 * Math.sin(PRZECHYL)
-    );
     kat2 += dt * 0.17;
     const s2 = Math.sin(kat2);
     ksiezycMaly2.position.set(
@@ -785,8 +928,17 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
           planujGwiazde();
           smuga.visible = true;
         }
-        smuga.position.lerpVectors(gwiazdaStart, gwiazdaKoniec, f);
-        smugaMat.opacity = Math.sin(f * Math.PI) * 0.7; // miękkie wejście/zejście
+        punktGwiazdy(f, smuga.position);
+        // obrót smugi wzdłuż STYCZNEJ łuku (na ekranie) — głowa zawsze
+        // celuje w kierunek lotu, także na zakrzywieniu
+        punktGwiazdy(Math.min(1, f + 0.03), gwPrzod);
+        gwPunkt.copy(smuga.position).project(kamera);
+        gwPrzod.project(kamera);
+        smugaMat.rotation = Math.atan2(
+          (gwPrzod.y - gwPunkt.y) * pojemnik.clientHeight,
+          (gwPrzod.x - gwPunkt.x) * pojemnik.clientWidth
+        );
+        smugaMat.opacity = Math.sin(f * Math.PI) * 0.75; // miękkie wejście/zejście
       } else if (smuga.visible) {
         smuga.visible = false;
         smugaMat.opacity = 0;
