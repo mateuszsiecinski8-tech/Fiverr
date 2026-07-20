@@ -322,85 +322,50 @@ body {
    2) chowamy CSS-owe ozdoby sekcji (planetki, komety, chipy) —
       dublowałyby się z prawdziwymi planetami 3D w tle.
    ============================================================ */
-/* Mgiełki pod sekcjami — każda w KOLORZE swojej scenerii
-   (fiolet przy fioletowej planecie, turkus przy turkusowej itd.).
+/* Mgiełki pod sekcjami — JEDEN, neutralnie ciemny odcień dla całej
+   strony (czysty czarny kosmos, spójny we wszystkich scenach —
+   bez kolorowych „mgławic" pod treścią).
    !important: wygrywa z bg-zinc-900/40 Portfolio i Opinii. */
 .tryb-lot section[id] {
   background: linear-gradient(
     180deg,
     rgba(3, 3, 8, 0) 0%,
-    rgba(6, 5, 14, 0.62) 7%,
-    rgba(6, 5, 14, 0.62) 93%,
+    rgba(5, 5, 12, 0.58) 7%,
+    rgba(5, 5, 12, 0.58) 93%,
     rgba(3, 3, 8, 0) 100%
-  ) !important;
-}
-.tryb-lot #uslugi,
-.tryb-lot #portfolio {
-  background: linear-gradient(
-    180deg,
-    rgba(10, 7, 24, 0) 0%,
-    rgba(13, 9, 32, 0.6) 7%,
-    rgba(13, 9, 32, 0.6) 93%,
-    rgba(10, 7, 24, 0) 100%
-  ) !important;
-}
-.tryb-lot #proces {
-  background: linear-gradient(
-    180deg,
-    rgba(3, 16, 24, 0) 0%,
-    rgba(4, 22, 32, 0.58) 7%,
-    rgba(4, 22, 32, 0.58) 93%,
-    rgba(3, 16, 24, 0) 100%
-  ) !important;
-}
-.tryb-lot #opinie {
-  background: linear-gradient(
-    180deg,
-    rgba(24, 6, 18, 0) 0%,
-    rgba(30, 8, 24, 0.58) 7%,
-    rgba(30, 8, 24, 0.58) 93%,
-    rgba(24, 6, 18, 0) 100%
-  ) !important;
-}
-.tryb-lot #kontakt {
-  /* finał w słońcu — mgiełka cieplejsza i LŻEJSZA (światło zalewa kadr) */
-  background: linear-gradient(
-    180deg,
-    rgba(30, 20, 8, 0) 0%,
-    rgba(34, 24, 12, 0.42) 10%,
-    rgba(26, 18, 10, 0.5) 93%,
-    rgba(20, 14, 8, 0) 100%
   ) !important;
 }
 .tryb-lot .ozdoby-kosmos {
   display: none;
 }
 
-/* --- KARTY W TRYBIE LOTU: szkło w kolorze scenerii zamiast
-       litych, ciemnych pudełek --- */
-/* Usługi: fioletowe szkło (księżyc + fioletowa planeta nad głową) */
-.tryb-lot #uslugi article {
-  background: rgba(26, 20, 52, 0.44) !important;
-  border-color: rgba(139, 124, 247, 0.3) !important;
+/* --- KARTY W TRYBIE LOTU: jednolite, neutralne „szkło" zamiast
+       litych pudełek — spójny styl we wszystkich scenach,
+       z delikatnym fioletowym akcentem na krawędzi --- */
+.tryb-lot #uslugi article,
+.tryb-lot #opinie figure {
+  background: rgba(13, 11, 28, 0.5) !important;
+  border-color: rgba(139, 124, 247, 0.24) !important;
   backdrop-filter: blur(10px);
 }
-/* Portfolio: lekkie, przezroczyste kafle zlane z atmosferą planety */
 .tryb-lot #portfolio [class*="rounded-3xl"] {
-  background: rgba(22, 16, 46, 0.38) !important;
-  border-color: rgba(190, 170, 255, 0.26) !important;
+  background: rgba(13, 11, 28, 0.45) !important;
+  border-color: rgba(139, 124, 247, 0.22) !important;
   box-shadow: 0 18px 50px -22px rgba(0, 0, 0, 0.6) !important;
   backdrop-filter: blur(12px);
 }
-/* Proces nie ma kart (sama typografia) — wystarcza turkusowa mgiełka */
-/* Opinie: różowe szkło */
-.tryb-lot #opinie figure {
-  background: rgba(52, 18, 38, 0.42) !important;
-  border-color: rgba(240, 111, 174, 0.28) !important;
-  backdrop-filter: blur(10px);
-}
-/* Kontakt: karta rozświetlona słońcem (ciepła, półprzezroczysta) */
 .tryb-lot #kontakt [class*="2.5rem"] {
-  background: rgba(42, 30, 16, 0.5) !important;
+  background: rgba(13, 11, 28, 0.55) !important;
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 219, 148, 0.22);
+  border: 1px solid rgba(139, 124, 247, 0.24);
+}
+
+/* Numery kroków Procesu (01, 02…) — na tle kosmosu ciemnoszare
+   cyfry znikały; w trybie lotu mają być WYRAŹNIE fioletowe. */
+.tryb-lot #proces span[class*="text-5xl"] {
+  color: var(--color-akcent) !important;
+}
+/* …a cienka linia łącząca kroki — subtelna, jasna (nie ciemny pasek) */
+.tryb-lot #proces [class*="h-px"] {
+  background: rgba(255, 255, 255, 0.16) !important;
 }
