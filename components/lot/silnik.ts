@@ -337,18 +337,67 @@ function atmosfera(promien: number, kolor: THREE.Color, sila = 1.0): THREE.Mesh 
   return new THREE.Mesh(new THREE.SphereGeometry(promien * 1.02, 48, 48), mat);
 }
 
-/* ============ POLE GWIAZD (własny shader — naturalne migotanie) ============ */
-/* Każda gwiazda ma WŁASNY rozmiar, jasność, tempo, fazę i głębokość
-   migotania — żadne dwie nie migają tak samo (efekt organiczny, nie
-   zapętlona animacja). Rozkład rozmiarów: większość drobnych i
-   przygaszonych, nieliczne większe/jaśniejsze jako akcenty. */
+/* Miękki, świecący punkt (sprite gwiazdy i poświat). */
+function namalujPoswiate(rgb: string): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 128;
+  c.height = 128;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, `rgba(${rgb},0.85)`);
+  g.addColorStop(0.35, `rgba(${rgb},0.25)`);
+  g.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return c;
+}
+
+/* Powierzchnia słońca — gorący żółto-biały rdzeń z miękką granulacją
+   (plamy cieplejszego i chłodniejszego złota), żeby tarcza nie była
+   płaska. Bloom rozświetli najjaśniejsze punkty. */
+function namalujSlonce(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 256;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#fff2cf";
+  ctx.fillRect(0, 0, 512, 256);
+  ctx.save();
+  ctx.filter = "blur(5px)";
+  for (let i = 0; i < 300; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 256;
+    const r = 5 + Math.random() * 24;
+    const goraco = Math.random() < 0.5;
+    ctx.fillStyle = goraco
+      ? `rgba(255,255,248,${(0.05 + Math.random() * 0.14).toFixed(3)})`
+      : `rgba(255,188,86,${(0.05 + Math.random() * 0.16).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  return c;
+}
+
+/* Korona/łuna słońca — gładki, realistyczny spadek jasności od
+   gorącego rdzenia do ciepłego, zanikającego brzegu. */
+function namalujKorone(stops: [number, string][]): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 512;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+  for (const [p, kol] of stops) g.addColorStop(p, kol);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 512, 512);
+  return c;
+}
+
+/* ============ POLE GWIAZD ============ */
 function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): THREE.Points {
   const pozycje = new Float32Array(ile * 3);
   const kolory = new Float32Array(ile * 3);
-  const rozmiary = new Float32Array(ile);
-  const fazy = new Float32Array(ile);
-  const tempa = new Float32Array(ile);
-  const ampy = new Float32Array(ile);
   const k = new THREE.Color();
   for (let i = 0; i < ile; i++) {
     // losowy punkt na sferycznej powłoce (równomiernie)
@@ -359,77 +408,27 @@ function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): T
     pozycje[i * 3] = s * Math.cos(fi) * r;
     pozycje[i * 3 + 1] = u * r;
     pozycje[i * 3 + 2] = s * Math.sin(fi) * r;
-    // paleta: biel, chłodny błękit, ciepła kość
+    // paleta: biel, chłodny błękit, ciepła kość — różna jasność
     const typ = Math.random();
     if (typ < 0.7) k.setRGB(1, 1, 1);
     else if (typ < 0.88) k.setRGB(0.72, 0.82, 1);
     else k.setRGB(1, 0.9, 0.75);
-    // rozkład: 85% drobne przygaszone / 12% średnie / 3% jasne akcenty
-    const los = Math.random();
-    let skala: number;
-    let jasnosc: number;
-    if (los < 0.85) {
-      skala = 0.45 + Math.random() * 0.55;
-      jasnosc = 0.18 + Math.random() * 0.4;
-    } else if (los < 0.97) {
-      skala = 1.1 + Math.random() * 0.7;
-      jasnosc = 0.5 + Math.random() * 0.35;
-    } else {
-      skala = 2.0 + Math.random() * 1.2;
-      jasnosc = 0.85 + Math.random() * 0.15;
-    }
+    const jasnosc = 0.25 + Math.random() * 0.75;
     kolory[i * 3] = k.r * jasnosc;
     kolory[i * 3 + 1] = k.g * jasnosc;
     kolory[i * 3 + 2] = k.b * jasnosc;
-    rozmiary[i] = rozmiar * skala;
-    fazy[i] = Math.random() * Math.PI * 2;
-    tempa[i] = 0.25 + Math.random() * 1.35; // każda w innym tempie
-    // duże gwiazdy migają płycej (spokojny, „pewny" blask)
-    ampy[i] = (0.08 + Math.random() * 0.3) * (skala > 1.8 ? 0.5 : 1);
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(pozycje, 3));
   geo.setAttribute("color", new THREE.BufferAttribute(kolory, 3));
-  geo.setAttribute("rozmiar", new THREE.BufferAttribute(rozmiary, 1));
-  geo.setAttribute("faza", new THREE.BufferAttribute(fazy, 1));
-  geo.setAttribute("tempo", new THREE.BufferAttribute(tempa, 1));
-  geo.setAttribute("amp", new THREE.BufferAttribute(ampy, 1));
-  const mat = new THREE.ShaderMaterial({
+  const mat = new THREE.PointsMaterial({
+    size: rozmiar,
+    map: new THREE.CanvasTexture(namalujPoswiate("255,255,255")),
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
     vertexColors: true,
-    uniforms: { uCzas: { value: 0 } },
-    vertexShader: /* glsl */ `
-      attribute float rozmiar;
-      attribute float faza;
-      attribute float tempo;
-      attribute float amp;
-      uniform float uCzas;
-      varying vec3 vKolor;
-      varying float vMig;
-      void main() {
-        vKolor = color;
-        // migotanie: sinus o losowym tempie/fazie + druga, wolniejsza
-        // fala — rytm przestaje być regularny
-        float fala = sin(uCzas * tempo + faza) * 0.7
-                   + sin(uCzas * tempo * 0.37 + faza * 1.7) * 0.3;
-        vMig = 1.0 - amp + amp * fala;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = rozmiar * (640.0 / -mv.z);
-        gl_Position = projectionMatrix * mv;
-      }
-    `,
-    fragmentShader: /* glsl */ `
-      varying vec3 vKolor;
-      varying float vMig;
-      void main() {
-        float d = length(gl_PointCoord - vec2(0.5));
-        float a = smoothstep(0.5, 0.04, d);
-        a *= a; // miękki brzeg, jaśniejszy rdzeń
-        gl_FragColor = vec4(vKolor * vMig, a * vMig);
-      }
-    `,
+    blending: THREE.AdditiveBlending,
+    sizeAttenuation: true,
   });
   return new THREE.Points(geo, mat);
 }
@@ -505,44 +504,58 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const gwiazdyBlisko = poleGwiazd(700, 18, 45, 0.34);
   scena.add(gwiazdyDaleko, gwiazdyBlisko);
 
-  /* — SŁOŃCE: świecąca kula + lens flare — */
+  /* — SŁOŃCE: rozżarzona kula + dwuwarstwowa korona — */
+  // BEZ modułu Lensflare (jego test zasłonięcia zostawiał czarny kwadrat
+  // na planecie). Realizm robią: gorąca tekstura tarczy, ciasny jasny
+  // rdzeń korony, szeroka miękka łuna i bloom.
+  const tSlonce = new THREE.CanvasTexture(namalujSlonce());
+  tSlonce.colorSpace = THREE.SRGBColorSpace;
   const slonce = new THREE.Mesh(
-    new THREE.SphereGeometry(1.1, 32, 32),
-    // cieplejsza barwa: z bliska (finał Kontakt) tarcza jest złocista,
-    // a nie wypalona na biało; z daleka (hero) wciąż jasny punkt
-    new THREE.MeshBasicMaterial({ color: 0xffe3b0, toneMapped: false })
+    new THREE.SphereGeometry(1.15, 48, 48),
+    new THREE.MeshBasicMaterial({ map: tSlonce, toneMapped: false })
   );
   slonce.position.copy(POZ_SLONCA);
   scena.add(slonce);
-  // BEZ modułu Lensflare: jego test zasłonięcia kopiuje kwadrat ekranu
-  // i z naszym renderem MSAA zostawiał CZARNY KWADRAT na planecie
-  // (bug ze sceny Usług). Blask słońca robi bloom + skromna korona.
-  // korona: umiarkowana, miękka łuna (czysty styl — bez wielkich oparów);
-  // w finale Kontakt kamera podlatuje blisko, więc i tak wypełnia kadr
-  const korona = document.createElement("canvas");
-  korona.width = 256;
-  korona.height = 256;
-  {
-    const kc = korona.getContext("2d")!;
-    const kg = kc.createRadialGradient(128, 128, 0, 128, 128, 128);
-    kg.addColorStop(0, "rgba(255,246,225,0.5)");
-    kg.addColorStop(0.3, "rgba(255,238,200,0.22)");
-    kg.addColorStop(0.65, "rgba(255,225,170,0.07)");
-    kg.addColorStop(1, "rgba(255,225,170,0)");
-    kc.fillStyle = kg;
-    kc.fillRect(0, 0, 256, 256);
-  }
-  const koronaSlonca = new THREE.Sprite(
+  // szeroka, miękka łuna (główny „realistyczny" blask wokół tarczy)
+  const koronaLuna = new THREE.Sprite(
     new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(korona),
+      map: new THREE.CanvasTexture(
+        namalujKorone([
+          [0, "rgba(255,248,228,0.75)"],
+          [0.08, "rgba(255,240,205,0.5)"],
+          [0.2, "rgba(255,222,158,0.24)"],
+          [0.42, "rgba(255,196,112,0.09)"],
+          [0.7, "rgba(255,178,96,0.025)"],
+          [1, "rgba(255,178,96,0)"],
+        ])
+      ),
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     })
   );
-  koronaSlonca.scale.set(7.5, 7.5, 1);
-  koronaSlonca.position.copy(POZ_SLONCA);
-  scena.add(koronaSlonca);
+  koronaLuna.scale.set(15, 15, 1);
+  koronaLuna.position.copy(POZ_SLONCA);
+  scena.add(koronaLuna);
+  // ciasny, gorący rdzeń tuż przy tarczy (ostry, jasny pierścień światła)
+  const koronaRdzen = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(
+        namalujKorone([
+          [0, "rgba(255,252,244,0.95)"],
+          [0.28, "rgba(255,244,214,0.45)"],
+          [0.6, "rgba(255,226,168,0.12)"],
+          [1, "rgba(255,226,168,0)"],
+        ])
+      ),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  koronaRdzen.scale.set(4.2, 4.2, 1);
+  koronaRdzen.position.copy(POZ_SLONCA);
+  scena.add(koronaRdzen);
 
   /* — FIOLETOWA PLANETA z pierścieniami (serce układu) — */
   const uklad = new THREE.Group();
@@ -817,10 +830,6 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     if (!widoczna) return;
     const dt = Math.min(zegar.getDelta(), 0.05);
     const czas = zegar.elapsedTime;
-
-    // zegar migotania gwiazd (własny shader pola gwiazd)
-    (gwiazdyDaleko.material as THREE.ShaderMaterial).uniforms.uCzas.value = czas;
-    (gwiazdyBlisko.material as THREE.ShaderMaterial).uniforms.uCzas.value = czas;
 
     // wygładzenie scrolla i myszy (kinowa bezwładność kamery)
     postepPlynny += (postep - postepPlynny) * Math.min(1, dt * 5);

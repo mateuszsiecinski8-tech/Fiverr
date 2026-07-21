@@ -33,9 +33,11 @@ import type { SilnikLotu } from "./silnik";
 
 gsap.registerPlugin(ScrollTrigger);
 
-/* Pusta przerwa między sekcjami — tu dzieje się lot */
+/* Pusta przerwa między sekcjami — tu dzieje się lot. DŁUGA (200vh),
+   żeby przelot kamery przez galaktykę był powolny i filmowy — widać
+   wtedy piękno kosmosu, a nie tylko szybki przeskok do planety. */
 function PrzerwaPodrozy() {
-  return <div aria-hidden="true" className="h-[120vh]" />;
+  return <div aria-hidden="true" className="h-[200vh]" />;
 }
 
 export default function LotSekcja() {
