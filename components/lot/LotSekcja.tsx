@@ -169,7 +169,9 @@ export default function LotSekcja() {
 
             <h1 className="mt-8 text-6xl font-extrabold leading-[1.02] tracking-tighter sm:text-7xl md:text-8xl lg:text-7xl xl:text-[5rem]">
               <span className="block">{hero.imie}</span>
-              <span className="gradient-zywy block bg-gradient-to-r from-akcent via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              {/* pb/-mb: tło gradientu musi objąć też ogonek „g" (bg-clip-text
+                  przycina kolor do linii tekstu — bez tego „g" wygląda na ucięte) */}
+              <span className="gradient-zywy block bg-gradient-to-r from-akcent via-purple-500 to-pink-500 bg-clip-text pb-[0.15em] -mb-[0.15em] text-transparent">
                 {hero.imieAkcent}
               </span>
             </h1>

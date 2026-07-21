@@ -58,7 +58,9 @@ export default function Hero() {
             {hero.imie}
           </span>
           <span className="wjazd block" style={{ animationDelay: "0.22s" }}>
-            <span className="gradient-zywy bg-gradient-to-r from-akcent via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            {/* pb/-mb: tło gradientu obejmuje też ogonek „g" (bg-clip-text
+                przycina kolor do linii tekstu — bez tego „g" jest ucięte) */}
+            <span className="gradient-zywy inline-block bg-gradient-to-r from-akcent via-purple-500 to-pink-500 bg-clip-text pb-[0.15em] -mb-[0.15em] text-transparent">
               {hero.imieAkcent}
             </span>
           </span>

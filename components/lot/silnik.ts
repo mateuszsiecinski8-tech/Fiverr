@@ -297,21 +297,6 @@ function namalujKsiezyc(kolorBazowy: string): HTMLCanvasElement {
   return c;
 }
 
-/* Miękki, świecący punkt (sprite gwiazdy i poświat). */
-function namalujPoswiate(rgb: string): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = 128;
-  c.height = 128;
-  const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, `rgba(${rgb},0.85)`);
-  g.addColorStop(0.35, `rgba(${rgb},0.25)`);
-  g.addColorStop(1, `rgba(${rgb},0)`);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
-  return c;
-}
-
 /* ============ SHADER ATMOSFERY (rim light Fresnela) ============ */
 /* Cienka, świecąca obwódka na krawędzi kuli — jak atmosfera Ziemi
    na zdjęciach z orbity. Additive = dodaje światło do tła. */
@@ -352,10 +337,18 @@ function atmosfera(promien: number, kolor: THREE.Color, sila = 1.0): THREE.Mesh 
   return new THREE.Mesh(new THREE.SphereGeometry(promien * 1.02, 48, 48), mat);
 }
 
-/* ============ POLE GWIAZD ============ */
+/* ============ POLE GWIAZD (własny shader — naturalne migotanie) ============ */
+/* Każda gwiazda ma WŁASNY rozmiar, jasność, tempo, fazę i głębokość
+   migotania — żadne dwie nie migają tak samo (efekt organiczny, nie
+   zapętlona animacja). Rozkład rozmiarów: większość drobnych i
+   przygaszonych, nieliczne większe/jaśniejsze jako akcenty. */
 function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): THREE.Points {
   const pozycje = new Float32Array(ile * 3);
   const kolory = new Float32Array(ile * 3);
+  const rozmiary = new Float32Array(ile);
+  const fazy = new Float32Array(ile);
+  const tempa = new Float32Array(ile);
+  const ampy = new Float32Array(ile);
   const k = new THREE.Color();
   for (let i = 0; i < ile; i++) {
     // losowy punkt na sferycznej powłoce (równomiernie)
@@ -366,27 +359,77 @@ function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): T
     pozycje[i * 3] = s * Math.cos(fi) * r;
     pozycje[i * 3 + 1] = u * r;
     pozycje[i * 3 + 2] = s * Math.sin(fi) * r;
-    // paleta: biel, chłodny błękit, ciepła kość — różna jasność
+    // paleta: biel, chłodny błękit, ciepła kość
     const typ = Math.random();
     if (typ < 0.7) k.setRGB(1, 1, 1);
     else if (typ < 0.88) k.setRGB(0.72, 0.82, 1);
     else k.setRGB(1, 0.9, 0.75);
-    const jasnosc = 0.25 + Math.random() * 0.75;
+    // rozkład: 85% drobne przygaszone / 12% średnie / 3% jasne akcenty
+    const los = Math.random();
+    let skala: number;
+    let jasnosc: number;
+    if (los < 0.85) {
+      skala = 0.45 + Math.random() * 0.55;
+      jasnosc = 0.18 + Math.random() * 0.4;
+    } else if (los < 0.97) {
+      skala = 1.1 + Math.random() * 0.7;
+      jasnosc = 0.5 + Math.random() * 0.35;
+    } else {
+      skala = 2.0 + Math.random() * 1.2;
+      jasnosc = 0.85 + Math.random() * 0.15;
+    }
     kolory[i * 3] = k.r * jasnosc;
     kolory[i * 3 + 1] = k.g * jasnosc;
     kolory[i * 3 + 2] = k.b * jasnosc;
+    rozmiary[i] = rozmiar * skala;
+    fazy[i] = Math.random() * Math.PI * 2;
+    tempa[i] = 0.25 + Math.random() * 1.35; // każda w innym tempie
+    // duże gwiazdy migają płycej (spokojny, „pewny" blask)
+    ampy[i] = (0.08 + Math.random() * 0.3) * (skala > 1.8 ? 0.5 : 1);
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(pozycje, 3));
   geo.setAttribute("color", new THREE.BufferAttribute(kolory, 3));
-  const mat = new THREE.PointsMaterial({
-    size: rozmiar,
-    map: new THREE.CanvasTexture(namalujPoswiate("255,255,255")),
+  geo.setAttribute("rozmiar", new THREE.BufferAttribute(rozmiary, 1));
+  geo.setAttribute("faza", new THREE.BufferAttribute(fazy, 1));
+  geo.setAttribute("tempo", new THREE.BufferAttribute(tempa, 1));
+  geo.setAttribute("amp", new THREE.BufferAttribute(ampy, 1));
+  const mat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    vertexColors: true,
     blending: THREE.AdditiveBlending,
-    sizeAttenuation: true,
+    vertexColors: true,
+    uniforms: { uCzas: { value: 0 } },
+    vertexShader: /* glsl */ `
+      attribute float rozmiar;
+      attribute float faza;
+      attribute float tempo;
+      attribute float amp;
+      uniform float uCzas;
+      varying vec3 vKolor;
+      varying float vMig;
+      void main() {
+        vKolor = color;
+        // migotanie: sinus o losowym tempie/fazie + druga, wolniejsza
+        // fala — rytm przestaje być regularny
+        float fala = sin(uCzas * tempo + faza) * 0.7
+                   + sin(uCzas * tempo * 0.37 + faza * 1.7) * 0.3;
+        vMig = 1.0 - amp + amp * fala;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = rozmiar * (640.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      varying vec3 vKolor;
+      varying float vMig;
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        float a = smoothstep(0.5, 0.04, d);
+        a *= a; // miękki brzeg, jaśniejszy rdzeń
+        gl_FragColor = vec4(vKolor * vMig, a * vMig);
+      }
+    `,
   });
   return new THREE.Points(geo, mat);
 }
@@ -465,7 +508,9 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   /* — SŁOŃCE: świecąca kula + lens flare — */
   const slonce = new THREE.Mesh(
     new THREE.SphereGeometry(1.1, 32, 32),
-    new THREE.MeshBasicMaterial({ color: 0xfffbf0, toneMapped: false })
+    // cieplejsza barwa: z bliska (finał Kontakt) tarcza jest złocista,
+    // a nie wypalona na biało; z daleka (hero) wciąż jasny punkt
+    new THREE.MeshBasicMaterial({ color: 0xffe3b0, toneMapped: false })
   );
   slonce.position.copy(POZ_SLONCA);
   scena.add(slonce);
@@ -529,17 +574,11 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   pierscienie.rotation.x = PRZECHYL;
   uklad.add(pierscienie);
 
-  /* — dwa księżyce przy pierścieniach — */
-  // Pierwszy to „PUNKT WIDOKOWY" przystanku Usługi. W hero KRĄŻY
-  // wokół planety jak prawdziwy księżyc; gdy scroll zbliża się do
-  // przystanku Usługi, orbita płynnie WYHAMOWUJE i księżyc osiada
-  // („dokuje") dokładnie w punkcie, na którym staje kamera — bez
-  // żadnego szarpnięcia, bo i tempo, i pozycja są mieszane płynnie.
+  /* — dwa księżyce przy pierścieniach (oba swobodnie orbitują) — */
   const ksiezycStacja = zrobKsiezycLadowania(0.2);
   uklad.add(ksiezycStacja);
   const PROMIEN_STACJI = 1.9505; // promień orbity (przy pierścieniach)
-  const KAT_DOKOWANIA = -0.4999; // kąt orbity = punkt widokowy Usług
-  let katStacja = KAT_DOKOWANIA - 0.4; // start blisko doku (widać go w hero)
+  let katStacja = -0.9; // pozycja startowa — widoczny w kadrze hero
   // drugi księżyc normalnie krąży (życie w kadrze hero)
   const tK2 = new THREE.CanvasTexture(namalujKsiezyc("#d3cdf2"));
   tK2.colorSpace = THREE.SRGBColorSpace;
@@ -612,24 +651,25 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   // Każda sekcja strony ma swój przystanek. Kamera STOI w „oknie"
   // przystanku (gdy czytasz sekcję) i LECI między oknami (przerwy
   // między sekcjami). Okna wyznacza LotSekcja z realnego układu strony.
+  // KAŻDY przystanek (poza hero) to NURKOWANIE W PLANETĘ: kamera
+  // podlatuje tak blisko, że tarcza wypełnia CAŁY kadr (łącznie
+  // z rogami) i planeta staje się tłem sekcji. Odległości dobrane
+  // z geometrii (d < 1.48·promień przy fov 52), a proste odcinki
+  // lotu między przystankami NIE przecinają żadnej kuli.
   const POZY = [
-    // 0. HERO — szeroki plan układu (planeta w prawych 2/3 ekranu)
+    // 0. HERO — szeroki plan układu (BEZ ZMIAN — otwarty kosmos)
     { poz: new THREE.Vector3(-2.0, 0.9, 8.4), cel: new THREE.Vector3(-1.2, 0.35, 0), fov: 45 },
-    // 1. USŁUGI — stoimy na zadokowanym księżycu przy pierścieniach;
-    //    fioletowa planeta wypełnia niebo nad nami
-    { poz: new THREE.Vector3(1.826, 0.377, 0.905), cel: new THREE.Vector3(-0.2, 0.3, 0), fov: 58 },
-    // 2. PORTFOLIO — wejście w atmosferę fioletowej planety (chmury tuż-tuż)
-    { poz: new THREE.Vector3(0.35, -0.15, 2.05), cel: new THREE.Vector3(-0.8, 0.8, 0), fov: 50 },
-    // 3. PROCES — tuż nad atmosferą turkusowej (na jej NOWEJ, dalszej
-    //    pozycji), spojrzenie z powrotem w stronę fioletowego układu
-    { poz: new THREE.Vector3(8.2, 0.307, -6.229), cel: new THREE.Vector3(3.5, -1.25, -4.2), fov: 55 },
-    // 4. OPINIE — kompozycja jak zdjęcie ISS nad Ziemią: różowa planeta
-    //    POZIOMO na dole kadru (łuk horyzontu), ciemny kosmos powyżej,
-    //    słońce wysoko w oddali
-    { poz: new THREE.Vector3(5.8, 3.57, -7.0), cel: new THREE.Vector3(-14, -1.5, -30), fov: 52 },
-    // 5. KONTAKT — finał: WLOT W BLASK SŁOŃCA (kamera tuż przy koronie,
-    //    światło zalewa kadr; słońce wysoko, nad kartą kontaktu)
-    { poz: new THREE.Vector3(-9.9, 6.5, -20.2), cel: new THREE.Vector3(-14, 5.0, -30), fov: 50 },
+    // 1. USŁUGI — nurkowanie w fioletową planetę (przednia strona)
+    { poz: new THREE.Vector3(0.88, 0.568, 1.467), cel: new THREE.Vector3(0, 0.2, 0), fov: 52 },
+    // 2. PORTFOLIO — ta sama planeta, inny wycinek (prawa strona)
+    { poz: new THREE.Vector3(1.447, -0.104, 0.838), cel: new THREE.Vector3(0, 0.2, 0), fov: 52 },
+    // 3. PROCES — nurkowanie w turkusową
+    { poz: new THREE.Vector3(7.861, -0.082, -5.958), cel: new THREE.Vector3(8.2, -0.2, -6.5), fov: 52 },
+    // 4. OPINIE — nurkowanie w różową (pozycja boczna — tak, żeby lot
+    //    z turkusowej i dalej do słońca omijał kulę planety)
+    { poz: new THREE.Vector3(4.983, 1.995, -6.465), cel: new THREE.Vector3(5.8, 2.6, -7), fov: 52 },
+    // 5. KONTAKT — finał: wlot w tarczę słońca (jasność wypełnia kadr)
+    { poz: new THREE.Vector3(-13.333, 8.767, -28.733), cel: new THREE.Vector3(-14, 9, -30), fov: 52 },
   ];
   // Domyślne okna postoju (nadpisywane przez ustawOkna po zmierzeniu strony)
   let okna: { a: number; b: number }[] = POZY.map((_, i) => ({
@@ -778,6 +818,10 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     const dt = Math.min(zegar.getDelta(), 0.05);
     const czas = zegar.elapsedTime;
 
+    // zegar migotania gwiazd (własny shader pola gwiazd)
+    (gwiazdyDaleko.material as THREE.ShaderMaterial).uniforms.uCzas.value = czas;
+    (gwiazdyBlisko.material as THREE.ShaderMaterial).uniforms.uCzas.value = czas;
+
     // wygładzenie scrolla i myszy (kinowa bezwładność kamery)
     postepPlynny += (postep - postepPlynny) * Math.min(1, dt * 5);
     myszPlynna.x += (mysz.x - myszPlynna.x) * Math.min(1, dt * 3);
@@ -798,28 +842,11 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       s2 * 2.35 * Math.sin(PRZECHYL)
     );
 
-    // KSIĘŻYC-STACJA: orbituje w hero, „dokuje" przed przystankiem Usługi.
-    // wDok rośnie 0→1 w trakcie LOTU z hero do Usług: tempo orbity
-    // wygasa (1-wDok), a kąt jest płynnie domieszany do kąta dokowania —
-    // gdy kamera ląduje, księżyc już stoi. Przy scrollu w górę wszystko
-    // odwraca się równie płynnie (czysta funkcja postępu scrolla).
-    const dokA = okna[0].b;
-    const dokB = okna[1].a;
-    const wDok =
-      postepPlynny <= dokA
-        ? 0
-        : postepPlynny >= dokB
-          ? 1
-          : gladkie((postepPlynny - dokA) / (dokB - dokA));
-    katStacja += dt * 0.11 * (1 - wDok);
-    // różnica kątów po najkrótszej drodze (żeby nie okrążać planety)
-    let doDoku = (KAT_DOKOWANIA - katStacja) % (Math.PI * 2);
-    if (doDoku > Math.PI) doDoku -= Math.PI * 2;
-    if (doDoku < -Math.PI) doDoku += Math.PI * 2;
-    const katS = katStacja + doDoku * wDok;
-    const sS = Math.sin(katS);
+    // drugi księżyc — spokojna orbita tuż przy pierścieniach
+    katStacja += dt * 0.11;
+    const sS = Math.sin(katStacja);
     ksiezycStacja.position.set(
-      Math.cos(katS) * PROMIEN_STACJI,
+      Math.cos(katStacja) * PROMIEN_STACJI,
       sS * PROMIEN_STACJI * Math.cos(PRZECHYL),
       sS * PROMIEN_STACJI * Math.sin(PRZECHYL)
     );

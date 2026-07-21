@@ -322,50 +322,120 @@ body {
    2) chowamy CSS-owe ozdoby sekcji (planetki, komety, chipy) —
       dublowałyby się z prawdziwymi planetami 3D w tle.
    ============================================================ */
-/* Mgiełki pod sekcjami — JEDEN, neutralnie ciemny odcień dla całej
-   strony (czysty czarny kosmos, spójny we wszystkich scenach —
-   bez kolorowych „mgławic" pod treścią).
-   !important: wygrywa z bg-zinc-900/40 Portfolio i Opinii. */
+/* ============ WNĘTRZA PLANET (immersyjne tła sekcji) ============
+   Kamera „wlatuje" w planetę — gdy sekcja jest na ekranie, jej tłem
+   jest KOLOR tej planety: nie płaska plama, tylko warstwy:
+   1) delikatna poświata (radial-gradient),
+   2) pionowe przejście jaśniej–ciemniej (linear-gradient),
+   3) ledwo widoczne pasma „powierzchni" (repeating-linear-gradient).
+   Warstwa siedzi na ::before z maską rozmywającą górną i dolną
+   krawędź — kolor miękko wlewa się w kadr podczas dolotu i wylewa
+   przy odlocie (kosmos prześwituje tylko w przerwach podróży). */
 .tryb-lot section[id] {
-  background: linear-gradient(
+  background: transparent !important; /* wygrywa z bg-zinc-900/40 */
+}
+.tryb-lot section[id]::before {
+  content: "";
+  position: absolute;
+  inset: -6vh 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
     180deg,
-    rgba(3, 3, 8, 0) 0%,
-    rgba(5, 5, 12, 0.58) 7%,
-    rgba(5, 5, 12, 0.58) 93%,
-    rgba(3, 3, 8, 0) 100%
-  ) !important;
+    transparent 0%,
+    #000 11%,
+    #000 89%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 11%,
+    #000 89%,
+    transparent 100%
+  );
+}
+/* Usługi — wnętrze fioletowej planety */
+.tryb-lot #uslugi::before {
+  background:
+    radial-gradient(120% 80% at 76% 0%, rgba(224, 126, 242, 0.26) 0%, rgba(224, 126, 242, 0) 55%),
+    radial-gradient(130% 90% at 12% 100%, rgba(16, 9, 44, 0.85) 0%, rgba(16, 9, 44, 0) 58%),
+    repeating-linear-gradient(171deg, rgba(255, 240, 252, 0.03) 0 3px, rgba(255, 240, 252, 0) 3px 13px),
+    linear-gradient(180deg, #2b1d67 0%, #45309f 38%, #543cb4 60%, #2a1c66 100%);
+}
+/* Portfolio — ta sama planeta, głębsza warstwa chmur (ciemniej, z różem) */
+.tryb-lot #portfolio::before {
+  background:
+    radial-gradient(110% 75% at 22% 0%, rgba(255, 169, 226, 0.2) 0%, rgba(255, 169, 226, 0) 52%),
+    radial-gradient(130% 90% at 85% 100%, rgba(12, 7, 36, 0.85) 0%, rgba(12, 7, 36, 0) 58%),
+    repeating-linear-gradient(174deg, rgba(255, 240, 252, 0.028) 0 3px, rgba(255, 240, 252, 0) 3px 12px),
+    linear-gradient(180deg, #241856 0%, #3a2a8e 42%, #452fa4 64%, #1f1449 100%);
+}
+/* Proces — wnętrze turkusowej planety */
+.tryb-lot #proces::before {
+  background:
+    radial-gradient(120% 80% at 70% 0%, rgba(99, 226, 234, 0.24) 0%, rgba(99, 226, 234, 0) 55%),
+    radial-gradient(130% 90% at 15% 100%, rgba(3, 20, 30, 0.85) 0%, rgba(3, 20, 30, 0) 58%),
+    repeating-linear-gradient(169deg, rgba(230, 255, 255, 0.03) 0 3px, rgba(230, 255, 255, 0) 3px 13px),
+    linear-gradient(180deg, #06283c 0%, #0d5273 40%, #10668c 62%, #052236 100%);
+}
+/* Opinie — wnętrze różowej planety */
+.tryb-lot #opinie::before {
+  background:
+    radial-gradient(120% 80% at 74% 0%, rgba(255, 196, 226, 0.26) 0%, rgba(255, 196, 226, 0) 55%),
+    radial-gradient(130% 90% at 14% 100%, rgba(30, 5, 20, 0.85) 0%, rgba(30, 5, 20, 0) 58%),
+    repeating-linear-gradient(172deg, rgba(255, 240, 250, 0.03) 0 3px, rgba(255, 240, 250, 0) 3px 13px),
+    linear-gradient(180deg, #451031 0%, #6f1e4f 40%, #82255c 62%, #380d28 100%);
+}
+/* Kontakt — wnętrze słońca (ciepły blask, jaśniej u góry).
+   Rozciągnięte też POD sekcję (bez dolnego rozmycia maski):
+   za kontaktem jest już tylko stopka — ciemny bursztyn ciągnie się
+   pod nią, żeby biały tekst stopki był czytelny. */
+.tryb-lot #kontakt::before {
+  inset: -6vh 0 -80vh;
+  background:
+    radial-gradient(90% 55% at 50% 0%, rgba(255, 240, 210, 0.26) 0%, rgba(255, 240, 210, 0) 55%),
+    radial-gradient(130% 80% at 50% 8%, rgba(255, 200, 118, 0.3) 0%, rgba(255, 200, 118, 0) 62%),
+    repeating-linear-gradient(176deg, rgba(255, 240, 214, 0.03) 0 3px, rgba(255, 240, 214, 0) 3px 12px),
+    linear-gradient(180deg, #64390a 0%, #7d4a0f 32%, #63390b 58%, #2e1b05 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 11%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 11%, #000 100%);
 }
 .tryb-lot .ozdoby-kosmos {
   display: none;
 }
 
-/* --- KARTY W TRYBIE LOTU: jednolite, neutralne „szkło" zamiast
-       litych pudełek — spójny styl we wszystkich scenach,
-       z delikatnym fioletowym akcentem na krawędzi --- */
+/* --- KAFELKI: frosted glass — mleczne szkło unoszące się nad
+       kolorowym wnętrzem planety; obwódka lekko w barwie sceny --- */
 .tryb-lot #uslugi article,
-.tryb-lot #opinie figure {
-  background: rgba(13, 11, 28, 0.5) !important;
-  border-color: rgba(139, 124, 247, 0.24) !important;
-  backdrop-filter: blur(10px);
+.tryb-lot #opinie figure,
+.tryb-lot #portfolio [class*="rounded-3xl"],
+.tryb-lot #kontakt [class*="2.5rem"] {
+  background: rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.55) !important;
+}
+.tryb-lot #uslugi article {
+  border-color: rgba(216, 199, 255, 0.32) !important;
 }
 .tryb-lot #portfolio [class*="rounded-3xl"] {
-  background: rgba(13, 11, 28, 0.45) !important;
-  border-color: rgba(139, 124, 247, 0.22) !important;
-  box-shadow: 0 18px 50px -22px rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(12px);
+  border-color: rgba(226, 205, 255, 0.28) !important;
+}
+.tryb-lot #opinie figure {
+  border-color: rgba(255, 196, 226, 0.32) !important;
 }
 .tryb-lot #kontakt [class*="2.5rem"] {
-  background: rgba(13, 11, 28, 0.55) !important;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(139, 124, 247, 0.24);
+  border: 1px solid rgba(255, 226, 170, 0.38);
+  background: rgba(255, 255, 255, 0.09) !important;
 }
 
-/* Numery kroków Procesu (01, 02…) — na tle kosmosu ciemnoszare
-   cyfry znikały; w trybie lotu mają być WYRAŹNIE fioletowe. */
-.tryb-lot #proces span[class*="text-5xl"] {
-  color: var(--color-akcent) !important;
+/* Numery kroków Procesu (01, 02…) — na turkusowym tle planety
+   czytelna jest jasna, chłodna biel (fiolet by tu znikał);
+   linia łącząca kroki subtelna, jasna. */
+.tryb-lot #proces span[class*="text-5xl"],
+.tryb-lot #proces p[class*="text-akcent"] {
+  color: #eafcff !important;
 }
-/* …a cienka linia łącząca kroki — subtelna, jasna (nie ciemny pasek) */
 .tryb-lot #proces [class*="h-px"] {
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.28) !important;
 }
