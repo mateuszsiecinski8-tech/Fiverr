@@ -32,9 +32,12 @@
 //   FOV dodatkowo „oddycha" (szerzej w środku lotu), a easing
 //   jest filmowy (odpowiednik power2.inOut).
 //
-// PANORAMA — przy każdym postoju w GÓRNYCH ROGACH kadru widać
-// poprzednie i następne ciało jako małą, przyciemnioną kulę.
-// Dzięki temu zawsze wiadomo, gdzie się jest w podróży.
+// KADROWANIE — każdy przystanek ma pole `kadr`, czyli miejsce
+// na EKRANIE, w którym ma wylądować planeta (np. „na dole po
+// prawej"). Dzięki temu teksty i karty sekcji NIE leżą na
+// najładniejszym fragmencie planety — mają swój własny, ciemny
+// kawałek kadru. To odpowiednik ustawienia modela w studiu:
+// najpierw wiemy, gdzie stanie, potem stawiamy światło i tekst.
 //
 // Ten plik NIE dotyka Reacta — czysty Three.js. Komponent
 // LotSekcja.tsx importuje go dynamicznie (tylko desktop).
@@ -242,39 +245,6 @@ function namalujPoswiate(rgb: string): HTMLCanvasElement {
   return c;
 }
 
-/* Tarcza słońca — prawie biała, z ledwo widoczną granulacją.
-   (Na produkcji to gładka biała kula; delikatne plamy dodają
-   życia, gdy kamera podlatuje blisko w sekcji Kontakt.) */
-function namalujSlonce(): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = 512;
-  c.height = 256;
-  const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#fffdf2";
-  ctx.fillRect(0, 0, 512, 256);
-  ctx.save();
-  ctx.filter = "blur(9px)";
-  for (let i = 0; i < 160; i++) {
-    ctx.fillStyle = `rgba(255,240,196,${(0.05 + Math.random() * 0.12).toFixed(3)})`;
-    ctx.beginPath();
-    ctx.arc(Math.random() * 512, Math.random() * 256, 8 + Math.random() * 30, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  return c;
-}
-
-/* Rozmyta miniatura — do „panoramy" (małe kule sąsiadów w rogach). */
-function rozmytaKopia(zrodlo: HTMLCanvasElement): HTMLCanvasElement {
-  const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 128;
-  const ctx = c.getContext("2d")!;
-  ctx.filter = "blur(3px)";
-  ctx.drawImage(zrodlo, 0, 0, 256, 128);
-  return c;
-}
-
 /* ============ POLE GWIAZD ============ */
 /* W hero gwiazd NIE widać (kadr wygląda dokładnie jak na produkcji) —
    rozjaśniają się dopiero, gdy ruszasz w podróż. Wtedy dają poczucie
@@ -334,6 +304,10 @@ export type SilnikLotu = {
   ustawOkna: (nowe: { a: number; b: number }[]) => void;
   /** Ile przystanków ma trasa (do kontroli w LotSekcja). */
   liczbaPrzystankow: number;
+  /** Podepnij funkcję, która dostanie numer przystanku, przy którym
+      właśnie stoi (albo do którego leci) kamera — używa jej pasek
+      podróży przy lewej krawędzi ekranu. */
+  naPrzystanku: (f: (i: number) => void) => void;
   /** Posprzątaj wszystko (unmount). */
   zniszcz: () => void;
 };
@@ -454,6 +428,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       map: tekstura(namalujKsiezyc("#d3cdf2", 24)),
       roughness: 0.6,
       emissive: 0x241f3a,
+      transparent: true, // patrz „NIE ZASŁANIAJ KADRU" niżej
     })
   );
   uklad.add(ksiezyc2);
@@ -517,6 +492,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       map: tekstura(namalujKsiezyc("#d7e8e5", 14)),
       roughness: 0.7,
       emissive: 0x1d3a38,
+      transparent: true, // patrz „NIE ZASŁANIAJ KADRU" niżej
     })
   );
   scena.add(ksiezycTurkusowej);
@@ -526,7 +502,6 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
      (MeshBasicMaterial — świeci własnym kolorem, nie reaguje na
      światła) + żółte halo w trybie additive. Bez tekstury i bez
      post-processingu, żeby wyglądało 1:1 jak w hero. */
-  const plotnoSlonca = namalujSlonce(); // tylko do miniatury w panoramie
   const slonce = new THREE.Mesh(
     new THREE.SphereGeometry(R_SLONCE, 48, 48),
     new THREE.MeshBasicMaterial({ color: 0xfffdf2 })
@@ -565,22 +540,30 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     /** kierunek, z którego podchodzi kamera (znormalizowany) */
     kierunek: () => THREE.Vector3;
     /** odległość kamery od środka (liczona na bieżąco — zależy od
-        proporcji ekranu, patrz `wypelnijKadr`) */
+        wielkości, jaką ma mieć tarcza w kadrze, patrz `tarczaNa`) */
     dystans: () => number;
     fov: number;
     /** przechył kadru (roll) w radianach */
     obrot: number;
+    /** GDZIE NA EKRANIE ma stanąć planeta — ułamki całego kadru,
+        liczone od jego środka:
+          x > 0 → planeta idzie w PRAWO,  x < 0 → w lewo,
+          y > 0 → planeta idzie w DÓŁ,    y < 0 → do góry.
+        Np. { x: 0.19, y: 0.20 } = „lekko w prawo i w dół".
+        Dzięki temu treść sekcji ma nad planetą swój ciemny,
+        spokojny kawałek kadru na tekst i karty. */
+    kadr: { x: number; y: number };
   };
 
-  /* Odległość, przy której tarcza o promieniu R dosięga BOCZNYCH
-     krawędzi kadru (z małym zapasem). Liczona z aktualnych proporcji
-     ekranu, więc planeta wypełnia kadr tak samo na laptopie 16:9
-     i na szerokim monitorze 21:9, a w ROGACH zawsze zostaje skrawek
-     kosmosu — tam pokazujemy sąsiadów (panorama). */
-  function wypelnijKadr(R: number, fov: number) {
+  /* Odległość, przy której tarcza o promieniu R zajmuje `ulamek`
+     WYSOKOŚCI kadru. Liczymy z wysokości (a nie z szerokości), więc
+     kompozycja wygląda tak samo na laptopie 16:9 i na szerokim
+     monitorze 21:9 — na szerokim po prostu więcej kosmosu po bokach. */
+  function tarczaNa(R: number, fov: number, ulamek: number) {
     return () => {
-      const polSzer = Math.atan(Math.tan((fov / 2) * STOPIEN) * kamera.aspect);
-      return R / Math.sin(Math.min(1.35, polSzer * 0.97));
+      // promień na ekranie = ulamek · wysokość → tangens kąta widzenia
+      const kat = Math.atan(2 * ulamek * Math.tan((fov / 2) * STOPIEN));
+      return R / Math.sin(kat);
     };
   }
 
@@ -616,55 +599,76 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const PRZYSTANKI: Przystanek[] = [
     // 0. HERO — szeroki plan całego układu (kadr jak na produkcji).
     //    Kamera patrzy prosto przed siebie, nie na konkretną planetę.
+    //    NIC tu nie ruszamy — te liczby odtwarzają zdjęcie z produkcji.
     {
       srodek: staly(new THREE.Vector3(-1.343, 0.683, 0)),
       kierunek: staly(new THREE.Vector3(0, 0, 1)),
       dystans: () => 8.835,
       fov: 42,
       obrot: 0,
+      kadr: { x: 0, y: 0 },
     },
-    // 1. USŁUGI — lądowanie na dużym księżycu olbrzyma (+8°).
-    //    Stały mnożnik (nie „wypełnij kadr"): księżyc ma zajmować ~3/4
-    //    wysokości, a WOKÓŁ niego ma być widoczna tarcza olbrzyma.
+    // 1. USŁUGI — duży KSIĘŻYC olbrzyma (+8°).
+    //    Kadr: księżyc jak kamień leżący na dole PO PRAWEJ, za nim
+    //    ciemne pasy chmur olbrzyma. Trzy karty usług dostają lewą
+    //    i górną część kadru — nie zasłaniają kraterów.
     {
       srodek: srodekKsiezyca,
       kierunek: kierunekKsiezyca,
-      dystans: () => R_KSIEZYC * 3.0,
+      dystans: tarczaNa(R_KSIEZYC, 52, 0.3),
       fov: 52,
       obrot: 8 * STOPIEN,
+      kadr: { x: 0.26, y: 0.26 },
     },
-    // 2. PORTFOLIO — sam olbrzym, od strony oświetlonej (−6°)
+    // 2. PORTFOLIO — OLBRZYM z pierścieniami (−6°).
+    //    To NAJDŁUŻSZA sekcja (dużo dużych kart, treść przewija się
+    //    przez cały ekran), więc kadr musi być SPOKOJNY i CIEMNY.
+    //    Dlatego olbrzym jest tu daleko i nisko po prawej — jak
+    //    widok z orbity: planeta w rogu, a przez dolną część kadru
+    //    przechodzi łuk pierścieni. Reszta to czysty kosmos, na
+    //    którym miniatury projektów wreszcie dobrze widać.
     {
       srodek: staly(SRODEK_OLBRZYMA),
       kierunek: staly(new THREE.Vector3(-0.6, 0.35, 0.72).normalize()),
-      dystans: wypelnijKadr(R_OLBRZYM, 52),
-      fov: 52,
+      dystans: tarczaNa(R_OLBRZYM, 46, 0.3),
+      fov: 46,
       obrot: -6 * STOPIEN,
+      kadr: { x: 0.3, y: 0.44 },
     },
-    // 3. PROCES — turkusowa planeta (+12°)
+    // 3. PROCES — TURKUSOWA planeta (+12°).
+    //    Kadr: planeta zsunięta tak nisko, że jej brzeg staje się
+    //    HORYZONTEM w dolnej 1/3 ekranu. Cztery kroki współpracy
+    //    stoją nad nim jak drogowskazy na powierzchni obcego świata.
     {
       srodek: staly(POZ_TURKUSOWEJ),
       kierunek: odPunktu(SRODEK_OLBRZYMA, POZ_TURKUSOWEJ),
-      dystans: wypelnijKadr(R_TURKUSOWA, 52),
+      dystans: tarczaNa(R_TURKUSOWA, 52, 0.58),
       fov: 52,
       obrot: 12 * STOPIEN,
+      kadr: { x: 0.06, y: 0.7 },
     },
-    // 4. OPINIE — różowa planeta (−8°)
+    // 4. OPINIE — RÓŻOWA planeta (−8°).
+    //    Kadr: planeta wschodzi z dołu PO LEWEJ jak duża kula.
+    //    Karty z opiniami zostają w górnej, ciemnoróżowej części nieba.
     {
       srodek: staly(POZ_ROZOWEJ),
       kierunek: odPunktu(POZ_TURKUSOWEJ, POZ_ROZOWEJ),
-      dystans: wypelnijKadr(R_ROZOWA, 52),
+      dystans: tarczaNa(R_ROZOWA, 52, 0.46),
       fov: 52,
       obrot: -8 * STOPIEN,
+      kadr: { x: -0.24, y: 0.52 },
     },
-    // 5. KONTAKT — finał: wlot w słońce, halo zalewa kadr (+10°).
-    //    Stały mnożnik — chcemy widzieć tarczę Z koroną, nie samą biel.
+    // 5. KONTAKT — FINAŁ: WSCHÓD SŁOŃCA (+10°).
+    //    Kadr: tarcza słońca nisko na środku, tuż pod kartą CTA —
+    //    światło bije spod niej do góry. Góra kadru zostaje ciemna,
+    //    więc nagłówek jest czytelny, a scena ma kulminację.
     {
       srodek: staly(POZ_SLONCA),
       kierunek: odPunktu(POZ_ROZOWEJ, POZ_SLONCA),
-      dystans: () => R_SLONCE * 3.75,
+      dystans: tarczaNa(R_SLONCE, 52, 0.3),
       fov: 52,
       obrot: 10 * STOPIEN,
+      kadr: { x: 0.02, y: 0.54 },
     },
   ];
 
@@ -801,11 +805,15 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     aktywnyPrzystanek = a;
 
     let przechylKadru: number;
+    let kadrX: number;
+    let kadrY: number;
     if (wPostoju) {
       pozycjaPrzystanku(a, bufPoz);
       bufCel.copy(PRZYSTANKI[a].srodek());
       kamera.fov = PRZYSTANKI[a].fov;
       przechylKadru = PRZYSTANKI[a].obrot;
+      kadrX = PRZYSTANKI[a].kadr.x;
+      kadrY = PRZYSTANKI[a].kadr.y;
     } else {
       const t = filmowe(surowe);
       pozycjaPrzystanku(a, bufA);
@@ -826,6 +834,9 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       // 4) PRZECHYŁ kadru — obraca się w drodze do nowego świata
       przechylKadru =
         PRZYSTANKI[a].obrot + (PRZYSTANKI[b].obrot - PRZYSTANKI[a].obrot) * t;
+      // 5) KADR — planeta płynnie wjeżdża na swoje miejsce na ekranie
+      kadrX = PRZYSTANKI[a].kadr.x + (PRZYSTANKI[b].kadr.x - PRZYSTANKI[a].kadr.x) * t;
+      kadrY = PRZYSTANKI[a].kadr.y + (PRZYSTANKI[b].kadr.y - PRZYSTANKI[a].kadr.y) * t;
     }
 
     // delikatny „oddech" + parallax myszy (pełny tylko w hero)
@@ -837,108 +848,47 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     kamera.up.set(0, 1, 0); // lookAt liczy obrót od pionu — resetujemy
     kamera.lookAt(bufCel);
     kamera.rotateZ(przechylKadru); // ← PRZECHYŁ KADRU (efekt „Prezi")
+
+    /* — PRZESUNIĘCIE KADRU —
+       Kamera stoi w miejscu, tylko lekko ODWRACA GŁOWĘ. Robimy to
+       PO przechyle, w jej własnych osiach, czyli dokładnie w osiach
+       tego, co widać na ekranie:
+         obrót w lewo (rotateY)  → planeta ucieka w PRAWO,
+         obrót w górę (rotateX)  → planeta zjeżdża w DÓŁ.
+       Kąt dobieramy tak, żeby przesunięcie wyszło równo tyle, ile
+       zamawia pole `kadr`. Mnożnik 2, bo „pół kadru" to połowa
+       ekranu, a `kadr` liczymy od jego ŚRODKA. */
+    if (kadrX !== 0 || kadrY !== 0) {
+      const polKadru = Math.tan((kamera.fov / 2) * STOPIEN);
+      kamera.rotateY(Math.atan(2 * kadrX * polKadru * kamera.aspect));
+      kamera.rotateX(Math.atan(2 * kadrY * polKadru));
+    }
     kamera.updateProjectionMatrix();
   }
 
-  /* ============================================================
-     PANORAMA — poprzednie i następne ciało jako małe, przyciemnione
-     kule w GÓRNYCH ROGACH kadru. Są „dziećmi" kamery, więc zawsze
-     siedzą dokładnie tam, gdzie trzeba; depthTest = false, żeby nie
-     chowały się w powierzchni planety wypełniającej kadr.
-     ============================================================ */
-  const MINIATURY = [
-    plotnoOlbrzyma, // 0. hero = cały układ, reprezentuje go olbrzym
-    plotnoKsiezyca, // 1. usługi
-    plotnoOlbrzyma, // 2. portfolio
-    plotnoTurkusowej, // 3. proces
-    plotnoRozowej, // 4. opinie
-    plotnoSlonca, // 5. kontakt
-  ].map((p) => tekstura(rozmytaKopia(p)));
+  /* Przy każdym postoju sekcja podaje na zewnątrz swój numer —
+     korzysta z tego pasek podróży (kropki przy lewej krawędzi
+     w components/lot/LotSekcja.tsx). Zastąpił on wcześniejsze
+     „kule sąsiadów" w rogach kadru: te wyglądały jak brud na
+     obiektywie, a pasek mówi to samo — gdzie jesteś w podróży —
+     tylko czytelnie i świadomie. */
+  let poinformujOPrzystanku: ((i: number) => void) | null = null;
+  let ostatnioZgloszony = -1;
 
-  function zrobSasiada() {
-    const kula = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 32, 32),
-      new THREE.MeshBasicMaterial({
-        map: MINIATURY[0],
-        color: 0x70707f, // przyciemnienie do ~40% jasności (dal)
-        transparent: true,
-        opacity: 0,
-        depthTest: false,
-        depthWrite: false,
-      })
-    );
-    kula.renderOrder = 900;
-    const luna = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: tekstura(namalujPoswiate("170,180,215"), false),
-        transparent: true,
-        opacity: 0,
-        depthTest: false,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      })
-    );
-    luna.renderOrder = 899;
-    kamera.add(kula, luna);
-    return { kula, luna };
-  }
-  const sasiadPoprzedni = zrobSasiada();
-  const sasiadNastepny = zrobSasiada();
-  let indeksPoprzedni = -1; // jaką teksturę mają teraz — żeby nie
-  let indeksNastepny = -1; // podmieniać mapy w każdej klatce
-  let kryciePanoramy = 0;
-
-  const DYSTANS_SASIADA = 7;
-  function ustawPanorame(dt: number) {
-    // panorama pokazuje się tylko przy POSTOJU i poza hero
-    const docelowe = wPostoju && aktywnyPrzystanek > 0 ? 1 : 0;
-    kryciePanoramy += (docelowe - kryciePanoramy) * Math.min(1, dt * 2.6);
-
-    const poprzedni = aktywnyPrzystanek - 1;
-    const nastepny = aktywnyPrzystanek + 1;
-    if (poprzedni >= 0 && poprzedni !== indeksPoprzedni) {
-      indeksPoprzedni = poprzedni;
-      const m = sasiadPoprzedni.kula.material as THREE.MeshBasicMaterial;
-      m.map = MINIATURY[poprzedni];
-      m.needsUpdate = true;
-    }
-    if (nastepny < PRZYSTANKI.length && nastepny !== indeksNastepny) {
-      indeksNastepny = nastepny;
-      const m = sasiadNastepny.kula.material as THREE.MeshBasicMaterial;
-      m.map = MINIATURY[nastepny];
-      m.needsUpdate = true;
-    }
-
-    // pozycje liczone z aktualnego fov i proporcji ekranu — działa
-    // tak samo na laptopie 16:9 i na szerokim monitorze 21:9
-    const polWys = Math.tan((kamera.fov / 2) * STOPIEN) * DYSTANS_SASIADA;
-    const polSzer = polWys * kamera.aspect;
-
-    const ustaw = (
-      s: { kula: THREE.Mesh; luna: THREE.Sprite },
-      x: number,
-      skala: number,
-      widoczny: boolean
-    ) => {
-      // lekki parallax za myszką — sąsiad „stoi w oddali", a nie
-      // klei się do ekranu jak naklejka
-      const px = x * polSzer + myszPlynna.x * 0.22;
-      const py = 0.72 * polWys - myszPlynna.y * 0.16;
-      s.kula.position.set(px, py, -DYSTANS_SASIADA);
-      s.kula.scale.setScalar(skala);
-      s.kula.rotation.y += dt * 0.05;
-      s.luna.position.set(px, py, -DYSTANS_SASIADA - 0.05);
-      s.luna.scale.set(skala * 5.2, skala * 5.2, 1);
-      const k = widoczny ? kryciePanoramy : 0;
-      (s.kula.material as THREE.MeshBasicMaterial).opacity = k;
-      s.luna.material.opacity = k * 0.3;
-      s.kula.visible = k > 0.01;
-      s.luna.visible = k > 0.01;
-    };
-
-    // poprzednie ciało zostaje z tyłu (mniejsze), następne rośnie
-    ustaw(sasiadPoprzedni, -0.79, 0.26, poprzedni >= 0);
-    ustaw(sasiadNastepny, 0.79, 0.33, nastepny < PRZYSTANKI.length);
+  /* ============ NIE ZASŁANIAJ KADRU ============
+     Przy postojach kamera stoi bardzo blisko planet, więc krążący
+     obok MAŁY księżyc potrafi wjechać dosłownie pod obiektyw —
+     i zamiast ozdoby robi się wielka szara plama na środku tekstu.
+     Zasada jest prosta jak na planie zdjęciowym: kto wchodzi
+     w kadr operatorowi, ten znika. Poniżej ~0,55 jednostki od
+     kamery księżyc płynnie się rozpływa. Z daleka (np. w hero)
+     nic się nie zmienia — tam odległości są wielokrotnie większe. */
+  const bufBlisko = new THREE.Vector3();
+  function schowajGdyPodObiektywem(obiekt: THREE.Mesh) {
+    const mat = obiekt.material as THREE.MeshStandardMaterial;
+    const d = obiekt.getWorldPosition(bufBlisko).distanceTo(kamera.position);
+    mat.opacity = Math.min(1, Math.max(0, (d - 0.55) / 0.45));
+    obiekt.visible = mat.opacity > 0.02;
   }
 
   /* — pętla renderowania — */
@@ -1001,7 +951,14 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     );
 
     ustawKamere(scrollPlynny, czas);
-    ustawPanorame(dt);
+    schowajGdyPodObiektywem(ksiezyc2);
+    schowajGdyPodObiektywem(ksiezycTurkusowej);
+
+    // powiadom pasek podróży, gdy zmieni się przystanek
+    if (aktywnyPrzystanek !== ostatnioZgloszony) {
+      ostatnioZgloszony = aktywnyPrzystanek;
+      poinformujOPrzystanku?.(aktywnyPrzystanek);
+    }
 
     // gwiazdy: niewidoczne w hero (kadr 1:1 z produkcją), rozjaśniają
     // się dopiero w podróży. Jadą razem z kamerą — daleka warstwa jak
@@ -1041,7 +998,12 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       if (nowe.length === PRZYSTANKI.length) okna = nowe;
     },
     liczbaPrzystankow: PRZYSTANKI.length,
+    naPrzystanku(f: (i: number) => void) {
+      poinformujOPrzystanku = f;
+      f(aktywnyPrzystanek); // od razu podaj stan na starcie
+    },
     zniszcz() {
+      poinformujOPrzystanku = null;
       cancelAnimationFrame(klatka);
       obserwator.disconnect();
       document.removeEventListener("visibilitychange", przyWidocznosci);
