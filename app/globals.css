@@ -315,115 +315,191 @@ body {
 
 /* ============================================================
    TRYB LOTU (eksperyment „ZUI Space Scroll") — desktop
-   Sekcje strony przewijają się nad prawdziwym kosmosem 3D, więc:
-   1) każda sekcja z id dostaje ciemną „mgiełkę" pod treścią
-      (czytelność na tle jasnych planet), miękko rozmytą na
-      górnej i dolnej krawędzi — kosmos prześwituje w przerwach;
-   2) chowamy CSS-owe ozdoby sekcji (planetki, komety, chipy) —
-      dublowałyby się z prawdziwymi planetami 3D w tle.
+   ============================================================
+   Cała strona ma wtedy JEDNO wspólne tło: kanwę 3D z tą samą
+   sceną, co produkcyjne hero (olbrzym z pierścieniami i księżycami,
+   różowa planeta, turkusowa, słońce). Scroll wozi po niej kamerę,
+   więc tłem KAŻDEJ sekcji jest prawdziwe ciało niebieskie.
+   Style poniżej robią cztery rzeczy:
+
+   1) KAŻDA SEKCJA MA SWOJĄ PALETĘ — kolor jej ciała niebieskiego
+      zapisujemy raz, w zmiennych CSS (--pl = akcent, --pl-rgb =
+      ten sam kolor do przezroczystości, --pl-tlo = ciemny odcień
+      na przyciemnienie). Reszta reguł tylko z nich korzysta, więc
+      zmiana koloru sekcji = zmiana JEDNEJ linijki.
+   2) TŁO SEKCJI jest PÓŁPRZEZROCZYSTE — planeta ma być widoczna!
+      Przyciemniamy ją tylko tyle, żeby tekst był czytelny, a przy
+      górnej i dolnej krawędzi tło zanika, żeby kosmos wlewał się
+      w kadr podczas dolotu i odlotu.
+   3) Chowamy CSS-owe ozdoby, które dublują się z prawdziwą sceną
+      3D (planetki i komety sekcji, turkusowa planetka w hero).
+   4) Hero (#start) wygląda 1:1 jak na produkcji — jego poświaty
+      i ziarno lądują POD kanwą, żeby nie zamgławiały planet.
    ============================================================ */
-/* ============ WNĘTRZA PLANET (immersyjne tła sekcji) ============
-   Kamera „wlatuje" w planetę — gdy sekcja jest na ekranie, jej tłem
-   jest czysty KOLOR tej planety. Bez pasków/faktury: tylko sam kolor
-   z bardzo delikatną, miękką poświatą (radial-gradient) i leciutkim
-   przejściem jaśniej–ciemniej, żeby tło miało głębię, a nie wyglądało
-   jak płaska plama. Warstwa siedzi na ::before z maską rozmywającą
-   górną i dolną krawędź — kolor miękko wlewa się w kadr podczas
-   dolotu i wylewa przy odlocie (kosmos prześwituje tylko w przerwach). */
-.tryb-lot section[id] {
-  background: transparent !important; /* wygrywa z bg-zinc-900/40 */
+
+/* --- 1. PALETY CIAŁ NIEBIESKICH (jedyne miejsce z kolorami sekcji) --- */
+.tryb-lot #uslugi {
+  --pl: #ddd7f8;            /* jasny liliowy regolit — duży księżyc */
+  --pl-rgb: 221, 215, 248;
+  --pl-tlo: 26, 22, 46;
 }
-.tryb-lot section[id]::before {
+.tryb-lot #portfolio {
+  --pl: #c9bcff;            /* fiolet olbrzyma — jego pasy chmur */
+  --pl-rgb: 201, 188, 255;
+  --pl-tlo: 34, 22, 74;
+}
+.tryb-lot #proces {
+  --pl: #a6ccc8;            /* stonowany turkus — turkusowa planeta */
+  --pl-rgb: 166, 204, 200;
+  --pl-tlo: 10, 40, 42;
+}
+.tryb-lot #opinie {
+  --pl: #ffc4e0;            /* róż — różowa planeta */
+  --pl-rgb: 255, 196, 224;
+  --pl-tlo: 60, 16, 42;
+}
+.tryb-lot #kontakt {
+  --pl: #ffe9b8;            /* ciepłe złoto — słońce */
+  --pl-rgb: 255, 233, 184;
+  --pl-tlo: 54, 34, 6;
+}
+
+/* --- 1b. HERO i wspólna kanwa --- */
+/* Kanwa pojawia się dopiero, gdy scena 3D jest zbudowana (klasę
+   „lot-gotowy" dokłada LotSekcja.tsx) — bez mignięcia pustki. */
+.tryb-lot .pojemnik-kosmos {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.tryb-lot.lot-gotowy .pojemnik-kosmos {
+  opacity: 1;
+}
+/* Poświaty i ziarno hero pod kanwę (-20), żeby fioletowa mgiełka
+   nie kładła się na planetach. `position: relative` bez z-index NIE
+   tworzy kontekstu stackingu, więc ujemny z-index naprawdę schodzi
+   poniżej kanwy (-10). */
+.tryb-lot #start .plywa1,
+.tryb-lot #start .plywa2,
+.tryb-lot #start .ziarno {
+  z-index: -20;
+}
+/* Turkusowa planetka CSS z hero — w trybie lotu rysuje ją scena 3D */
+.tryb-lot .planetka-css {
+  display: none;
+}
+
+/* --- 2. TŁO SEKCJI: delikatna zasłona NA planecie (nie zamiast!) --- */
+.tryb-lot section[id]:not([id="start"]) {
+  background: transparent !important; /* wygrywa z bg-zinc-900/40 */
+  transition: opacity 0.7s ease;
+  opacity: 0.72;                      /* sekcja „obok" — lekko przygaszona */
+}
+/* Sekcja, przy której planecie właśnie stoi kamera (klasę dokłada
+   ScrollTrigger w components/lot/LotSekcja.tsx).
+   UWAGA na specyficzność: selektor MUSI powtórzyć `:not([id="start"])`,
+   żeby był mocniejszy od reguły przygaszającej wyżej — inaczej sekcja
+   nigdy nie rozjaśni się do 100% i tekst zostaje wyprany.
+   (Nie używamy tu `:not(#start)`, bo `:not()` przejmuje specyficzność
+   swojego argumentu i ID zbiłoby wszystkie reguły z klasami.) */
+.tryb-lot section[id].aktywna:not([id="start"]) {
+  opacity: 1;
+}
+.tryb-lot section[id]:not([id="start"])::before {
   content: "";
   position: absolute;
-  inset: -6vh 0;
+  inset: -8vh 0;
   z-index: -1;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(
-    180deg,
-    transparent 0%,
-    #000 11%,
-    #000 89%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    180deg,
-    transparent 0%,
-    #000 11%,
-    #000 89%,
-    transparent 100%
-  );
-}
-/* Usługi — wnętrze fioletowej planety */
-.tryb-lot #uslugi::before {
   background:
-    radial-gradient(120% 85% at 72% 22%, rgba(150, 120, 255, 0.35) 0%, rgba(150, 120, 255, 0) 60%),
-    linear-gradient(160deg, #3a2782 0%, #4a349c 45%, #3d2b82 72%, #2a1d63 100%);
+    /* poświata w kolorze planety — od góry kadru, jak odbite światło */
+    radial-gradient(
+      130% 80% at 50% -6%,
+      rgba(var(--pl-rgb), 0.16) 0%,
+      rgba(var(--pl-rgb), 0) 62%
+    ),
+    /* przyciemnienie pod tekst — zanika na krawędziach, więc kosmos
+       „wlewa się" w kadr przy dolocie i odlocie */
+    linear-gradient(
+      180deg,
+      rgba(var(--pl-tlo), 0) 0%,
+      rgba(var(--pl-tlo), 0.62) 12%,
+      rgba(var(--pl-tlo), 0.72) 45%,
+      rgba(var(--pl-tlo), 0.62) 88%,
+      rgba(var(--pl-tlo), 0) 100%
+    );
 }
-/* Portfolio — ta sama planeta, nieco głębszy, chłodniejszy wycinek */
-.tryb-lot #portfolio::before {
-  background:
-    radial-gradient(120% 85% at 28% 20%, rgba(160, 130, 255, 0.3) 0%, rgba(160, 130, 255, 0) 60%),
-    linear-gradient(200deg, #322473 0%, #402e90 48%, #35276f 74%, #241a54 100%);
-}
-/* Proces — wnętrze turkusowej planety */
-.tryb-lot #proces::before {
-  background:
-    radial-gradient(120% 85% at 68% 22%, rgba(90, 220, 235, 0.3) 0%, rgba(90, 220, 235, 0) 60%),
-    linear-gradient(160deg, #0a4b68 0%, #0f6389 46%, #0b4f70 72%, #073950 100%);
-}
-/* Opinie — wnętrze różowej planety */
-.tryb-lot #opinie::before {
-  background:
-    radial-gradient(120% 85% at 70% 22%, rgba(255, 150, 205, 0.32) 0%, rgba(255, 150, 205, 0) 60%),
-    linear-gradient(160deg, #6b1d4c 0%, #86285f 46%, #6f2050 72%, #4a153a 100%);
-}
-/* Kontakt — wnętrze słońca (ciepły złoty blask).
-   Rozciągnięte też POD sekcję (bez dolnego rozmycia maski):
-   za kontaktem jest już tylko stopka — ciepły ton ciągnie się pod nią. */
+/* Kontakt = finał podróży: ciepły ton ciągnie się też pod stopkę */
 .tryb-lot #kontakt::before {
-  inset: -6vh 0 -80vh;
+  inset: -8vh 0 -80vh;
   background:
-    radial-gradient(115% 72% at 50% 2%, rgba(255, 232, 176, 0.55) 0%, rgba(255, 232, 176, 0) 60%),
-    linear-gradient(180deg, #b9740f 0%, #cf861a 32%, #a4630e 60%, #3a2408 100%);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 11%, #000 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 11%, #000 100%);
+    radial-gradient(
+      120% 70% at 50% 0%,
+      rgba(var(--pl-rgb), 0.26) 0%,
+      rgba(var(--pl-rgb), 0) 60%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--pl-tlo), 0) 0%,
+      rgba(var(--pl-tlo), 0.6) 12%,
+      rgba(var(--pl-tlo), 0.74) 50%,
+      rgba(var(--pl-tlo), 0.92) 100%
+    );
 }
 .tryb-lot .ozdoby-kosmos {
   display: none;
 }
 
-/* --- KAFELKI: frosted glass — mleczne szkło unoszące się nad
-       kolorowym wnętrzem planety; obwódka lekko w barwie sceny --- */
+/* --- 3. AKCENTY: fiolet marki ustępuje kolorowi planety --- */
+.tryb-lot section[id]:not([id="start"]) .text-akcent {
+  color: var(--pl) !important;
+}
+.tryb-lot section[id]:not([id="start"]) [class*="bg-akcent/10"] {
+  background-color: rgba(var(--pl-rgb), 0.16) !important;
+}
+
+/* --- 4. KARTY: mleczne szkło unoszące się nad planetą,
+       z obwódką i poświatą w jej kolorze --- */
 .tryb-lot #uslugi article,
 .tryb-lot #opinie figure,
-.tryb-lot #portfolio [class*="rounded-3xl"],
+.tryb-lot #portfolio a[class*="border-akcent"],
 .tryb-lot #kontakt [class*="2.5rem"] {
   background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(var(--pl-rgb), 0.34) !important;
   backdrop-filter: blur(14px);
-  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.55) !important;
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.6) !important;
 }
-.tryb-lot #uslugi article {
-  border-color: rgba(216, 199, 255, 0.32) !important;
+/* kafelki portfolio to zdjęcia — im dajemy tylko ramkę i blask */
+.tryb-lot #portfolio a[class*="h-72"] {
+  border: 1px solid rgba(var(--pl-rgb), 0.3);
 }
-.tryb-lot #portfolio [class*="rounded-3xl"] {
-  border-color: rgba(226, 205, 255, 0.28) !important;
+/* przy aktywnej sekcji karty dostają delikatną poświatę planety */
+.tryb-lot section[id].aktywna article,
+.tryb-lot section[id].aktywna figure,
+.tryb-lot section[id].aktywna a[class*="rounded-3xl"],
+.tryb-lot section[id].aktywna [class*="2.5rem"] {
+  box-shadow:
+    0 24px 60px -28px rgba(0, 0, 0, 0.6),
+    0 0 46px -14px rgba(var(--pl-rgb), 0.38) !important;
 }
-.tryb-lot #opinie figure {
-  border-color: rgba(255, 196, 226, 0.32) !important;
-}
+/* karta kontaktu jest ciemna z definicji — tu wystarczy szkło */
 .tryb-lot #kontakt [class*="2.5rem"] {
-  border: 1px solid rgba(255, 226, 170, 0.38);
+  border: 1px solid rgba(var(--pl-rgb), 0.4);
   background: rgba(255, 255, 255, 0.09) !important;
 }
 
-/* Numery kroków Procesu (01, 02…) — na turkusowym tle planety
-   czytelna jest jasna, chłodna biel (fiolet by tu znikał);
-   linia łącząca kroki subtelna, jasna. */
-.tryb-lot #proces span[class*="text-5xl"],
-.tryb-lot #proces p[class*="text-akcent"] {
-  color: #eafcff !important;
+/* --- 5. DROBIAZGI: numery kroków, cienkie linie, tagi --- */
+/* Numery Procesu (01, 02…) — na tle planety czytelna jest jasna,
+   chłodna biel; fiolet by tu po prostu zniknął. */
+.tryb-lot #proces span[class*="text-5xl"] {
+  color: rgba(var(--pl-rgb), 0.55) !important;
 }
-.tryb-lot #proces [class*="h-px"] {
-  background: rgba(255, 255, 255, 0.28) !important;
+.tryb-lot #proces .group:hover span[class*="text-5xl"] {
+  color: var(--pl) !important;
+}
+.tryb-lot section[id]:not([id="start"]) [class*="h-px"] {
+  background: rgba(var(--pl-rgb), 0.3) !important;
+}
+/* obwódki tagów i separatorów w kolorze planety, ale bardzo cicho */
+.tryb-lot section[id]:not([id="start"]) [class*="border-t"] {
+  border-top-color: rgba(var(--pl-rgb), 0.22) !important;
 }

@@ -3,27 +3,33 @@
 // LOT PRZEZ CAŁĄ STRONĘ (eksperyment „ZUI Space Scroll")
 //
 // Jak to działa:
-//  • kanwa 3D jest PRZYPIĘTA pod całą stroną (position: fixed,
-//    z-index -10) — kosmos widać zawsze, pod każdą sekcją,
+//  • JEDNA kanwa 3D (components/lot/silnik.ts) jest PRZYPIĘTA pod
+//    całą stroną (position: fixed, z-index -10). To ta sama scena,
+//    co w produkcyjnym hero — fioletowy olbrzym z pierścieniami
+//    i księżycami, różowa planeta, turkusowa, słońce. Nic więcej
+//    nie dochodzi: scroll po prostu WOZI KAMERĘ po tej scenie;
+//  • HERO to produkcyjny komponent <Hero /> (tekst po lewej),
+//    tylko bez własnej sceny 3D — planety rysuje wspólna kanwa,
+//    a kadr startowy kamery odtwarza produkcyjną kompozycję;
 //  • sekcje to NORMALNE komponenty strony (pełna treść, działające
-//    kotwice menu, SEO) przewijane nad kosmosem,
-//  • między sekcjami są puste „przerwy podróży" (120vh) — tam kamera
-//    LECI do następnej planety; gdy sekcja jest na ekranie, kamera
-//    STOI przy jej planecie (okna postoju mierzone z układu strony),
+//    kotwice menu, SEO) przewijane nad kosmosem;
+//  • między sekcjami są puste „przerwy podróży" — tam kamera LECI
+//    do następnego ciała (zoom out po łuku → pan → przechył kadru
+//    → zoom in); gdy sekcja jest na ekranie, kamera STOI przy jej
+//    ciele, a w górnych rogach widać sąsiadów (panorama);
 //  • ScrollTrigger zamienia scroll całej strony na postęp 0–1
 //    i podaje go silnikowi 3D.
 //
-// Przystanki: Hero (szeroki plan) → Usługi (księżyc) → Portfolio
-// (atmosfera fioletowej) → Proces (turkusowa) → Opinie (różowa)
-// → Kontakt (lot w słońce). Cennik jest wyłączony na stronie
+// Przystanki: Hero (szeroki plan układu) → Usługi (duży księżyc)
+// → Portfolio (olbrzym) → Proces (turkusowa) → Opinie (różowa)
+// → Kontakt (słońce). Cennik jest wyłączony na stronie
 // (app/page.tsx), więc nie ma przystanku.
 // ============================================================
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { IkonaStrzalka } from "../Ikony";
-import { hero, linki } from "@/lib/dane";
+import Hero from "../Hero";
 import Services from "../Services";
 import Portfolio from "../Portfolio";
 import Process from "../Process";
@@ -31,11 +37,17 @@ import Testimonials from "../Testimonials";
 import Contact from "../Contact";
 import type { SilnikLotu } from "./silnik";
 
+// ScrollTrigger używamy TYLKO do efektów HTML (odjazd tekstu hero,
+// podświetlenie aktywnej sekcji). Sama kamera 3D czyta pozycję
+// scrolla bezpośrednio — patrz components/lot/silnik.ts.
 gsap.registerPlugin(ScrollTrigger);
 
+/* Sekcje-przystanki (kolejność MUSI się zgadzać z trasą w silnik.ts) */
+const SEKCJE = ["uslugi", "portfolio", "proces", "opinie", "kontakt"];
+
 /* Pusta przerwa między sekcjami — tu dzieje się lot. DŁUGA (200vh),
-   żeby przelot kamery przez galaktykę był powolny i filmowy — widać
-   wtedy piękno kosmosu, a nie tylko szybki przeskok do planety. */
+   żeby przelot kamery przez układ był powolny i filmowy — widać
+   wtedy piękno sceny, a nie tylko szybki przeskok do planety. */
 function PrzerwaPodrozy() {
   return <div aria-hidden="true" className="h-[200vh]" />;
 }
@@ -45,59 +57,117 @@ export default function LotSekcja() {
   const pojemnik3d = useRef<HTMLDivElement>(null);
   const heroTresc = useRef<HTMLDivElement>(null);
   const podpowiedz = useRef<HTMLDivElement>(null);
-  const [gotowa, setGotowa] = useState(false);
 
   useEffect(() => {
     let silnik: SilnikLotu | null = null;
-    let trigger: ScrollTrigger | null = null;
     let zatrzymana = false;
+    let stoper: ReturnType<typeof setTimeout> | null = null;
+    const wyzwalacze: ScrollTrigger[] = [];
     const tweeny: gsap.core.Tween[] = [];
+    const sprzataczki: (() => void)[] = []; // co odpiąć przy unmount
+
+    /* — płynne przewijanie z CSS gryzie się z animacją GSAP
+         (klik w menu = filmowa podróż), więc na czas trybu lotu
+         oddajemy stery JavaScriptowi — */
+    const poprzednieScroll = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "auto";
+
+    /* ============ KLIK W MENU = FILMOWA PODRÓŻ KAMERY ============
+       Kotwice (#uslugi, #portfolio…) zostają w HTML-u (SEO i
+       dostępność), ale zamiast skoku robimy płynne przewinięcie —
+       a że kamera jest podpięta pod scroll, sama wykonuje
+       zoom out → przelot → przechył → zoom in do właściwego ciała. */
+    function przyKliku(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+      const cel = e.target as HTMLElement | null;
+      const link = cel?.closest?.('a[href^="#"]') as HTMLAnchorElement | null;
+      if (!link) return;
+      const id = link.getAttribute("href")?.slice(1);
+      if (!id) return;
+      const sekcja = document.getElementById(id);
+      if (!sekcja) return;
+
+      e.preventDefault();
+      const vh = window.innerHeight;
+      const doceloweY =
+        id === "start" ? 0 : sekcja.getBoundingClientRect().top + window.scrollY - vh * 0.12;
+      // im dalej lecimy, tym dłuższa (ale wciąż filmowa) animacja
+      const dystans = Math.abs(doceloweY - window.scrollY) / vh;
+      const czas = Math.min(1.9, Math.max(0.9, 0.55 + dystans * 0.16)) * 1000;
+      przewinDo(doceloweY, czas, () => history.replaceState(null, "", `#${id}`));
+    }
+
+    /* Płynne przewinięcie strony — własne, w kilku linijkach, bez
+       dodatkowej biblioteki. Kamera 3D czyta pozycję scrolla sama,
+       więc podąża za tym ruchem i wykonuje pełne przejście:
+       zoom out → przelot → przechył → zoom in. */
+    let klatkaPrzewijania = 0;
+    function przewinDo(doY: number, czasMs: number, poZakonczeniu: () => void) {
+      cancelAnimationFrame(klatkaPrzewijania);
+      const odY = window.scrollY;
+      const roznica = doY - odY;
+      const start = performance.now();
+      // ten sam „filmowy" easing co w silniku (odpowiednik power2.inOut)
+      const filmowe = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+      const krok = (teraz: number) => {
+        const t = Math.min(1, (teraz - start) / czasMs);
+        window.scrollTo(0, odY + roznica * filmowe(t));
+        if (t < 1) klatkaPrzewijania = requestAnimationFrame(krok);
+        else poZakonczeniu();
+      };
+      klatkaPrzewijania = requestAnimationFrame(krok);
+    }
+    sprzataczki.push(() => cancelAnimationFrame(klatkaPrzewijania));
+    document.addEventListener("click", przyKliku);
 
     (async () => {
       // silnik (i cały Three.js) dociąga się dopiero tutaj — leniwie
       const { zbudujLot } = await import("./silnik");
       if (zatrzymana || !pojemnik3d.current || !root.current) return;
       silnik = zbudujLot(pojemnik3d.current);
-      setGotowa(true);
+      // kanwa jest ukryta do czasu zbudowania sceny (klasa niżej)
+      root.current.classList.add("lot-gotowy");
 
       /* — pomiar OKIEN POSTOJU z prawdziwego układu strony —
-         okno = zakres scrolla, w którym sekcja jest na ekranie
-         (wtedy kamera stoi przy jej planecie) */
-      const przeliczOkna = () => {
-        const el = root.current;
-        if (!el || !silnik) return;
+         okno = zakres scrolla (w PIKSELACH), w którym sekcja jest
+         na ekranie; wtedy kamera stoi przy jej ciele niebieskim,
+         a między oknami leci do następnego.
+
+         Piksele, a nie ułamki — bo silnik sam odczytuje pozycję
+         scrolla. Gdyby jedna strona liczyła w pikselach, a druga
+         w ułamkach zapamiętanego zakresu, obie miary rozjechałyby
+         się w chwili, gdy doładują się miniatury portfolio i strona
+         zmieni wysokość. */
+      function przeliczOkna() {
+        if (!silnik) return;
         const vh = window.innerHeight;
-        const calosc = Math.max(1, el.offsetHeight - vh); // ile da się przescrollować
-        const frakcja = (y: number) => Math.min(1, Math.max(0, y / calosc));
-        const sekcje = ["uslugi", "portfolio", "proces", "opinie", "kontakt"];
-        const nowe = [{ a: 0, b: frakcja(vh * 0.4) }]; // hero: od samej góry
-        for (const id of sekcje) {
+        // hero: kamera stoi, dopóki tekst nie odjedzie z ekranu
+        const nowe = [{ a: 0, b: vh * 0.55 }];
+        for (const id of SEKCJE) {
           const s = document.getElementById(id);
           if (!s) return; // sekcja jeszcze nie w DOM — spróbujemy ponownie
           const gora = s.getBoundingClientRect().top + window.scrollY;
           nowe.push({
-            a: frakcja(gora - vh * 0.65), // kamera dolatuje tuż przed sekcją
-            b: frakcja(gora + s.offsetHeight - vh * 0.35),
+            a: gora - vh * 0.65, // kamera dolatuje tuż przed sekcją
+            b: gora + s.offsetHeight - vh * 0.35,
           });
         }
         silnik.ustawOkna(nowe);
-      };
-
-      /* — scroll całej strony → postęp lotu 0–1 — */
-      trigger = ScrollTrigger.create({
-        trigger: root.current,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-        onUpdate: (self) => silnik?.ustawPostep(self.progress),
-        onRefresh: przeliczOkna,
-      });
+      }
       przeliczOkna();
-      // jeszcze raz po chwili — układ mógł się przesunąć po dociągnięciu
-      // miniatur portfolio
-      setTimeout(przeliczOkna, 1500);
 
-      /* — tekst hero i podpowiedź znikają, gdy ruszamy w podróż — */
+      /* — układ strony zmienia się, gdy doładują się miniatury
+           portfolio albo gdy zmienisz rozmiar okna — wtedy trzeba
+           przemierzyć okna postoju od nowa — */
+      window.addEventListener("load", przeliczOkna);
+      window.addEventListener("resize", przeliczOkna);
+      sprzataczki.push(() => {
+        window.removeEventListener("load", przeliczOkna);
+        window.removeEventListener("resize", przeliczOkna);
+      });
+      stoper = setTimeout(przeliczOkna, 1500);
+
+      /* — tekst hero i podpowiedź odjeżdżają w górę, gdy ruszamy — */
       if (heroTresc.current) {
         tweeny.push(
           gsap.to(heroTresc.current, {
@@ -107,7 +177,7 @@ export default function LotSekcja() {
             scrollTrigger: {
               trigger: root.current,
               start: "top top",
-              end: `+=${window.innerHeight * 0.7}`,
+              end: () => `+=${window.innerHeight * 0.8}`,
               scrub: true,
             },
           })
@@ -121,121 +191,76 @@ export default function LotSekcja() {
             scrollTrigger: {
               trigger: root.current,
               start: "top top",
-              end: `+=${window.innerHeight * 0.3}`,
+              end: () => `+=${window.innerHeight * 0.3}`,
               scrub: true,
             },
           })
         );
       }
+
+      /* — AKTYWNA SEKCJA („wyspa", przy której właśnie stoi kamera):
+           pełna jasność + poświata w kolorze ciała niebieskiego.
+           Reszta lekko przygaszona — patrz app/globals.css. — */
+      for (const id of SEKCJE) {
+        const s = document.getElementById(id);
+        if (!s) continue;
+        wyzwalacze.push(
+          ScrollTrigger.create({
+            trigger: s,
+            start: "top 80%",
+            end: "bottom 20%",
+            toggleClass: { targets: s, className: "aktywna" },
+          })
+        );
+      }
+
+      ScrollTrigger.refresh();
     })();
 
     return () => {
       zatrzymana = true;
+      if (stoper) clearTimeout(stoper);
+      sprzataczki.forEach((s) => s());
+      document.removeEventListener("click", przyKliku);
+      document.documentElement.style.scrollBehavior = poprzednieScroll;
       tweeny.forEach((t) => {
         t.scrollTrigger?.kill();
         t.kill();
       });
-      trigger?.kill();
+      wyzwalacze.forEach((w) => w.kill());
       silnik?.zniszcz();
     };
   }, []);
 
   return (
     <div ref={root} className="tryb-lot relative">
-      {/* ===== KOSMOS: przypięty POD całą stroną ===== */}
-      <div className="fixed inset-0 -z-10">
-        <div
-          ref={pojemnik3d}
-          className={`h-full w-full transition-opacity duration-1000 ${
-            gotowa ? "opacity-100" : "opacity-0"
-          }`}
-        />
-        {!gotowa && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-akcent/20 border-t-akcent" />
-          </div>
-        )}
-      </div>
+      {/* ===== KOSMOS: jedna kanwa przypięta POD całą stroną ===== */}
+      <div ref={pojemnik3d} className="pojemnik-kosmos fixed inset-0 -z-10" />
 
-      {/* ===== HERO (bez ciemnej mgiełki — czysty kosmos za tekstem) ===== */}
-      <section className="relative flex min-h-screen items-center px-5 md:px-8">
-        <div ref={heroTresc} className="mx-auto w-full max-w-[94rem]">
-          <div className="max-w-2xl pt-16">
-            <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-4 py-1.5 text-sm font-medium text-zinc-300 backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              {hero.dostepnosc}
-            </span>
+      {/* ===== HERO — produkcyjny układ; planety rysuje kanwa wyżej ===== */}
+      <div ref={heroTresc} className="relative">
+        <Hero scena3d={false} />
 
-            <h1 className="mt-8 text-6xl font-extrabold leading-[1.02] tracking-tighter sm:text-7xl md:text-8xl lg:text-7xl xl:text-[5rem]">
-              <span className="block">{hero.imie}</span>
-              {/* pb/-mb: tło gradientu musi objąć też ogonek „g" (bg-clip-text
-                  przycina kolor do linii tekstu — bez tego „g" wygląda na ucięte) */}
-              <span className="gradient-zywy block bg-gradient-to-r from-akcent via-purple-500 to-pink-500 bg-clip-text pb-[0.15em] -mb-[0.15em] text-transparent">
-                {hero.imieAkcent}
-              </span>
-            </h1>
-
-            <p className="mt-8 max-w-xl text-lg leading-relaxed text-zinc-400 md:text-xl">
-              {hero.opis}
-            </p>
-
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a
-                href="#uslugi"
-                className="blysk group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-zinc-900 transition-all duration-300 hover:-translate-y-0.5 hover:bg-akcent hover:text-white hover:shadow-xl hover:shadow-akcent/25"
-              >
-                {hero.przyciskPrace}
-                <IkonaStrzalka className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </a>
-              <a
-                href={linki.fiverr}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-700 px-8 py-4 text-base font-semibold text-zinc-200 transition-all duration-300 hover:-translate-y-0.5 hover:border-akcent hover:text-akcent"
-              >
-                {hero.przyciskKontakt}
-              </a>
-            </div>
-
-            <dl className="mt-14 grid max-w-xl grid-cols-3 gap-6 border-t border-zinc-800 pt-8">
-              {hero.statystyki.map((stat) => (
-                <div key={stat.opis}>
-                  <dt className="sr-only">{stat.opis}</dt>
-                  <dd className="text-2xl font-extrabold tracking-tight md:text-3xl">
-                    {stat.liczba}
-                  </dd>
-                  <dd className="mt-1 text-xs font-medium text-zinc-400 md:text-sm">
-                    {stat.opis}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
-
-        {/* podpowiedź: zacznij podróż */}
+        {/* podpowiedź: zacznij podróż (dodatek trybu ZUI) */}
         <div
           ref={podpowiedz}
-          className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-2 text-zinc-400"
+          className="pointer-events-none absolute inset-x-0 bottom-8 z-20 flex flex-col items-center gap-2 text-zinc-400"
         >
           <span className="text-xs font-semibold uppercase tracking-[0.25em]">
             Scroll to begin the journey
           </span>
           <span className="animate-bounce text-lg">↓</span>
         </div>
-      </section>
+      </div>
 
       {/* ===== PODRÓŻ: sekcje strony z lotami między nimi ===== */}
-      <PrzerwaPodrozy /> {/* lot: opadanie na księżyc */}
+      <PrzerwaPodrozy /> {/* lot: znad układu na duży księżyc */}
       <Services />
-      <PrzerwaPodrozy /> {/* lot: wejście w atmosferę fioletowej */}
+      <PrzerwaPodrozy /> {/* lot: z księżyca na tarczę olbrzyma */}
       <Portfolio />
-      <PrzerwaPodrozy /> {/* lot: przelot do turkusowej */}
+      <PrzerwaPodrozy /> {/* lot: do turkusowej planety */}
       <Process />
-      <PrzerwaPodrozy /> {/* lot: wzlot ku różowej */}
+      <PrzerwaPodrozy /> {/* lot: do różowej planety */}
       <Testimonials />
       <PrzerwaPodrozy /> {/* lot: finałowy kurs na słońce */}
       <Contact />

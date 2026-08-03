@@ -32,7 +32,10 @@ function PlanetkaTurkusowa() {
     // Prawa krawędź hero, na wysokości środka — tuż ZA pierścieniami dużej
     // planety (życzenie właściciela). right-[6%] zostawia zapas, żeby elipsa
     // orbity księżyca nie ucinała się na krawędzi ekranu.
-    <span className="absolute right-[6%] top-[46%] hidden lg:block">
+    // klasa „planetka-css": w trybie lotu (ZUI) ta ozdoba jest chowana,
+    // bo turkusową planetę rysuje wtedy prawdziwa scena 3D — patrz
+    // app/globals.css i components/lot/silnik.ts
+    <span className="planetka-css absolute right-[6%] top-[46%] hidden lg:block">
       {/* delikatna, stonowana poświata za planetą */}
       <span className="absolute -inset-5 rounded-full bg-teal-600/10 blur-xl" />
       {/* Kula planety (56 px). Kolor STONOWANY (mniej neonowy turkus), żeby

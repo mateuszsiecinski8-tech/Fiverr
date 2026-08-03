@@ -1,195 +1,171 @@
 // ============================================================
 // SILNIK LOTU (eksperyment „ZUI Space Scroll")
 //
-// Jedna, CIĄGŁA scena kosmiczna na pełnym ekranie. Scroll strony
-// steruje pozycją kamery (funkcja ustawPostep 0–1), a kamera leci
-// po zaplanowanej trasie: szeroki widok układu → podejście →
-// lądowanie na księżycu fioletowej planety.
+// JEDNA scena 3D na całą stronę — dokładnie ta sama kompozycja,
+// co w produkcyjnym hero (components/Scena3D.tsx):
 //
-// Skąd „kinowy" wygląd (inspiracja: zdjęcia ISS/NASA):
-//  • BLOOM (post-processing) — jasne rzeczy „rozlewają" światło,
-//  • LENS FLARE przy słońcu (moduł Three.js),
-//  • RIM LIGHT — własny shader Fresnela: świecąca obwódka
-//    atmosfery na krawędzi każdej planety,
-//  • GĘSTE POLE GWIAZD (dwie warstwy — bliższa daje paralaksę),
-//  • filmowe mapowanie tonów ACES + wyższy kontrast.
+//   • fioletowy GAZOWY OLBRZYM z pierścieniami i DWOMA księżycami,
+//   • RÓŻOWA planeta (prawa górna część kadru),
+//   • TURKUSOWA mini-planeta z księżycem (prawa krawędź),
+//   • SŁOŃCE w oddali: prawie biała kula + żółte halo.
+//
+// Te same tekstury, te same materiały, to samo światło — kanwa
+// jest tylko rozciągnięta na CAŁY ekran i przypięta pod stroną,
+// a kadr hero jest tak dobrany, żeby układ wyglądał jak na
+// produkcji (tekst po lewej, planety po prawej).
+//
+// ŻADNYCH nowych ciał niebieskich — scroll po prostu WOZI KAMERĘ
+// po tej jednej scenie. Każda sekcja ma swój przystanek:
+//
+//   0. HERO       — szeroki plan całego układu (jak na produkcji)
+//   1. USŁUGI     — duży KSIĘŻYC olbrzyma (lądowanie tuż nad
+//                   pierścieniami, olbrzym wypełnia tło)
+//   2. PORTFOLIO  — sam OLBRZYM (fioletowe pasy chmur w kadrze)
+//   3. PROCES     — TURKUSOWA planeta
+//   4. OPINIE     — RÓŻOWA planeta
+//   5. KONTAKT    — SŁOŃCE (finał podróży)
+//
+// EFEKT „PREZI" — przejścia to nie prosty lot, tylko:
+//   zoom out po ŁUKU (krzywa Béziera) → przesunięcie (pan) →
+//   PRZECHYŁ kadru (roll, inny dla każdego odcinka: +8°, −6°,
+//   +12°, −8°, +10°) → zoom in do następnego ciała.
+//   FOV dodatkowo „oddycha" (szerzej w środku lotu), a easing
+//   jest filmowy (odpowiednik power2.inOut).
+//
+// PANORAMA — przy każdym postoju w GÓRNYCH ROGACH kadru widać
+// poprzednie i następne ciało jako małą, przyciemnioną kulę.
+// Dzięki temu zawsze wiadomo, gdzie się jest w podróży.
 //
 // Ten plik NIE dotyka Reacta — czysty Three.js. Komponent
 // LotSekcja.tsx importuje go dynamicznie (tylko desktop).
 // ============================================================
 
 import * as THREE from "three";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
-/* ============ MALOWANIE TEKSTUR (canvas 2D — zero plików) ============ */
+/* ============ TEKSTURY — 1:1 z produkcyjnej sceny hero ============ */
 
-/* --- POMOCNIK: faliste, ROZMYTE pasmo chmur (okresowe — bez szwu).
-   Rysujemy z ctx.filter = blur(...), więc pasma mają miękkie,
-   warstwowe przejścia zamiast ostrych, „tanich" krawędzi. --- */
-function pasmoChmur(
-  ctx: CanvasRenderingContext2D,
-  szer: number,
-  y: number,
-  wys: number,
-  kolor: string,
-  rozmycie: number,
-  cykle: number,
-  faza: number,
-  amplituda: number
-) {
-  ctx.save();
-  ctx.filter = `blur(${rozmycie}px)`;
-  ctx.fillStyle = kolor;
-  const fala = (x: number) => Math.sin((x / szer) * Math.PI * 2 * cykle + faza) * amplituda;
-  ctx.beginPath();
-  for (let x = -40; x <= szer + 40; x += 24) {
-    x === -40 ? ctx.moveTo(x, y + fala(x)) : ctx.lineTo(x, y + fala(x));
-  }
-  for (let x = szer + 40; x >= -40; x -= 24) ctx.lineTo(x, y + wys + fala(x));
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-/* Gazowy olbrzym — żywe fiolety i róże, kilka WARSTW miękkich chmur. */
+/* Planeta główna: gazowy olbrzym (pasy kolorów + smugi „chmur"
+   + turkusowe burze). Rozdzielczość podniesiona 2× względem hero,
+   bo w trybie lotu kamera podchodzi do planety bardzo blisko. */
 function namalujPlanete(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 2048;
   c.height = 1024;
   const ctx = c.getContext("2d")!;
-  // baza: nasycony pionowy gradient pasów
+
+  // pionowy gradient pasów (od bieguna do bieguna) — kolory z produkcji
   const grad = ctx.createLinearGradient(0, 0, 0, 1024);
-  grad.addColorStop(0.0, "#332075");
-  grad.addColorStop(0.16, "#6247e8");
-  grad.addColorStop(0.32, "#9b7ffd");
-  grad.addColorStop(0.45, "#e07ef2");
-  grad.addColorStop(0.57, "#ffa9e2");
-  grad.addColorStop(0.68, "#7e63ff");
-  grad.addColorStop(0.84, "#46309f");
-  grad.addColorStop(1.0, "#271b60");
+  grad.addColorStop(0.0, "#2a1e63");
+  grad.addColorStop(0.18, "#5b47d6");
+  grad.addColorStop(0.34, "#8b7cf7");
+  grad.addColorStop(0.46, "#d17ce8");
+  grad.addColorStop(0.58, "#f0a6d8");
+  grad.addColorStop(0.7, "#6d5dfc");
+  grad.addColorStop(0.85, "#3b2f8f");
+  grad.addColorStop(1.0, "#221a52");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 2048, 1024);
 
-  // WARSTWA 1: szerokie, mocno rozmyte pasma (duże masy chmur)
-  for (let i = 0; i < 9; i++) {
-    const y = (i / 9) * 1024 + Math.random() * 60;
-    pasmoChmur(
-      ctx, 2048, y, 40 + Math.random() * 90,
-      i % 2 ? "rgba(255,235,250,0.10)" : "rgba(40,20,90,0.12)",
-      26, 2 + (i % 2), i * 2.3, 26
-    );
-  }
-  // WARSTWA 2: średnie smugi (struktura pasów)
-  for (let i = 0; i < 22; i++) {
-    const y = Math.random() * 1024;
-    pasmoChmur(
-      ctx, 2048, y, 8 + Math.random() * 26,
-      `rgba(255,255,255,${0.05 + Math.random() * 0.07})`,
-      10, 2 + (i % 3), i * 1.7, 15
-    );
-  }
-  // WARSTWA 3: cienkie, ledwo rozmyte nitki (detal z bliska — Portfolio)
-  for (let i = 0; i < 26; i++) {
-    const y = Math.random() * 1024;
-    pasmoChmur(
-      ctx, 2048, y, 2 + Math.random() * 6,
-      `rgba(255,240,252,${0.04 + Math.random() * 0.05})`,
-      2.5, 3 + (i % 3), i * 2.9, 9
-    );
-  }
-  // turkusowe burze — owalne, miękkie, owinięte przez szew
-  ctx.save();
-  ctx.filter = "blur(7px)";
+  // Faliste, półprzezroczyste smugi chmur.
+  // WAŻNE: fala musi być OKRESOWA na szerokości płótna, żeby lewa
+  // i prawa krawędź tekstury się zgadzały — inaczej na kuli widać
+  // pionowy „szew". Dlatego liczymy pełne cykle (2*PI*k*x/szer).
+  const smuga = (ile: number, wysMin: number, wysZakres: number, alfa: number, rozmycie: number) => {
+    for (let i = 0; i < ile; i++) {
+      const y = Math.random() * 1024;
+      const wys = wysMin + Math.random() * wysZakres;
+      const cykle = 2 + (i % 2); // zawsze się domyka na obwodzie
+      const faza = i * 2.1;
+      const fala = (x: number) => Math.sin((x / 2048) * Math.PI * 2 * cykle + faza) * 14;
+      ctx.save();
+      ctx.filter = `blur(${rozmycie}px)`;
+      ctx.fillStyle = `rgba(255,255,255,${(0.03 + Math.random() * alfa).toFixed(3)})`;
+      ctx.beginPath();
+      for (let x = 0; x <= 2048; x += 16) {
+        x === 0 ? ctx.moveTo(x, y + fala(x)) : ctx.lineTo(x, y + fala(x));
+      }
+      for (let x = 2048; x >= 0; x -= 16) ctx.lineTo(x, y + wys + fala(x));
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+  smuga(26, 6, 28, 0.07, 3); // pasy jak na produkcji
+  smuga(22, 2, 8, 0.05, 1.2); // dodatkowy drobny detal (widoczny z bliska)
+
+  // Turkusowe „burze" — każdą rysujemy też w kopii przesuniętej
+  // o ±szerokość, żeby te przy krawędzi płynnie owijały się przez szew.
   for (let i = 0; i < 12; i++) {
     const cx = Math.random() * 2048;
     const cy = 240 + Math.random() * 560;
-    const rx = 46 + Math.random() * 110;
-    const ry = 13 + Math.random() * 22;
-    ctx.fillStyle = `rgba(64,224,208,${0.07 + Math.random() * 0.1})`;
+    const rx = 52 + Math.random() * 120;
+    const ry = 14 + Math.random() * 24;
+    ctx.save();
+    ctx.filter = "blur(4px)";
+    ctx.fillStyle = `rgba(79,209,197,${(0.05 + Math.random() * 0.1).toFixed(3)})`;
     for (const przesun of [-2048, 0, 2048]) {
       ctx.beginPath();
       ctx.ellipse(cx + przesun, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.fill();
-      // jaśniejsze „oko" burzy
-      ctx.fillStyle = `rgba(210,255,250,${0.05 + Math.random() * 0.05})`;
-      ctx.beginPath();
-      ctx.ellipse(cx + przesun - rx * 0.2, cy - ry * 0.2, rx * 0.45, ry * 0.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = `rgba(64,224,208,${0.07 + Math.random() * 0.1})`;
     }
+    ctx.restore();
   }
-  ctx.restore();
   return c;
 }
 
-/* Różowa planeta — żywy róż, warstwowe miękkie pasy (widok z orbity). */
+/* Różowa planeta (bez lądów, miękkie pasy) — jak na produkcji. */
 function namalujRozowa(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 1024;
   c.height = 512;
   const ctx = c.getContext("2d")!;
   const g = ctx.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0.0, "#c2337e");
-  g.addColorStop(0.28, "#ff64ab");
-  g.addColorStop(0.5, "#ffa2d0");
-  g.addColorStop(0.64, "#ffc4e2");
-  g.addColorStop(0.8, "#f45c9f");
-  g.addColorStop(1.0, "#a52c6b");
+  g.addColorStop(0.0, "#b0407e");
+  g.addColorStop(0.4, "#f06fae");
+  g.addColorStop(0.62, "#ffa6cf");
+  g.addColorStop(0.8, "#e86ba6");
+  g.addColorStop(1.0, "#9c3a72");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 1024, 512);
-  for (let i = 0; i < 7; i++) {
-    pasmoChmur(
-      ctx, 1024, (i / 7) * 512 + Math.random() * 40, 18 + Math.random() * 44,
-      i % 2 ? "rgba(255,240,250,0.14)" : "rgba(150,30,90,0.12)",
-      14, 2 + (i % 2), i * 2.1, 12
-    );
-  }
-  for (let i = 0; i < 14; i++) {
-    pasmoChmur(
-      ctx, 1024, Math.random() * 512, 3 + Math.random() * 9,
-      `rgba(255,235,248,${0.06 + Math.random() * 0.08})`,
-      3, 2 + (i % 3), i * 1.9, 7
-    );
+  // miękkie jaśniejsze pasma
+  for (let i = 0; i < 12; i++) {
+    ctx.save();
+    ctx.filter = "blur(3px)";
+    ctx.fillStyle = `rgba(255,224,240,${(0.1 + Math.random() * 0.14).toFixed(3)})`;
+    ctx.fillRect(0, Math.random() * 512, 1024, 4 + Math.random() * 14);
+    ctx.restore();
   }
   return c;
 }
 
-/* Turkusowa planeta — żywy niebiesko-turkusowy (prośba właściciela). */
+/* Turkusowa mini-planeta — te same kolory, co jej wersja CSS
+   w components/Ozdoby3D.tsx (stonowany, nie neonowy turkus). */
 function namalujTurkusowa(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 1024;
   c.height = 512;
   const ctx = c.getContext("2d")!;
   const g = ctx.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0.0, "#0a4a6e");
-  g.addColorStop(0.25, "#1489b8");
-  g.addColorStop(0.45, "#2fc4d8");
-  g.addColorStop(0.6, "#63e2ea");
-  g.addColorStop(0.75, "#17a3c4");
-  g.addColorStop(1.0, "#083d5e");
+  g.addColorStop(0.0, "#183e40");
+  g.addColorStop(0.22, "#3a6d69");
+  g.addColorStop(0.45, "#5f9a95");
+  g.addColorStop(0.6, "#a6ccc8");
+  g.addColorStop(0.78, "#4b8580");
+  g.addColorStop(1.0, "#16383a");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 1024, 512);
-  for (let i = 0; i < 7; i++) {
-    pasmoChmur(
-      ctx, 1024, (i / 7) * 512 + Math.random() * 40, 16 + Math.random() * 40,
-      i % 2 ? "rgba(230,255,255,0.13)" : "rgba(8,50,90,0.14)",
-      14, 2 + (i % 2), i * 2.4, 12
-    );
-  }
   for (let i = 0; i < 14; i++) {
-    pasmoChmur(
-      ctx, 1024, Math.random() * 512, 3 + Math.random() * 8,
-      `rgba(235,255,255,${0.06 + Math.random() * 0.08})`,
-      3, 2 + (i % 3), i * 2.2, 7
-    );
+    ctx.save();
+    ctx.filter = "blur(4px)";
+    ctx.fillStyle = `rgba(214,238,235,${(0.05 + Math.random() * 0.1).toFixed(3)})`;
+    ctx.fillRect(0, Math.random() * 512, 1024, 3 + Math.random() * 12);
+    ctx.restore();
   }
   return c;
 }
 
-/* Pierścienie — pas 57–100% promienia tekstury (patrz KONTEKST.md). */
+/* Pierścienie: przezroczyste i jaśniejsze pasma.
+   UWAGA (patrz KONTEKST.md): pierścień 3D czyta z tekstury pas
+   57–100% promienia → malujemy promienie 300–508 px na płótnie 1024. */
 function namalujPierscienie(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 1024;
@@ -208,83 +184,31 @@ function namalujPierscienie(): HTMLCanvasElement {
   return c;
 }
 
-/* Księżyc STACJA — GŁADKA, prosta tekstura (wzór: małe księżyce ze
-   starszej wersji hero). Jasny regolit, miękkie plamy, delikatne
-   kratery BEZ ostrych rantów. Zwraca [kolor, mapa nierówności]. */
-function namalujKsiezycLadowania(): [HTMLCanvasElement, HTMLCanvasElement] {
-  const R = 1024;
-  const kolor = document.createElement("canvas");
-  kolor.width = R;
-  kolor.height = R / 2;
-  const kc = kolor.getContext("2d")!;
-  const bump = document.createElement("canvas");
-  bump.width = R;
-  bump.height = R / 2;
-  const bc = bump.getContext("2d")!;
-
-  // baza: jasna, chłodna szarość z lekkim fioletem (jak d3cdf2 małych księżyców)
-  const g = kc.createLinearGradient(0, 0, 0, R / 2);
-  g.addColorStop(0, "#ccc7e0");
-  g.addColorStop(0.5, "#bdb8d4");
-  g.addColorStop(1, "#aca7c6");
-  kc.fillStyle = g;
-  kc.fillRect(0, 0, R, R / 2);
-  bc.fillStyle = "#808080"; // neutralna wysokość
-  bc.fillRect(0, 0, R, R / 2);
-
-  // miękkie, rozmyte plamy — subtelna zmienność powierzchni
-  kc.save();
-  kc.filter = "blur(9px)";
-  for (let i = 0; i < 22; i++) {
-    const x = Math.random() * R;
-    const y = Math.random() * (R / 2);
-    const r = 40 + Math.random() * 130;
-    kc.fillStyle = `rgba(96,90,124,${0.05 + Math.random() * 0.06})`;
-    for (const dx of [-R, 0, R]) {
-      kc.beginPath();
-      kc.arc(x + dx, y, r, 0, Math.PI * 2);
-      kc.fill();
-    }
-  }
-  kc.restore();
-
-  // delikatne kratery: tylko miękki cień (bez białych obwódek)
-  kc.save();
-  kc.filter = "blur(4px)";
-  bc.save();
-  bc.filter = "blur(3px)";
-  for (let i = 0; i < 42; i++) {
-    const x = Math.random() * R;
-    const y = Math.random() * (R / 2);
-    const r = 6 + Math.random() * 22;
-    for (const dx of [-R, 0, R]) {
-      kc.fillStyle = "rgba(70,64,96,0.16)";
-      kc.beginPath();
-      kc.arc(x + dx, y, r, 0, Math.PI * 2);
-      kc.fill();
-      bc.fillStyle = "rgba(0,0,0,0.28)";
-      bc.beginPath();
-      bc.arc(x + dx, y, r, 0, Math.PI * 2);
-      bc.fill();
-    }
-  }
-  kc.restore();
-  bc.restore();
-  return [kolor, bump];
-}
-
-/* Mały księżyc na orbicie (drobne kratery). */
-function namalujKsiezyc(kolorBazowy: string): HTMLCanvasElement {
+/* Księżyc: baza + delikatne kratery (ciemniejsze kółka z cienkim
+   jasnym rantem od strony światła, żeby wyglądały na wklęsłe).
+   Rozdzielczość 512 — przy „lądowaniu" w sekcji Usługi księżyc
+   wypełnia większość kadru, więc potrzebuje więcej detalu. */
+function namalujKsiezyc(kolorBazowy: string, ileKraterow = 46): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 256;
+  c.width = 512;
+  c.height = 512;
   const ctx = c.getContext("2d")!;
   ctx.fillStyle = kolorBazowy;
-  ctx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 24; i++) {
-    const x = Math.random() * 256;
-    const y = Math.random() * 256;
-    const r = 5 + Math.random() * 16;
+  ctx.fillRect(0, 0, 512, 512);
+  // miękkie plamy — subtelna zmienność powierzchni
+  ctx.save();
+  ctx.filter = "blur(14px)";
+  for (let i = 0; i < 18; i++) {
+    ctx.fillStyle = `rgba(120,112,150,${(0.05 + Math.random() * 0.07).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * 512, Math.random() * 512, 30 + Math.random() * 90, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  for (let i = 0; i < ileKraterow; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const r = 8 + Math.random() * 30;
     const cien = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
     cien.addColorStop(0, "rgba(50,45,80,0.5)");
     cien.addColorStop(0.75, "rgba(50,45,80,0.18)");
@@ -293,108 +217,68 @@ function namalujKsiezyc(kolorBazowy: string): HTMLCanvasElement {
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
+    // cienki jasny rant (górna-lewa krawędź krateru „łapie" światło)
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.lineWidth = Math.max(1, r * 0.1);
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.94, Math.PI * 0.65, Math.PI * 1.55);
+    ctx.stroke();
   }
   return c;
 }
 
-/* ============ SHADER ATMOSFERY (rim light Fresnela) ============ */
-/* Cienka, świecąca obwódka na krawędzi kuli — jak atmosfera Ziemi
-   na zdjęciach z orbity. Additive = dodaje światło do tła. */
-function atmosfera(promien: number, kolor: THREE.Color, sila = 1.0): THREE.Mesh {
-  const mat = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.FrontSide,
-    uniforms: {
-      uKolor: { value: kolor },
-      uSila: { value: sila },
-    },
-    vertexShader: /* glsl */ `
-      varying vec3 vNormalW;
-      varying vec3 vPozW;
-      void main() {
-        vNormalW = normalize(mat3(modelMatrix) * normal);
-        vec4 poz = modelMatrix * vec4(position, 1.0);
-        vPozW = poz.xyz;
-        gl_Position = projectionMatrix * viewMatrix * poz;
-      }
-    `,
-    fragmentShader: /* glsl */ `
-      uniform vec3 uKolor;
-      uniform float uSila;
-      varying vec3 vNormalW;
-      varying vec3 vPozW;
-      void main() {
-        vec3 doKamery = normalize(cameraPosition - vPozW);
-        // 1 na krawędzi kuli, 0 na środku tarczy — wysoki wykładnik
-        // ściska poświatę do CIENKIEJ obwódki (bez efektu szklanej bańki)
-        float rim = pow(1.0 - abs(dot(doKamery, normalize(vNormalW))), 3.8);
-        gl_FragColor = vec4(uKolor, rim * uSila);
-      }
-    `,
-  });
-  return new THREE.Mesh(new THREE.SphereGeometry(promien * 1.02, 48, 48), mat);
-}
-
-/* Miękki, świecący punkt (sprite gwiazdy i poświat). */
+/* Miękka, okrągła poświata (parametr: kolor rgb) — jak na produkcji. */
 function namalujPoswiate(rgb: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 128;
-  c.height = 128;
+  c.width = 256;
+  c.height = 256;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, `rgba(${rgb},0.85)`);
-  g.addColorStop(0.35, `rgba(${rgb},0.25)`);
+  const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, `rgba(${rgb},0.6)`);
+  g.addColorStop(0.5, `rgba(${rgb},0.18)`);
   g.addColorStop(1, `rgba(${rgb},0)`);
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillRect(0, 0, 256, 256);
   return c;
 }
 
-/* Powierzchnia słońca — gorący żółto-biały rdzeń z miękką granulacją
-   (plamy cieplejszego i chłodniejszego złota), żeby tarcza nie była
-   płaska. Bloom rozświetli najjaśniejsze punkty. */
+/* Tarcza słońca — prawie biała, z ledwo widoczną granulacją.
+   (Na produkcji to gładka biała kula; delikatne plamy dodają
+   życia, gdy kamera podlatuje blisko w sekcji Kontakt.) */
 function namalujSlonce(): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = 512;
   c.height = 256;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#fff2cf";
+  ctx.fillStyle = "#fffdf2";
   ctx.fillRect(0, 0, 512, 256);
   ctx.save();
-  ctx.filter = "blur(5px)";
-  for (let i = 0; i < 300; i++) {
-    const x = Math.random() * 512;
-    const y = Math.random() * 256;
-    const r = 5 + Math.random() * 24;
-    const goraco = Math.random() < 0.5;
-    ctx.fillStyle = goraco
-      ? `rgba(255,255,248,${(0.05 + Math.random() * 0.14).toFixed(3)})`
-      : `rgba(255,188,86,${(0.05 + Math.random() * 0.16).toFixed(3)})`;
+  ctx.filter = "blur(9px)";
+  for (let i = 0; i < 160; i++) {
+    ctx.fillStyle = `rgba(255,240,196,${(0.05 + Math.random() * 0.12).toFixed(3)})`;
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(Math.random() * 512, Math.random() * 256, 8 + Math.random() * 30, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
   return c;
 }
 
-/* Korona/łuna słońca — gładki, realistyczny spadek jasności od
-   gorącego rdzenia do ciepłego, zanikającego brzegu. */
-function namalujKorone(stops: [number, string][]): HTMLCanvasElement {
+/* Rozmyta miniatura — do „panoramy" (małe kule sąsiadów w rogach). */
+function rozmytaKopia(zrodlo: HTMLCanvasElement): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 512;
-  c.height = 512;
+  c.width = 256;
+  c.height = 128;
   const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-  for (const [p, kol] of stops) g.addColorStop(p, kol);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 512, 512);
+  ctx.filter = "blur(3px)";
+  ctx.drawImage(zrodlo, 0, 0, 256, 128);
   return c;
 }
 
 /* ============ POLE GWIAZD ============ */
+/* W hero gwiazd NIE widać (kadr wygląda dokładnie jak na produkcji) —
+   rozjaśniają się dopiero, gdy ruszasz w podróż. Wtedy dają poczucie
+   ruchu i głębi podczas przelotów. */
 function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): THREE.Points {
   const pozycje = new Float32Array(ile * 3);
   const kolory = new Float32Array(ile * 3);
@@ -425,6 +309,7 @@ function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): T
     size: rozmiar,
     map: new THREE.CanvasTexture(namalujPoswiate("255,255,255")),
     transparent: true,
+    opacity: 0,
     depthWrite: false,
     vertexColors: true,
     blending: THREE.AdditiveBlending,
@@ -433,32 +318,19 @@ function poleGwiazd(ile: number, minR: number, maxR: number, rozmiar: number): T
   return new THREE.Points(geo, mat);
 }
 
-/* ============ KSIĘŻYC STACJA (gładka kula, miękki detal) ============ */
-/* Bez rzeźbienia wierzchołków — czysty, równy kontur jak małe
-   księżyce w starszej wersji hero. Detal robi delikatny bump. */
-function zrobKsiezycLadowania(promien: number): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(promien, 96, 96);
-  const [kolor, bump] = namalujKsiezycLadowania();
-  const tKolor = new THREE.CanvasTexture(kolor);
-  tKolor.colorSpace = THREE.SRGBColorSpace;
-  const tBump = new THREE.CanvasTexture(bump);
-  const mat = new THREE.MeshStandardMaterial({
-    map: tKolor,
-    bumpMap: tBump,
-    bumpScale: 0.5,
-    roughness: 0.95,
-    metalness: 0.0,
-  });
-  return new THREE.Mesh(geo, mat);
-}
-
 /* ============ GŁÓWNA FUNKCJA — budowa świata ============ */
 
 export type SilnikLotu = {
-  /** Postęp podróży 0–1 (od ScrollTriggera). */
-  ustawPostep: (p: number) => void;
-  /** Okna postoju przy przystankach (ułamki 0–1 scrolla) — po jednym
-      na sekcję: hero, usługi, portfolio, proces, opinie, kontakt. */
+  /** Okna postoju przy przystankach — po jednym na sekcję (hero,
+      usługi, portfolio, proces, opinie, kontakt), podane w PIKSELACH
+      scrolla: od `a` do `b` kamera stoi przy danym ciele, a między
+      `b` jednego a `a` następnego leci.
+
+      Dlaczego w pikselach, a nie w ułamkach 0–1? Bo silnik sam czyta
+      `window.scrollY` w swojej pętli. Gdyby pozycję podawał ktoś inny
+      (np. ScrollTrigger, znormalizowaną do zapamiętanego zakresu),
+      obie miary rozjeżdżałyby się przy każdej zmianie wysokości
+      strony — a wtedy kamera stoi przy złej planecie. */
   ustawOkna: (nowe: { a: number; b: number }[]) => void;
   /** Ile przystanków ma trasa (do kontroli w LotSekcja). */
   liczbaPrzystankow: number;
@@ -467,233 +339,432 @@ export type SilnikLotu = {
 };
 
 export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
-  /* — renderer + kolor filmowy — */
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  /* — renderer: dokładnie taki jak w produkcyjnej scenie hero
+       (alpha = przezroczyste tło, więc widać ciemne tło strony
+       i dryfujące poświaty hero; ZERO post-processingu, żeby
+       planety wyglądały 1:1 jak na produkcji) — */
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(pojemnik.clientWidth, pojemnik.clientHeight);
-  // BEZ filmowego mapowania tonów — produkcyjna scena hero renderowała
-  // kolory liniowo i planety wyglądały żywiej (fiolet zamiast granatu).
-  renderer.toneMapping = THREE.NoToneMapping;
+  renderer.domElement.style.pointerEvents = "none";
   pojemnik.appendChild(renderer.domElement);
 
   const scena = new THREE.Scene();
-  scena.background = new THREE.Color(0x030308); // głęboki kosmos, nie czysta czerń
   const kamera = new THREE.PerspectiveCamera(
-    45,
+    42,
     pojemnik.clientWidth / pojemnik.clientHeight,
     0.02,
     260
   );
+  // kamera MUSI być w scenie, żeby jej „dzieci" (panorama sąsiadów)
+  // w ogóle się renderowały
+  scena.add(kamera);
 
-  /* — światła: słońce jest głównym źródłem (dramatyzm), ambient tylko
-     dopełnia cienie, żeby planety nie były czarne — */
-  // Zestaw świateł PRZENIESIONY z produkcyjnej sceny hero (Scena3D) —
-  // to on dawał planetom żywy fiolet zamiast granatowych cieni:
+  // wszystkie tekstury w jednym worku — łatwe sprzątanie
+  const tekstury: THREE.Texture[] = [];
+  function tekstura(plotno: HTMLCanvasElement, sRGB = true): THREE.CanvasTexture {
+    const t = new THREE.CanvasTexture(plotno);
+    if (sRGB) t.colorSpace = THREE.SRGBColorSpace;
+    tekstury.push(t);
+    return t;
+  }
+
+  /* ============================================================
+     KOMPOZYCJA UKŁADU
+     Pozycje dobrane tak, żeby przy kadrze hero (kamera niżej)
+     układ wyglądał jak na produkcji: olbrzym z pierścieniami
+     w prawej części ekranu, różowa planeta nad nim, słońce
+     między tekstem a olbrzymem, turkusowa przy prawej krawędzi.
+     ============================================================ */
+  const SRODEK_OLBRZYMA = new THREE.Vector3(0.35, 0.1, 0);
+  const POZ_ROZOWEJ = new THREE.Vector3(2.55, 1.89, -0.32);
+  const POZ_TURKUSOWEJ = new THREE.Vector3(7.34, 0.23, -5.93);
+  const POZ_SLONCA = new THREE.Vector3(-1.68, 3.26, -11.26);
+
+  const R_OLBRZYM = 1.35;
+  const R_KSIEZYC = 0.14; // duży księżyc — przystanek „Usługi"
+  const R_ROZOWA = 0.52;
+  const R_TURKUSOWA = 0.34;
+  const R_SLONCE = 0.32;
+
+  /* — światła: 1:1 z produkcyjnej sceny hero — */
   scena.add(new THREE.AmbientLight(0xffffff, 0.5));
   const swiatloGlowne = new THREE.DirectionalLight(0xffffff, 2.2);
   swiatloGlowne.position.set(-4, 2.5, 3);
   scena.add(swiatloGlowne);
-  // Słońce w tle zostaje jako ciepły „backlight" (decay 0 = stała jasność)
-  const POZ_SLONCA = new THREE.Vector3(-14, 9, -30);
-  const swiatloSlonca = new THREE.PointLight(0xfff2d8, 1.2, 0, 0);
+  // ciepłe światło „od słońca"
+  const swiatloSlonca = new THREE.PointLight(0xfff4d0, 1.4, 0, 0);
   swiatloSlonca.position.copy(POZ_SLONCA);
   scena.add(swiatloSlonca);
 
-  /* — pole gwiazd (daleka kopuła + bliższa warstwa dla paralaksy) — */
-  const gwiazdyDaleko = poleGwiazd(6500, 60, 110, 0.62);
-  const gwiazdyBlisko = poleGwiazd(700, 18, 45, 0.34);
+  /* — gwiazdy (niewidoczne w hero, rozjaśniają się w podróży) — */
+  const gwiazdyDaleko = poleGwiazd(4200, 60, 110, 0.42);
+  const gwiazdyBlisko = poleGwiazd(600, 20, 45, 0.24);
   scena.add(gwiazdyDaleko, gwiazdyBlisko);
 
-  /* — SŁOŃCE: rozżarzona kula + dwuwarstwowa korona — */
-  // BEZ modułu Lensflare (jego test zasłonięcia zostawiał czarny kwadrat
-  // na planecie). Realizm robią: gorąca tekstura tarczy, ciasny jasny
-  // rdzeń korony, szeroka miękka łuna i bloom.
-  const tSlonce = new THREE.CanvasTexture(namalujSlonce());
-  tSlonce.colorSpace = THREE.SRGBColorSpace;
-  const slonce = new THREE.Mesh(
-    new THREE.SphereGeometry(1.15, 48, 48),
-    new THREE.MeshBasicMaterial({ map: tSlonce, toneMapped: false })
-  );
-  slonce.position.copy(POZ_SLONCA);
-  scena.add(slonce);
-  // szeroka, miękka łuna (główny „realistyczny" blask wokół tarczy)
-  const koronaLuna = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(
-        namalujKorone([
-          [0, "rgba(255,248,228,0.75)"],
-          [0.08, "rgba(255,240,205,0.5)"],
-          [0.2, "rgba(255,222,158,0.24)"],
-          [0.42, "rgba(255,196,112,0.09)"],
-          [0.7, "rgba(255,178,96,0.025)"],
-          [1, "rgba(255,178,96,0)"],
-        ])
-      ),
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
-  );
-  koronaLuna.scale.set(15, 15, 1);
-  koronaLuna.position.copy(POZ_SLONCA);
-  scena.add(koronaLuna);
-  // ciasny, gorący rdzeń tuż przy tarczy (ostry, jasny pierścień światła)
-  const koronaRdzen = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(
-        namalujKorone([
-          [0, "rgba(255,252,244,0.95)"],
-          [0.28, "rgba(255,244,214,0.45)"],
-          [0.6, "rgba(255,226,168,0.12)"],
-          [1, "rgba(255,226,168,0)"],
-        ])
-      ),
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
-  );
-  koronaRdzen.scale.set(4.2, 4.2, 1);
-  koronaRdzen.position.copy(POZ_SLONCA);
-  scena.add(koronaRdzen);
-
-  /* — FIOLETOWA PLANETA z pierścieniami (serce układu) — */
+  /* ========== PLANETA GŁÓWNA (z pierścieniami i księżycami) ========== */
   const uklad = new THREE.Group();
-  uklad.position.set(0, 0.2, 0);
+  uklad.position.copy(SRODEK_OLBRZYMA);
   uklad.rotation.z = 0.16;
   scena.add(uklad);
 
-  const tPlaneta = new THREE.CanvasTexture(namalujPlanete());
-  tPlaneta.colorSpace = THREE.SRGBColorSpace;
+  const plotnoOlbrzyma = namalujPlanete();
   const planeta = new THREE.Mesh(
-    new THREE.SphereGeometry(1.35, 96, 96),
-    new THREE.MeshStandardMaterial({ map: tPlaneta, roughness: 0.85, metalness: 0.05 })
+    new THREE.SphereGeometry(R_OLBRZYM, 96, 96),
+    new THREE.MeshStandardMaterial({
+      map: tekstura(plotnoOlbrzyma),
+      roughness: 0.85,
+      metalness: 0.05,
+    })
   );
   uklad.add(planeta);
-  uklad.add(atmosfera(1.35, new THREE.Color(0x8b7cf7), 0.6));
 
-  const tPierscienie = new THREE.CanvasTexture(namalujPierscienie());
-  tPierscienie.anisotropy = 8; // ostre pasma pierścieni także pod ostrym kątem
+  const tPierscieni = tekstura(namalujPierscienie(), false);
+  tPierscieni.anisotropy = 8; // ostre pasma także pod ostrym kątem
   const pierscienie = new THREE.Mesh(
     new THREE.RingGeometry(1.6, 2.7, 160),
     new THREE.MeshBasicMaterial({
-      map: tPierscienie,
+      map: tPierscieni,
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: false,
     })
   );
-  const PRZECHYL = -1.18;
+  const PRZECHYL = -1.18; // pochylenie pierścieni (rad)
   pierscienie.rotation.x = PRZECHYL;
   uklad.add(pierscienie);
 
-  /* — dwa księżyce przy pierścieniach (oba swobodnie orbitują) — */
-  const ksiezycStacja = zrobKsiezycLadowania(0.2);
-  uklad.add(ksiezycStacja);
-  const PROMIEN_STACJI = 1.9505; // promień orbity (przy pierścieniach)
-  let katStacja = -0.9; // pozycja startowa — widoczny w kadrze hero
-  // drugi księżyc normalnie krąży (życie w kadrze hero)
-  const tK2 = new THREE.CanvasTexture(namalujKsiezyc("#d3cdf2"));
-  tK2.colorSpace = THREE.SRGBColorSpace;
-  const ksiezycMaly2 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 28, 28),
-    new THREE.MeshStandardMaterial({ map: tK2, roughness: 0.9 })
+  // księżyc GŁÓWNY (jaśniejszy) — to na nim „ląduje" sekcja Usługi
+  const plotnoKsiezyca = namalujKsiezyc("#e8e4ff");
+  const ksiezyc = new THREE.Mesh(
+    new THREE.SphereGeometry(R_KSIEZYC, 64, 64),
+    new THREE.MeshStandardMaterial({
+      map: tekstura(plotnoKsiezyca),
+      roughness: 0.6,
+      emissive: 0x2a2540,
+    })
   );
-  uklad.add(ksiezycMaly2);
+  uklad.add(ksiezyc);
 
-  /* — RÓŻOWA i TURKUSOWA planeta (dalsze przystanki — na razie tło) — */
-  const tRoz = new THREE.CanvasTexture(namalujRozowa());
-  tRoz.colorSpace = THREE.SRGBColorSpace;
+  // drugi, MNIEJSZY księżyc — ta sama płaszczyzna orbity, własny
+  // promień i tempo, żeby księżyce nigdy się nie mijały
+  const ksiezyc2 = new THREE.Mesh(
+    new THREE.SphereGeometry(0.085, 32, 32),
+    new THREE.MeshStandardMaterial({
+      map: tekstura(namalujKsiezyc("#d3cdf2", 24)),
+      roughness: 0.6,
+      emissive: 0x241f3a,
+    })
+  );
+  uklad.add(ksiezyc2);
+
+  // poświata za planetą
+  const poswiata = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tekstura(namalujPoswiate("139,124,247"), false),
+      transparent: true,
+      depthWrite: false,
+    })
+  );
+  poswiata.scale.set(5.6, 5.6, 1);
+  poswiata.position.set(SRODEK_OLBRZYMA.x, SRODEK_OLBRZYMA.y, -1.6);
+  scena.add(poswiata);
+
+  /* ========== RÓŻOWA PLANETA ========== */
+  const plotnoRozowej = namalujRozowa();
   const rozowa = new THREE.Mesh(
-    new THREE.SphereGeometry(0.9, 64, 64),
-    new THREE.MeshStandardMaterial({ map: tRoz, roughness: 0.8 })
+    new THREE.SphereGeometry(R_ROZOWA, 72, 72),
+    new THREE.MeshStandardMaterial({ map: tekstura(plotnoRozowej), roughness: 0.8 })
   );
-  // Różowa — w górnym prawym rejonie kadru hero (jak w starszej,
-  // czystszej wersji strony). BEZ wielkiej mgławicowej poświaty —
-  // tylko cienki rim atmosfery na krawędzi (styl zdjęć z orbity).
-  rozowa.position.set(5.8, 2.6, -7);
+  rozowa.position.copy(POZ_ROZOWEJ);
   scena.add(rozowa);
-  const atmoRoz = atmosfera(0.9, new THREE.Color(0xff6fb2), 0.9);
-  atmoRoz.position.copy(rozowa.position);
-  scena.add(atmoRoz);
-
-  // Turkusowa — MAŁY, ODLEGŁY punkt przy prawej krawędzi kadru hero
-  // (daleko za pierścieniami — niczego nie zasłania), z własnym
-  // mini-księżycem na orbicie. Też bez mgławicowej aury.
-  const tTurk = new THREE.CanvasTexture(namalujTurkusowa());
-  tTurk.colorSpace = THREE.SRGBColorSpace;
-  const turkusowa = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 64, 64),
-    new THREE.MeshStandardMaterial({ map: tTurk, roughness: 0.8 })
+  const poswiataRoz = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tekstura(namalujPoswiate("240,111,174"), false),
+      transparent: true,
+      depthWrite: false,
+    })
   );
-  turkusowa.position.set(8.2, -0.2, -6.5);
+  poswiataRoz.scale.set(2.1, 2.1, 1);
+  poswiataRoz.position.copy(POZ_ROZOWEJ).setZ(POZ_ROZOWEJ.z - 0.2);
+  scena.add(poswiataRoz);
+
+  /* ========== TURKUSOWA MINI-PLANETA (z księżycem) ========== */
+  // W klasycznej wersji strony jest to ozdoba CSS (Ozdoby3D.tsx);
+  // tu musi być prawdziwą kulą, bo kamera do niej podlatuje.
+  const plotnoTurkusowej = namalujTurkusowa();
+  const turkusowa = new THREE.Mesh(
+    new THREE.SphereGeometry(R_TURKUSOWA, 64, 64),
+    new THREE.MeshStandardMaterial({ map: tekstura(plotnoTurkusowej), roughness: 0.8 })
+  );
+  turkusowa.position.copy(POZ_TURKUSOWEJ);
   scena.add(turkusowa);
-  const atmoTurk = atmosfera(0.5, new THREE.Color(0x37c8dc), 0.8);
-  atmoTurk.position.copy(turkusowa.position);
-  scena.add(atmoTurk);
-  // mini-księżyc turkusowej (jak w produkcyjnych Ozdobach 3D)
-  const tKt = new THREE.CanvasTexture(namalujKsiezyc("#cfe9e4"));
-  tKt.colorSpace = THREE.SRGBColorSpace;
+  const poswiataTurk = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tekstura(namalujPoswiate("95,154,149"), false),
+      transparent: true,
+      depthWrite: false,
+    })
+  );
+  poswiataTurk.scale.set(1.5, 1.5, 1);
+  poswiataTurk.position.copy(POZ_TURKUSOWEJ).setZ(POZ_TURKUSOWEJ.z - 0.2);
+  scena.add(poswiataTurk);
+  // jej mały księżyc (na produkcji krąży w PRZECIWNĄ stronę niż
+  // księżyce olbrzyma — zachowujemy ten szczegół)
   const ksiezycTurkusowej = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 24, 24),
-    new THREE.MeshStandardMaterial({ map: tKt, roughness: 0.9 })
+    new THREE.SphereGeometry(0.045, 24, 24),
+    new THREE.MeshStandardMaterial({
+      map: tekstura(namalujKsiezyc("#d7e8e5", 14)),
+      roughness: 0.7,
+      emissive: 0x1d3a38,
+    })
   );
   scena.add(ksiezycTurkusowej);
 
-  /* — POST-PROCESSING: bloom (kinowe „rozlewanie" światła) — */
-  // WAŻNE dla jakości: własny render target z MSAA (samples: 4).
-  // Domyślny target composera NIE ma antyaliasingu — to przez niego
-  // krawędzie planet wyglądały na postrzępione.
-  const celRenderu = new THREE.WebGLRenderTarget(
-    pojemnik.clientWidth,
-    pojemnik.clientHeight,
-    { samples: 4, type: THREE.HalfFloatType }
+  /* ========== SŁOŃCE (prawie biała kula + żółte halo) ==========
+     DOKŁADNIE jak na produkcji: gładka, prawie biała kula
+     (MeshBasicMaterial — świeci własnym kolorem, nie reaguje na
+     światła) + żółte halo w trybie additive. Bez tekstury i bez
+     post-processingu, żeby wyglądało 1:1 jak w hero. */
+  const plotnoSlonca = namalujSlonce(); // tylko do miniatury w panoramie
+  const slonce = new THREE.Mesh(
+    new THREE.SphereGeometry(R_SLONCE, 48, 48),
+    new THREE.MeshBasicMaterial({ color: 0xfffdf2 })
   );
-  const composer = new EffectComposer(renderer, celRenderu);
-  composer.addPass(new RenderPass(scena, kamera));
-  const bloom = new UnrealBloomPass(
-    new THREE.Vector2(pojemnik.clientWidth, pojemnik.clientHeight),
-    0.6, // siła
-    0.5, // promień
-    0.88 // próg — świeci tylko to, co naprawdę jasne (słońce, rimy)
+  slonce.position.copy(POZ_SLONCA);
+  scena.add(slonce);
+  const halo = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tekstura(namalujPoswiate("255,236,150"), false),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
   );
-  composer.addPass(bloom);
-  composer.addPass(new OutputPass());
+  // skala przeliczona z produkcji (3.4 przy odległości ~13) na
+  // nową odległość słońca, żeby halo wyglądało tak samo
+  halo.scale.set(5.2, 5.2, 1);
+  halo.position.copy(POZ_SLONCA).setZ(POZ_SLONCA.z - 0.1);
+  scena.add(halo);
 
-  /* ============ TRASA KAMERY — 6 PRZYSTANKÓW (pełne ZUI) ============ */
-  // Każda sekcja strony ma swój przystanek. Kamera STOI w „oknie"
-  // przystanku (gdy czytasz sekcję) i LECI między oknami (przerwy
-  // między sekcjami). Okna wyznacza LotSekcja z realnego układu strony.
-  // KAŻDY przystanek (poza hero) to NURKOWANIE W PLANETĘ: kamera
-  // podlatuje tak blisko, że tarcza wypełnia CAŁY kadr (łącznie
-  // z rogami) i planeta staje się tłem sekcji. Odległości dobrane
-  // z geometrii (d < 1.48·promień przy fov 52), a proste odcinki
-  // lotu między przystankami NIE przecinają żadnej kuli.
-  const POZY = [
-    // 0. HERO — szeroki plan układu (BEZ ZMIAN — otwarty kosmos)
-    { poz: new THREE.Vector3(-2.0, 0.9, 8.4), cel: new THREE.Vector3(-1.2, 0.35, 0), fov: 45 },
-    // 1. USŁUGI — nurkowanie w fioletową planetę (przednia strona)
-    { poz: new THREE.Vector3(0.88, 0.568, 1.467), cel: new THREE.Vector3(0, 0.2, 0), fov: 52 },
-    // 2. PORTFOLIO — ta sama planeta, inny wycinek (prawa strona)
-    { poz: new THREE.Vector3(1.447, -0.104, 0.838), cel: new THREE.Vector3(0, 0.2, 0), fov: 52 },
-    // 3. PROCES — nurkowanie w turkusową
-    { poz: new THREE.Vector3(7.861, -0.082, -5.958), cel: new THREE.Vector3(8.2, -0.2, -6.5), fov: 52 },
-    // 4. OPINIE — nurkowanie w różową (pozycja boczna — tak, żeby lot
-    //    z turkusowej i dalej do słońca omijał kulę planety)
-    { poz: new THREE.Vector3(4.983, 1.995, -6.465), cel: new THREE.Vector3(5.8, 2.6, -7), fov: 52 },
-    // 5. KONTAKT — finał: wlot w tarczę słońca (jasność wypełnia kadr)
-    { poz: new THREE.Vector3(-13.333, 8.767, -28.733), cel: new THREE.Vector3(-14, 9, -30), fov: 52 },
+  /* ============================================================
+     TRASA KAMERY — 6 PRZYSTANKÓW PO TEJ SAMEJ SCENIE
+     ============================================================
+     Każdy przystanek liczymy z geometrii: bierzemy środek ciała
+     niebieskiego i cofamy kamerę wzdłuż wybranego kierunku
+     o `mnoznik · promień`. Przy mnożniku ~1,55 tarcza wypełnia
+     kadr, a w rogach zostaje skrawek kosmosu na panoramę.
+     Kierunek podejścia dobrany tak, żeby kamera patrzyła na
+     OŚWIETLONĄ stronę (światło pada z lewej-przedniej strony).
+     ============================================================ */
+  const STOPIEN = Math.PI / 180;
+
+  type Przystanek = {
+    /** środek ciała, na które patrzymy (może się ruszać — księżyc!) */
+    srodek: () => THREE.Vector3;
+    /** kierunek, z którego podchodzi kamera (znormalizowany) */
+    kierunek: () => THREE.Vector3;
+    /** odległość kamery od środka (liczona na bieżąco — zależy od
+        proporcji ekranu, patrz `wypelnijKadr`) */
+    dystans: () => number;
+    fov: number;
+    /** przechył kadru (roll) w radianach */
+    obrot: number;
+  };
+
+  /* Odległość, przy której tarcza o promieniu R dosięga BOCZNYCH
+     krawędzi kadru (z małym zapasem). Liczona z aktualnych proporcji
+     ekranu, więc planeta wypełnia kadr tak samo na laptopie 16:9
+     i na szerokim monitorze 21:9, a w ROGACH zawsze zostaje skrawek
+     kosmosu — tam pokazujemy sąsiadów (panorama). */
+  function wypelnijKadr(R: number, fov: number) {
+    return () => {
+      const polSzer = Math.atan(Math.tan((fov / 2) * STOPIEN) * kamera.aspect);
+      return R / Math.sin(Math.min(1.35, polSzer * 0.97));
+    };
+  }
+
+  const staly = (v: THREE.Vector3) => () => v;
+  const pomocniczy = new THREE.Vector3();
+  const pomocniczy2 = new THREE.Vector3();
+  const normalnaPierscieni = new THREE.Vector3();
+
+  /* Kierunek podejścia do KSIĘŻYCA: od zewnątrz jego orbity,
+     uniesiony ~38° nad płaszczyznę pierścieni. Dzięki temu kamera
+     „skacze" tuż nad pierścieniami, księżyc jest w kadrze, a za nim
+     rozciąga się wielka tarcza olbrzyma. */
+  function kierunekKsiezyca(): THREE.Vector3 {
+    ksiezyc.getWorldPosition(pomocniczy);
+    pomocniczy.sub(SRODEK_OLBRZYMA).normalize(); // promieniowo, na zewnątrz
+    pierscienie.getWorldDirection(normalnaPierscieni); // normalna pierścieni
+    return pomocniczy
+      .multiplyScalar(Math.cos(38 * STOPIEN))
+      .addScaledVector(normalnaPierscieni, Math.sin(38 * STOPIEN))
+      .normalize();
+  }
+  function srodekKsiezyca(): THREE.Vector3 {
+    return ksiezyc.getWorldPosition(pomocniczy2);
+  }
+
+  /* Kierunek „od poprzedniego ciała" — lot jest wtedy naturalny:
+     wylatujemy zza pleców jednego świata wprost na drugi. */
+  const odPunktu = (skad: THREE.Vector3, dokad: THREE.Vector3) => {
+    const v = new THREE.Vector3().subVectors(skad, dokad).normalize();
+    return () => v;
+  };
+
+  const PRZYSTANKI: Przystanek[] = [
+    // 0. HERO — szeroki plan całego układu (kadr jak na produkcji).
+    //    Kamera patrzy prosto przed siebie, nie na konkretną planetę.
+    {
+      srodek: staly(new THREE.Vector3(-1.343, 0.683, 0)),
+      kierunek: staly(new THREE.Vector3(0, 0, 1)),
+      dystans: () => 8.835,
+      fov: 42,
+      obrot: 0,
+    },
+    // 1. USŁUGI — lądowanie na dużym księżycu olbrzyma (+8°).
+    //    Stały mnożnik (nie „wypełnij kadr"): księżyc ma zajmować ~3/4
+    //    wysokości, a WOKÓŁ niego ma być widoczna tarcza olbrzyma.
+    {
+      srodek: srodekKsiezyca,
+      kierunek: kierunekKsiezyca,
+      dystans: () => R_KSIEZYC * 3.0,
+      fov: 52,
+      obrot: 8 * STOPIEN,
+    },
+    // 2. PORTFOLIO — sam olbrzym, od strony oświetlonej (−6°)
+    {
+      srodek: staly(SRODEK_OLBRZYMA),
+      kierunek: staly(new THREE.Vector3(-0.6, 0.35, 0.72).normalize()),
+      dystans: wypelnijKadr(R_OLBRZYM, 52),
+      fov: 52,
+      obrot: -6 * STOPIEN,
+    },
+    // 3. PROCES — turkusowa planeta (+12°)
+    {
+      srodek: staly(POZ_TURKUSOWEJ),
+      kierunek: odPunktu(SRODEK_OLBRZYMA, POZ_TURKUSOWEJ),
+      dystans: wypelnijKadr(R_TURKUSOWA, 52),
+      fov: 52,
+      obrot: 12 * STOPIEN,
+    },
+    // 4. OPINIE — różowa planeta (−8°)
+    {
+      srodek: staly(POZ_ROZOWEJ),
+      kierunek: odPunktu(POZ_TURKUSOWEJ, POZ_ROZOWEJ),
+      dystans: wypelnijKadr(R_ROZOWA, 52),
+      fov: 52,
+      obrot: -8 * STOPIEN,
+    },
+    // 5. KONTAKT — finał: wlot w słońce, halo zalewa kadr (+10°).
+    //    Stały mnożnik — chcemy widzieć tarczę Z koroną, nie samą biel.
+    {
+      srodek: staly(POZ_SLONCA),
+      kierunek: odPunktu(POZ_ROZOWEJ, POZ_SLONCA),
+      dystans: () => R_SLONCE * 3.75,
+      fov: 52,
+      obrot: 10 * STOPIEN,
+    },
   ];
-  // Domyślne okna postoju (nadpisywane przez ustawOkna po zmierzeniu strony)
-  let okna: { a: number; b: number }[] = POZY.map((_, i) => ({
-    a: i / POZY.length,
-    b: (i + 0.6) / POZY.length,
-  }));
 
-  const gladkie = (t: number) => t * t * (3 - 2 * t); // smoothstep
+  /* ============ OMIJANIE CIAŁ NIEBIESKICH ============
+     Łuk przelotu bywa krótszy niż droga naokoło planety — bez tego
+     kamera potrafiłaby przelecieć przez ŚRODEK olbrzyma. Dlatego
+     każdy punkt trasy wypychamy na zewnątrz, jeśli wszedłby bliżej
+     niż 14% ponad powierzchnię kuli. Efekt: zamiast przenikać przez
+     planetę, kamera efektownie ślizga się tuż nad jej chmurami.
+     (1,14·R jest zawsze mniejsze od dystansu postoju, więc kadry
+     przy sekcjach zostają nietknięte.) */
+  const OTULINA = 1.14;
+  const KULE: { srodek: () => THREE.Vector3; promien: number }[] = [
+    { srodek: staly(SRODEK_OLBRZYMA), promien: R_OLBRZYM },
+    { srodek: staly(POZ_ROZOWEJ), promien: R_ROZOWA },
+    { srodek: staly(POZ_TURKUSOWEJ), promien: R_TURKUSOWA },
+    { srodek: staly(POZ_SLONCA), promien: R_SLONCE },
+    { srodek: srodekKsiezyca, promien: R_KSIEZYC },
+  ];
+  const bufOmin = new THREE.Vector3();
+  function omijajKule(punkt: THREE.Vector3) {
+    for (const kula of KULE) {
+      const srodek = kula.srodek();
+      const bezpieczny = kula.promien * OTULINA;
+      const d = punkt.distanceTo(srodek);
+      if (d < bezpieczny && d > 1e-4) {
+        bufOmin.subVectors(punkt, srodek).normalize();
+        punkt.addScaledVector(bufOmin, bezpieczny - d);
+      }
+    }
+  }
 
-  let postep = 0; // cel (od scrolla)
-  let postepPlynny = 0; // wygładzony (kamera nie szarpie)
+  // ŁUKI PRZEJŚĆ — jak mocno trasa wygina się w górę/w bok między
+  // przystankami (to daje „zoom out → przelot → zoom in") oraz
+  // o ile stopni rozszerza się fov w połowie lotu. Znaki na przemian
+  // = każdy odcinek wygląda inaczej, trasa nie jest monotonna.
+  const LUKI = [
+    { gora: 1.6, bok: 0.9, fov: 12 },   // hero → usługi (księżyc)
+    { gora: 3.4, bok: 1.7, fov: 15 },   // usługi → portfolio (olbrzym)
+    { gora: 2.4, bok: -1.6, fov: 13 },  // portfolio → proces (turkusowa)
+    { gora: -2.0, bok: -2.2, fov: 16 }, // proces → opinie (różowa)
+    { gora: 2.6, bok: 1.5, fov: 14 },   // opinie → kontakt (słońce)
+  ];
+
+  // Okna postoju w pikselach scrolla — ustawia je LotSekcja po
+  // zmierzeniu układu strony. Do tego czasu stoimy w hero.
+  let okna: { a: number; b: number }[] = [];
+
+  /* Easing filmowy — odpowiednik GSAP-owego „power2.inOut":
+     ruszamy miękko, w środku lecimy szybko, hamujemy miękko. */
+  const filmowe = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+  /* Pozycja kamery na przystanku: środek ciała + kierunek · dystans. */
+  const bufPoz = new THREE.Vector3();
+  const bufCel = new THREE.Vector3();
+  function pozycjaPrzystanku(i: number, out: THREE.Vector3): THREE.Vector3 {
+    const p = PRZYSTANKI[i];
+    return out.copy(p.srodek()).addScaledVector(p.kierunek(), p.dystans());
+  }
+
+  /* Punkt kontrolny łuku między przystankami a→b: środek odcinka
+     odsunięty w bok i w górę (prostopadle do kierunku lotu). */
+  const bufA = new THREE.Vector3();
+  const bufB = new THREE.Vector3();
+  const bufKier = new THREE.Vector3();
+  const bufBok = new THREE.Vector3();
+  const bufGora = new THREE.Vector3();
+  const PION = new THREE.Vector3(0, 1, 0);
+  function punktKontrolny(i: number, out: THREE.Vector3): THREE.Vector3 {
+    pozycjaPrzystanku(i, bufA);
+    pozycjaPrzystanku(i + 1, bufB);
+    bufKier.subVectors(bufB, bufA);
+    bufBok.crossVectors(bufKier, PION).normalize();
+    bufGora.crossVectors(bufBok, bufKier).normalize();
+    return out
+      .addVectors(bufA, bufB)
+      .multiplyScalar(0.5)
+      .addScaledVector(bufGora, LUKI[i].gora)
+      .addScaledVector(bufBok, LUKI[i].bok);
+  }
+
+  /* Punkt na kwadratowej krzywej Béziera (a → kontrola → b). */
+  function punktLuku(
+    a: THREE.Vector3,
+    k: THREE.Vector3,
+    b: THREE.Vector3,
+    t: number,
+    out: THREE.Vector3
+  ) {
+    const u = 1 - t;
+    out.set(
+      u * u * a.x + 2 * u * t * k.x + t * t * b.x,
+      u * u * a.y + 2 * u * t * k.y + t * t * b.y,
+      u * u * a.z + 2 * u * t * k.z + t * t * b.z
+    );
+  }
+
+  let scrollPlynny = window.scrollY; // wygładzona pozycja (kamera nie szarpie)
+  let wPostoju = true; // czy stoimy przy ciele niebieskim (a nie lecimy)
+  let aktywnyPrzystanek = 0;
   const mysz = { x: 0, y: 0 }; // parallax kursora
   const myszPlynna = { x: 0, y: 0 };
 
@@ -703,203 +774,247 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   }
   window.addEventListener("mousemove", przyRuchuMyszy);
 
-  const cel = new THREE.Vector3();
-  const pozKamery = new THREE.Vector3();
+  const kontrola = new THREE.Vector3();
+  const pozB = new THREE.Vector3();
+  const celB = new THREE.Vector3();
 
-  function ustawKamere(p: number, czas: number) {
+  function ustawKamere(y: number, czas: number) {
     // gdzie jesteśmy: w oknie przystanku (kamera stoi) czy w locie?
-    let a = POZY.length - 1;
-    let lok = 0; // 0 = jesteśmy w przystanku a; 0–1 = lot do a+1
+    // `y` to pozycja scrolla w pikselach (wygładzona).
+    let a = Math.max(0, okna.length - 1);
+    let surowe = 0; // 0 = postój; 0–1 = lot do a+1
     for (let i = 0; i < okna.length; i++) {
-      if (p <= okna[i].b) {
-        if (p >= okna[i].a || i === 0) {
+      if (y <= okna[i].b) {
+        if (y >= okna[i].a || i === 0) {
           a = i;
-          lok = 0;
+          surowe = 0;
         } else {
           a = i - 1;
-          lok = gladkie((p - okna[i - 1].b) / (okna[i].a - okna[i - 1].b));
+          const dl = Math.max(1, okna[i].a - okna[i - 1].b);
+          surowe = Math.min(1, Math.max(0, (y - okna[i - 1].b) / dl));
         }
         break;
       }
     }
-    const b = Math.min(a + 1, POZY.length - 1);
+    const b = Math.min(a + 1, PRZYSTANKI.length - 1);
+    wPostoju = surowe <= 0 || a === b;
+    aktywnyPrzystanek = a;
 
-    pozKamery.lerpVectors(POZY[a].poz, POZY[b].poz, lok);
-    cel.lerpVectors(POZY[a].cel, POZY[b].cel, lok);
-    kamera.fov = POZY[a].fov + (POZY[b].fov - POZY[a].fov) * lok;
+    let przechylKadru: number;
+    if (wPostoju) {
+      pozycjaPrzystanku(a, bufPoz);
+      bufCel.copy(PRZYSTANKI[a].srodek());
+      kamera.fov = PRZYSTANKI[a].fov;
+      przechylKadru = PRZYSTANKI[a].obrot;
+    } else {
+      const t = filmowe(surowe);
+      pozycjaPrzystanku(a, bufA);
+      pozycjaPrzystanku(b, pozB);
+      punktKontrolny(a, kontrola);
+      // 1) POZYCJA po łuku — kamera odlatuje, przesuwa się w bok
+      //    i dolatuje do następnego ciała (zoom out → pan → zoom in)
+      punktLuku(bufA, kontrola, pozB, t, bufPoz);
+      omijajKule(bufPoz); // …ale nigdy NIE przez środek planety
+      // 2) CEL patrzenia płynnie wędruje na następne ciało
+      celB.copy(PRZYSTANKI[b].srodek());
+      bufCel.copy(PRZYSTANKI[a].srodek()).lerp(celB, t);
+      // 3) FOV „oddycha" — w połowie lotu szerzej (mocniejszy zoom out)
+      kamera.fov =
+        PRZYSTANKI[a].fov +
+        (PRZYSTANKI[b].fov - PRZYSTANKI[a].fov) * t +
+        Math.sin(Math.PI * t) * LUKI[a].fov;
+      // 4) PRZECHYŁ kadru — obraca się w drodze do nowego świata
+      przechylKadru =
+        PRZYSTANKI[a].obrot + (PRZYSTANKI[b].obrot - PRZYSTANKI[a].obrot) * t;
+    }
 
     // delikatny „oddech" + parallax myszy (pełny tylko w hero)
-    const luz = a === 0 && lok === 0 ? 1 : 0.35;
-    pozKamery.x += Math.sin(czas * 0.23) * 0.045 * luz + myszPlynna.x * 0.09 * luz;
-    pozKamery.y += Math.cos(czas * 0.19) * 0.035 * luz - myszPlynna.y * 0.07 * luz;
+    const luz = a === 0 && wPostoju ? 1 : 0.35;
+    bufPoz.x += Math.sin(czas * 0.23) * 0.045 * luz + myszPlynna.x * 0.09 * luz;
+    bufPoz.y += Math.cos(czas * 0.19) * 0.035 * luz - myszPlynna.y * 0.07 * luz;
 
-    kamera.position.copy(pozKamery);
-    kamera.lookAt(cel);
+    kamera.position.copy(bufPoz);
+    kamera.up.set(0, 1, 0); // lookAt liczy obrót od pionu — resetujemy
+    kamera.lookAt(bufCel);
+    kamera.rotateZ(przechylKadru); // ← PRZECHYŁ KADRU (efekt „Prezi")
     kamera.updateProjectionMatrix();
   }
 
-  /* ============ SPADAJĄCA GWIAZDA (tylko w hero) ============ */
-  // Subtelna smuga światła przelatująca cyklicznie przez PUSTĄ część
-  // nieba (górny środek kadru) — omija słońce, planety i tekst.
-  function namalujSmuge(): HTMLCanvasElement {
-    // Styl ze starszej wersji strony: CIENKA, elegancka smużka —
-    // zwężający się ogon i mała, jasna główka. Bez wielkiego blasku.
-    const c = document.createElement("canvas");
-    c.width = 512;
-    c.height = 64;
-    const ctx = c.getContext("2d")!;
-    ctx.save();
-    ctx.filter = "blur(1.6px)";
-    for (let i = 0; i <= 70; i++) {
-      const t = i / 70; // 0 = koniec ogona … 1 = głowa
-      const x = 20 + t * 452;
-      const r = 0.4 + t * t * 3.0;
-      ctx.fillStyle = `rgba(255,252,246,${(0.015 + t * t * 0.34).toFixed(3)})`;
-      ctx.beginPath();
-      ctx.arc(x, 32, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-    // mała główka — jasny punkt z krótką poświatą
-    const gl = ctx.createRadialGradient(472, 32, 0, 472, 32, 14);
-    gl.addColorStop(0, "rgba(255,255,255,0.9)");
-    gl.addColorStop(0.3, "rgba(255,248,235,0.4)");
-    gl.addColorStop(1, "rgba(255,248,235,0)");
-    ctx.fillStyle = gl;
-    ctx.fillRect(452, 12, 40, 40);
-    return c;
-  }
-  const smugaMat = new THREE.SpriteMaterial({
-    map: new THREE.CanvasTexture(namalujSmuge()),
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-  const smuga = new THREE.Sprite(smugaMat);
-  smuga.scale.set(3.0, 0.375, 1); // proporcje tekstury 512:64
-  smuga.visible = false;
-  scena.add(smuga);
-  const gwiazdaStart = new THREE.Vector3();
-  const gwiazdaKontrol = new THREE.Vector3(); // punkt łuku (tor zakrzywiony)
-  const gwiazdaKoniec = new THREE.Vector3();
-  const gwPunkt = new THREE.Vector3();
-  const gwPrzod = new THREE.Vector3();
-  let gwiazdaZegar = 4; // pierwszy przelot ~4 s po wejściu na stronę
-  const GWIAZDA_CO = 9; // kolejne co ~9 s (cyklicznie, ale rzadko)
-  const GWIAZDA_TRWA = 1.5;
+  /* ============================================================
+     PANORAMA — poprzednie i następne ciało jako małe, przyciemnione
+     kule w GÓRNYCH ROGACH kadru. Są „dziećmi" kamery, więc zawsze
+     siedzą dokładnie tam, gdzie trzeba; depthTest = false, żeby nie
+     chowały się w powierzchni planety wypełniającej kadr.
+     ============================================================ */
+  const MINIATURY = [
+    plotnoOlbrzyma, // 0. hero = cały układ, reprezentuje go olbrzym
+    plotnoKsiezyca, // 1. usługi
+    plotnoOlbrzyma, // 2. portfolio
+    plotnoTurkusowej, // 3. proces
+    plotnoRozowej, // 4. opinie
+    plotnoSlonca, // 5. kontakt
+  ].map((p) => tekstura(rozmytaKopia(p)));
 
-  function planujGwiazde() {
-    // trasa liczona z AKTUALNEJ kamery: od punktu ekranu (42%, 15%)
-    // do (66%, 32%) — pusty pas nieba między słońcem a planetami
-    const naSwiat = (nx: number, ny: number, out: THREE.Vector3) => {
-      out.set(nx, ny, 0.5).unproject(kamera);
-      out.sub(kamera.position).normalize().multiplyScalar(28).add(kamera.position);
-    };
-    naSwiat(-0.16, 0.7, gwiazdaStart);
-    naSwiat(0.32, 0.36, gwiazdaKoniec);
-    // punkt kontrolny NAD prostą start→koniec → tor LEKKO wygięty
-    // (subtelnie — smużka ma zostać elegancka, nie teatralna)
-    gwiazdaKontrol
-      .addVectors(gwiazdaStart, gwiazdaKoniec)
-      .multiplyScalar(0.5)
-      .add(new THREE.Vector3(0, 0.5, 0));
-  }
-
-  /* Pozycja na łuku (krzywa Béziera 2. stopnia) */
-  function punktGwiazdy(f: number, out: THREE.Vector3) {
-    const a = (1 - f) * (1 - f);
-    const b = 2 * f * (1 - f);
-    const d = f * f;
-    out.set(
-      a * gwiazdaStart.x + b * gwiazdaKontrol.x + d * gwiazdaKoniec.x,
-      a * gwiazdaStart.y + b * gwiazdaKontrol.y + d * gwiazdaKoniec.y,
-      a * gwiazdaStart.z + b * gwiazdaKontrol.z + d * gwiazdaKoniec.z
+  function zrobSasiada() {
+    const kula = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 32),
+      new THREE.MeshBasicMaterial({
+        map: MINIATURY[0],
+        color: 0x70707f, // przyciemnienie do ~40% jasności (dal)
+        transparent: true,
+        opacity: 0,
+        depthTest: false,
+        depthWrite: false,
+      })
     );
+    kula.renderOrder = 900;
+    const luna = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: tekstura(namalujPoswiate("170,180,215"), false),
+        transparent: true,
+        opacity: 0,
+        depthTest: false,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    luna.renderOrder = 899;
+    kamera.add(kula, luna);
+    return { kula, luna };
+  }
+  const sasiadPoprzedni = zrobSasiada();
+  const sasiadNastepny = zrobSasiada();
+  let indeksPoprzedni = -1; // jaką teksturę mają teraz — żeby nie
+  let indeksNastepny = -1; // podmieniać mapy w każdej klatce
+  let kryciePanoramy = 0;
+
+  const DYSTANS_SASIADA = 7;
+  function ustawPanorame(dt: number) {
+    // panorama pokazuje się tylko przy POSTOJU i poza hero
+    const docelowe = wPostoju && aktywnyPrzystanek > 0 ? 1 : 0;
+    kryciePanoramy += (docelowe - kryciePanoramy) * Math.min(1, dt * 2.6);
+
+    const poprzedni = aktywnyPrzystanek - 1;
+    const nastepny = aktywnyPrzystanek + 1;
+    if (poprzedni >= 0 && poprzedni !== indeksPoprzedni) {
+      indeksPoprzedni = poprzedni;
+      const m = sasiadPoprzedni.kula.material as THREE.MeshBasicMaterial;
+      m.map = MINIATURY[poprzedni];
+      m.needsUpdate = true;
+    }
+    if (nastepny < PRZYSTANKI.length && nastepny !== indeksNastepny) {
+      indeksNastepny = nastepny;
+      const m = sasiadNastepny.kula.material as THREE.MeshBasicMaterial;
+      m.map = MINIATURY[nastepny];
+      m.needsUpdate = true;
+    }
+
+    // pozycje liczone z aktualnego fov i proporcji ekranu — działa
+    // tak samo na laptopie 16:9 i na szerokim monitorze 21:9
+    const polWys = Math.tan((kamera.fov / 2) * STOPIEN) * DYSTANS_SASIADA;
+    const polSzer = polWys * kamera.aspect;
+
+    const ustaw = (
+      s: { kula: THREE.Mesh; luna: THREE.Sprite },
+      x: number,
+      skala: number,
+      widoczny: boolean
+    ) => {
+      // lekki parallax za myszką — sąsiad „stoi w oddali", a nie
+      // klei się do ekranu jak naklejka
+      const px = x * polSzer + myszPlynna.x * 0.22;
+      const py = 0.72 * polWys - myszPlynna.y * 0.16;
+      s.kula.position.set(px, py, -DYSTANS_SASIADA);
+      s.kula.scale.setScalar(skala);
+      s.kula.rotation.y += dt * 0.05;
+      s.luna.position.set(px, py, -DYSTANS_SASIADA - 0.05);
+      s.luna.scale.set(skala * 5.2, skala * 5.2, 1);
+      const k = widoczny ? kryciePanoramy : 0;
+      (s.kula.material as THREE.MeshBasicMaterial).opacity = k;
+      s.luna.material.opacity = k * 0.3;
+      s.kula.visible = k > 0.01;
+      s.luna.visible = k > 0.01;
+    };
+
+    // poprzednie ciało zostaje z tyłu (mniejsze), następne rośnie
+    ustaw(sasiadPoprzedni, -0.79, 0.26, poprzedni >= 0);
+    ustaw(sasiadNastepny, 0.79, 0.33, nastepny < PRZYSTANKI.length);
   }
 
   /* — pętla renderowania — */
   const zegar = new THREE.Clock();
+  let kat = Math.random() * Math.PI * 2;
   let kat2 = Math.random() * Math.PI * 2;
-  let kat3 = Math.random() * Math.PI * 2; // mini-księżyc turkusowej
+  let kat3 = Math.random() * Math.PI * 2;
   let klatka = 0;
   let widoczna = true;
+  let krycieGwiazd = 0;
+  // Promienie orbit z produkcji: księżyc zawsze POZA planetą (1.35),
+  // drugi krąży dalej i szybciej, żeby się nigdy nie mijały.
+  const R_ORBITY = 1.95;
+  const R_ORBITY2 = 2.35;
 
   function animuj() {
     klatka = requestAnimationFrame(animuj);
-    if (!widoczna) return;
     const dt = Math.min(zegar.getDelta(), 0.05);
+    // Pozycję scrolla czytamy SAMI, wprost z przeglądarki — działa tak
+    // samo dla kółka myszy, klawiatury, paska i animowanego przewijania
+    // z menu (nie zależymy od żadnej biblioteki).
+    scrollPlynny += (window.scrollY - scrollPlynny) * Math.min(1, dt * 5);
+    if (!widoczna) return;
     const czas = zegar.elapsedTime;
 
-    // wygładzenie scrolla i myszy (kinowa bezwładność kamery)
-    postepPlynny += (postep - postepPlynny) * Math.min(1, dt * 5);
     myszPlynna.x += (mysz.x - myszPlynna.x) * Math.min(1, dt * 3);
     myszPlynna.y += (mysz.y - myszPlynna.y) * Math.min(1, dt * 3);
 
-    // ruch świata
-    planeta.rotation.y += dt * 0.05;
-    pierscienie.rotation.z += dt * 0.015;
-    rozowa.rotation.y += dt * 0.12;
-    turkusowa.rotation.y += dt * 0.1;
-    gwiazdyDaleko.rotation.y += dt * 0.0035;
+    // ruch świata (tempo z produkcji, tylko olbrzym wolniej —
+    // z bliska szybki obrót powierzchni męczyłby oko)
+    planeta.rotation.y += dt * 0.06;
+    pierscienie.rotation.z += dt * 0.02;
+    rozowa.rotation.y += dt * 0.18;
+    turkusowa.rotation.y += dt * 0.14;
 
-    kat2 += dt * 0.17;
+    // Oba księżyce olbrzyma: prawdziwa orbita w PŁASZCZYŹNIE
+    // pierścieni, w tę samą stronę. Główny krąży wolno, bo to na nim
+    // „stoi" kamera w sekcji Usługi (szybka orbita = zawroty głowy).
+    kat += dt * 0.12;
+    const s = Math.sin(kat);
+    ksiezyc.position.set(
+      Math.cos(kat) * R_ORBITY,
+      s * R_ORBITY * Math.cos(PRZECHYL),
+      s * R_ORBITY * Math.sin(PRZECHYL)
+    );
+    kat2 += dt * 0.4;
     const s2 = Math.sin(kat2);
-    ksiezycMaly2.position.set(
-      Math.cos(kat2) * 2.35,
-      s2 * 2.35 * Math.cos(PRZECHYL),
-      s2 * 2.35 * Math.sin(PRZECHYL)
+    ksiezyc2.position.set(
+      Math.cos(kat2) * R_ORBITY2,
+      s2 * R_ORBITY2 * Math.cos(PRZECHYL),
+      s2 * R_ORBITY2 * Math.sin(PRZECHYL)
     );
 
-    // drugi księżyc — spokojna orbita tuż przy pierścieniach
-    katStacja += dt * 0.11;
-    const sS = Math.sin(katStacja);
-    ksiezycStacja.position.set(
-      Math.cos(katStacja) * PROMIEN_STACJI,
-      sS * PROMIEN_STACJI * Math.cos(PRZECHYL),
-      sS * PROMIEN_STACJI * Math.sin(PRZECHYL)
-    );
-
-    // mini-księżyc turkusowej — mała, pochylona orbita wokół niej
-    kat3 += dt * 0.35;
+    // księżyc turkusowej — w PRZECIWNĄ stronę (szczegół z produkcji)
+    kat3 -= dt * 0.5;
     ksiezycTurkusowej.position.set(
-      turkusowa.position.x + Math.cos(kat3) * 0.85,
-      turkusowa.position.y + Math.sin(kat3) * 0.28,
-      turkusowa.position.z + Math.sin(kat3) * 0.72
+      POZ_TURKUSOWEJ.x + Math.cos(kat3) * 0.62,
+      POZ_TURKUSOWEJ.y + Math.sin(kat3) * 0.17,
+      POZ_TURKUSOWEJ.z + Math.sin(kat3) * 0.5
     );
 
-    // spadająca gwiazda — pojawia się TYLKO w hero (początek podróży)
-    if (postepPlynny < 0.04) {
-      gwiazdaZegar -= dt;
-      if (gwiazdaZegar <= -GWIAZDA_TRWA) gwiazdaZegar = GWIAZDA_CO; // następny cykl
-      if (gwiazdaZegar <= 0) {
-        const f = -gwiazdaZegar / GWIAZDA_TRWA; // 0–1 wzdłuż trasy
-        if (!smuga.visible) {
-          planujGwiazde();
-          smuga.visible = true;
-        }
-        punktGwiazdy(f, smuga.position);
-        // obrót smugi wzdłuż STYCZNEJ łuku (na ekranie) — głowa zawsze
-        // celuje w kierunek lotu, także na zakrzywieniu
-        punktGwiazdy(Math.min(1, f + 0.03), gwPrzod);
-        gwPunkt.copy(smuga.position).project(kamera);
-        gwPrzod.project(kamera);
-        smugaMat.rotation = Math.atan2(
-          (gwPrzod.y - gwPunkt.y) * pojemnik.clientHeight,
-          (gwPrzod.x - gwPunkt.x) * pojemnik.clientWidth
-        );
-        smugaMat.opacity = Math.sin(f * Math.PI) * 0.75; // miękkie wejście/zejście
-      } else if (smuga.visible) {
-        smuga.visible = false;
-        smugaMat.opacity = 0;
-      }
-    } else if (smuga.visible) {
-      smuga.visible = false;
-      smugaMat.opacity = 0;
-    }
+    ustawKamere(scrollPlynny, czas);
+    ustawPanorame(dt);
 
-    ustawKamere(postepPlynny, czas);
-    composer.render();
+    // gwiazdy: niewidoczne w hero (kadr 1:1 z produkcją), rozjaśniają
+    // się dopiero w podróży. Jadą razem z kamerą — daleka warstwa jak
+    // kopuła nieba, bliska z opóźnieniem (paralaksa w locie).
+    const celGwiazd = aktywnyPrzystanek > 0 || !wPostoju ? 1 : 0;
+    krycieGwiazd += (celGwiazd - krycieGwiazd) * Math.min(1, dt * 1.6);
+    (gwiazdyDaleko.material as THREE.PointsMaterial).opacity = krycieGwiazd * 0.9;
+    (gwiazdyBlisko.material as THREE.PointsMaterial).opacity = krycieGwiazd * 0.7;
+    gwiazdyDaleko.position.copy(kamera.position);
+    gwiazdyDaleko.rotation.y += dt * 0.0035;
+    gwiazdyBlisko.position.copy(kamera.position).multiplyScalar(0.88);
+
+    renderer.render(scena, kamera);
   }
   animuj();
 
@@ -914,21 +1029,18 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const obserwator = new ResizeObserver(() => {
     const szer = pojemnik.clientWidth;
     const wys = pojemnik.clientHeight;
+    if (!szer || !wys) return;
     kamera.aspect = szer / wys;
     kamera.updateProjectionMatrix();
     renderer.setSize(szer, wys);
-    composer.setSize(szer, wys);
   });
   obserwator.observe(pojemnik);
 
   return {
-    ustawPostep(p: number) {
-      postep = Math.min(1, Math.max(0, p));
-    },
     ustawOkna(nowe: { a: number; b: number }[]) {
-      if (nowe.length === POZY.length) okna = nowe;
+      if (nowe.length === PRZYSTANKI.length) okna = nowe;
     },
-    liczbaPrzystankow: POZY.length,
+    liczbaPrzystankow: PRZYSTANKI.length,
     zniszcz() {
       cancelAnimationFrame(klatka);
       obserwator.disconnect();
@@ -941,7 +1053,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
         if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
         else mat?.dispose?.();
       });
-      composer.dispose();
+      tekstury.forEach((t) => t.dispose());
       renderer.dispose();
       renderer.domElement.remove();
     },

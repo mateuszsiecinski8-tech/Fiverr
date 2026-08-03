@@ -11,7 +11,14 @@ import Scena3D from "./Scena3D";
 import Ozdoby3D from "./Ozdoby3D";
 import { hero, linki } from "@/lib/dane";
 
-export default function Hero() {
+// Prop „scena3d" (domyślnie true) — używa go TYLKO tryb ZUI
+// (components/lot/LotSekcja.tsx). Tam planety rysuje jedna, wspólna
+// kanwa rozciągnięta na cały ekran (components/lot/silnik.ts), więc
+// hero nie może dokładać drugiej sceny WebGL — zostawia po prostu
+// puste miejsce tej samej wysokości, żeby układ się nie ruszył.
+// Klasyczna strona nie podaje tego propa, więc wygląda 1:1 jak
+// na produkcji.
+export default function Hero({ scena3d = true }: { scena3d?: boolean } = {}) {
   return (
     <section
       id="start"
@@ -120,7 +127,13 @@ export default function Hero() {
             + słońce w oddali — główny element strony.
             Szczegóły w components/Scena3D.tsx */}
         <div className="wjazd pointer-events-none relative mt-14 lg:mt-0" style={{ animationDelay: "0.55s" }}>
-          <Scena3D />
+          {scena3d ? (
+            <Scena3D />
+          ) : (
+            // tryb ZUI: planety rysuje wspólna kanwa pod całą stroną —
+            // tu zostaje tylko puste miejsce o tej samej wysokości
+            <div aria-hidden="true" className="h-72 w-full md:h-96 lg:h-[600px]" />
+          )}
         </div>
       </div>
     </section>
