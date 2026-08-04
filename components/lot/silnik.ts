@@ -209,46 +209,371 @@ function namalujPierscienie(): HTMLCanvasElement {
   return c;
 }
 
-/* Księżyc: baza + delikatne kratery (ciemniejsze kółka z cienkim
-   jasnym rantem od strony światła, żeby wyglądały na wklęsłe).
-   Rozdzielczość 512 — przy „lądowaniu" w sekcji Usługi księżyc
-   wypełnia większość kadru, więc potrzebuje więcej detalu. */
-function namalujKsiezyc(kolorBazowy: string, ileKraterow = 46): HTMLCanvasElement {
+/* ============================================================
+   KSIĘŻYC — PRAWDZIWY RELIEF, NIE NAKLEJKA
+   ============================================================
+   Stara wersja malowała kratery jako gotowe obrazki: ciemne kółko
+   plus jasny łuk „od strony światła". Wyglądało to jak naklejki,
+   bo nimi było — światło sceny nic o tych kraterach nie wiedziało,
+   więc przy obrocie księżyca cienie zostawały w miejscu.
+
+   Teraz kolejność jest odwrócona, tak jak w prawdziwej grafice 3D:
+
+     1. Najpierw powstaje MAPA WYSOKOŚCI — prawdziwy teren.
+        Każdy krater ma pełną budowę: misę, WAŁ (podniesiona
+        krawędź), warstwę WYRZUCONEGO MATERIAŁU dookoła, a te
+        największe — CENTRALNY SZCZYT (skała odbita po uderzeniu).
+     2. Z tej mapy liczymy DWIE tekstury naraz:
+          • kolor (jasne świeże wały, ciemne „morza", promienie),
+          • MAPĘ NORMALNYCH — czyli informację, w którą stronę
+            „patrzy" powierzchnia w każdym punkcie.
+
+   To ta druga robi całą robotę. Dzięki niej silnik oświetla każdy
+   wał osobno, cienie same wpadają w misy, a przy obrocie księżyca
+   wszystko się zmienia — bo teren naprawdę istnieje.
+
+   Wszystko liczone kodem, zero plików graficznych.
+   ============================================================ */
+
+type PowierzchniaKsiezyca = {
+  kolor: HTMLCanvasElement;
+  normalna: HTMLCanvasElement;
+};
+
+/* --- szum „wartościowy" z zawijaniem w poziomie ---
+   Zawijanie jest konieczne, bo tekstura owija się wokół kuli:
+   lewa krawędź musi pasować do prawej, inaczej widać pionowy szew. */
+function siatkaSzumu(w: number, h: number): Float32Array {
+  const a = new Float32Array(w * h);
+  for (let i = 0; i < a.length; i++) a[i] = Math.random();
+  return a;
+}
+function probkuj(siatka: Float32Array, w: number, h: number, u: number, v: number): number {
+  const x = u * w;
+  const y = Math.min(v, 0.9999) * h;
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const fx = x - x0;
+  const fy = y - y0;
+  const gx0 = ((x0 % w) + w) % w;
+  const gx1 = (gx0 + 1) % w;
+  const gy0 = Math.min(Math.max(y0, 0), h - 1);
+  const gy1 = Math.min(gy0 + 1, h - 1);
+  const g = (t: number) => t * t * (3 - 2 * t); // wygładzenie krawędzi
+  const sx = g(fx);
+  const sy = g(fy);
+  const a = siatka[gy0 * w + gx0];
+  const b = siatka[gy0 * w + gx1];
+  const c = siatka[gy1 * w + gx0];
+  const d = siatka[gy1 * w + gx1];
+  return (a + (b - a) * sx) * (1 - sy) + (c + (d - c) * sx) * sy;
+}
+
+/** PROFIL KRATERU — przekrój przez krater, od środka na zewnątrz.
+    `r` to odległość od środka podzielona przez promień krateru
+    (r = 1 to sama krawędź). Zwraca wysokość w umownych jednostkach. */
+function profilKrateru(r: number): number {
+  if (r > 2.6) return 0;
+  let h = 0;
+  // MISA — zagłębienie, najgłębsze w środku
+  if (r < 0.92) h -= Math.pow(1 - (r / 0.92) * (r / 0.92), 0.75);
+  // WAŁ — podniesiona obwódka tuż za krawędzią misy.
+  //       To on „łapie" światło i sprawia, że krater wygląda
+  //       na wklęsły, a nie na plamę.
+  h += 0.6 * Math.exp(-(((r - 1.0) / 0.1) * ((r - 1.0) / 0.1)));
+  // EJECTA — materiał wyrzucony przy uderzeniu, opada z odległością.
+  // `zanik` doprowadza warstwę DOKŁADNIE do zera na granicy r = 2.6.
+  // Bez tego zostawał tam mikroskopijny uskok — a mapa normalnych
+  // wzmacnia każdy uskok i na kuli pojawiał się cienki okrąg,
+  // jakby ktoś obrysował krater cyrklem.
+  if (r > 1.0) {
+    const zanik = 1 - (r - 1.0) / 1.6;
+    h += 0.17 * Math.exp(-(r - 1.0) / 0.5) * zanik * zanik;
+  }
+  return h;
+}
+
+function zbudujKsiezyc(opcje: {
+  szer: number; // szerokość tekstury (wysokość = połowa)
+  bazowy: [number, number, number]; // kolor regolitu
+  duze: number; // ile dużych kraterów
+  srednie: number;
+  male: number;
+  morza: number; // ile ciemnych „mórz" (zastygła lawa)
+  relief: number; // siła rzeźby (0 = płasko)
+}): PowierzchniaKsiezyca {
+  const W = opcje.szer;
+  const H = W / 2;
+  const wysokosc = new Float32Array(W * H); // mapa wysokości
+  const swiezosc = new Float32Array(W * H); // jak „świeży" jest materiał
+  const morze = new Float32Array(W * H); // 1 = ciemne morze
+  const jasnosc = new Float32Array(W * H); // promienie od młodych kraterów
+
+  /* --- 1. PODKŁAD: pofalowany, stary teren --- */
+  const oktawy = [
+    { siatka: siatkaSzumu(24, 12), w: 24, h: 12, waga: 1.0 },
+    { siatka: siatkaSzumu(64, 32), w: 64, h: 32, waga: 0.45 },
+    { siatka: siatkaSzumu(180, 90), w: 180, h: 90, waga: 0.18 },
+    { siatka: siatkaSzumu(420, 210), w: 420, h: 210, waga: 0.07 },
+    /* Najdrobniejsza warstwa — ledwie widoczna gołym okiem, ale to
+       ona decyduje, czy powierzchnia wygląda jak PYŁ, czy jak
+       wypolerowany plastik. Bez niej duże kratery robią się
+       gładkie i „galaretowate". */
+    { siatka: siatkaSzumu(1100, 550), w: 1100, h: 550, waga: 0.022 },
+  ];
+  for (let y = 0; y < H; y++) {
+    const v = y / H;
+    for (let x = 0; x < W; x++) {
+      const u = x / W;
+      let s = 0;
+      for (const o of oktawy) s += (probkuj(o.siatka, o.w, o.h, u, v) - 0.5) * o.waga;
+      wysokosc[y * W + x] = s * 0.6;
+    }
+  }
+
+  /* --- 2. MORZA — wielkie, gładkie niziny z zastygłej lawy.
+         Są ciemniejsze i prawie pozbawione małych kraterów, bo
+         powstały później i „zalały" starszy teren. --- */
+  for (let i = 0; i < opcje.morza; i++) {
+    // punkt równomiernie na kuli (inaczej morza tłoczą się przy biegunach)
+    const theta = Math.acos(Math.random() * 1.4 - 0.7);
+    const cx = Math.random() * W;
+    const cy = (theta / Math.PI) * H;
+    const promien = (0.1 + Math.random() * 0.13) * W;
+    const nieregularnosc = siatkaSzumu(16, 8);
+    const zasieg = Math.ceil(promien * 1.6);
+    for (let dy = -zasieg; dy <= zasieg; dy++) {
+      const y = Math.round(cy) + dy;
+      if (y < 0 || y >= H) continue;
+      const sin = Math.max(Math.sin((y / H) * Math.PI), 0.2);
+      for (let dx = -Math.ceil(zasieg / sin); dx <= Math.ceil(zasieg / sin); dx++) {
+        const x = ((Math.round(cx) + dx) % W + W) % W;
+        const odl = Math.hypot(dx * sin, dy) / promien;
+        // brzeg morza ma być poszarpany, nie idealnie okrągły
+        const brzeg = 0.75 + probkuj(nieregularnosc, 16, 8, x / W, y / H) * 0.5;
+        if (odl > brzeg) continue;
+        // łagodne przejście na brzegu morza — przy ostrym było
+        // widać cienką, nienaturalną kreskę na powierzchni
+        const sila = Math.min(1, (brzeg - odl) / 0.38);
+        const i2 = y * W + x;
+        morze[i2] = Math.max(morze[i2], sila);
+        wysokosc[i2] -= sila * 0.5; // morze leży niżej
+        wysokosc[i2] *= 1 - sila * 0.6; // …i jest znacznie gładsze
+      }
+    }
+  }
+
+  /* --- 3. KRATERY w trzech skalach --- */
+  function wbijKrater(promienTeksela: number, mlody: boolean) {
+    // środek równomiernie na kuli
+    const theta = Math.acos(Math.random() * 2 - 1);
+    const cy = (theta / Math.PI) * H;
+    const cx = Math.random() * W;
+    const sin = Math.max(Math.sin(theta), 0.16); // przy biegunach nie rozciągamy w nieskończoność
+    // Jasne promienie przy biegunie rozciągają się w wachlarz smug
+    // zbiegających się w jednym punkcie — brzydki artefakt mapy
+    // prostokątnej. Młode (promieniste) kratery robimy więc tylko
+    // z dala od biegunów.
+    if (sin < 0.5) mlody = false;
+    // duże kratery są względnie PŁYTSZE niż małe (tak jest naprawdę)
+    const amplituda = opcje.relief * Math.pow(promienTeksela, 0.55) * 0.55;
+    const szczyt = promienTeksela > W * 0.028 ? 0.45 : 0; // centralny szczyt tylko w dużych
+    const zasieg = Math.ceil(promienTeksela * 2.6);
+    // promienie: losowy wzór „szprych" wokół młodego krateru
+    const faza = Math.random() * Math.PI * 2;
+    const ileSzprych = 5 + Math.floor(Math.random() * 7);
+
+    for (let dy = -zasieg; dy <= zasieg; dy++) {
+      const y = Math.round(cy) + dy;
+      if (y < 0 || y >= H) continue;
+      const rozciag = Math.ceil(zasieg / sin);
+      for (let dx = -rozciag; dx <= rozciag; dx++) {
+        const x = ((Math.round(cx) + dx) % W + W) % W;
+        const odlX = dx * sin; // przeliczenie na odległość NA KULI
+        const r = Math.hypot(odlX, dy) / promienTeksela;
+        if (r > 2.6) continue;
+        const i2 = y * W + x;
+
+        let h = profilKrateru(r);
+        if (szczyt > 0 && r < 0.5) h += szczyt * Math.exp(-((r / 0.2) * (r / 0.2)));
+        wysokosc[i2] += h * amplituda;
+
+        // świeży materiał (wał + ejecta) jest jaśniejszy od otoczenia
+        if (r > 0.75 && r < 1.9) {
+          swiezosc[i2] = Math.min(1, swiezosc[i2] + (mlody ? 0.55 : 0.22) * Math.exp(-(r - 1) * 2));
+        }
+        // JASNE PROMIENIE — smugi pyłu ciągnące się daleko poza krater.
+        // To one sprawiają, że młody krater widać z drugiego końca tarczy.
+        if (mlody && r > 1.1) {
+          const kat = Math.atan2(dy, odlX);
+          // wykładnik 3 (a nie 8) — smugi mają być miękkie i nieregularne,
+          // przy ostrym wykładniku wychodził wykres kołowy, nie pył
+          const szprycha = Math.pow(Math.abs(Math.cos((kat - faza) * ileSzprych * 0.5)), 3);
+          jasnosc[i2] = Math.min(1, jasnosc[i2] + szprycha * Math.exp(-(r - 1.1) / 1.4) * 0.7);
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < opcje.duze; i++) wbijKrater(W * (0.018 + Math.random() * 0.028), Math.random() < 0.3);
+  for (let i = 0; i < opcje.srednie; i++) wbijKrater(W * (0.006 + Math.random() * 0.012), Math.random() < 0.18);
+  for (let i = 0; i < opcje.male; i++) wbijKrater(W * (0.0018 + Math.random() * 0.0042), false);
+
+  /* --- 4. KOLOR --- */
+  const plotnoKoloru = document.createElement("canvas");
+  plotnoKoloru.width = W;
+  plotnoKoloru.height = H;
+  const ctxK = plotnoKoloru.getContext("2d")!;
+  const obrazK = ctxK.createImageData(W, H);
+  const drobnySzum = siatkaSzumu(W / 2, H / 2);
+  const [br, bg, bb] = opcje.bazowy;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i2 = y * W + x;
+      // ziarno regolitu — bez niego powierzchnia wygląda plastikowo
+      const ziarno = (probkuj(drobnySzum, W / 2, H / 2, x / W, y / H) - 0.5) * 0.12;
+      let t = 1 + ziarno;
+      t *= 1 - morze[i2] * 0.42; // morza wyraźnie ciemniejsze
+      t *= 1 + swiezosc[i2] * 0.22; // świeże wały jaśniejsze
+      t += jasnosc[i2] * 0.24; // promienie
+      t += Math.max(-0.12, Math.min(0.12, wysokosc[i2] * 0.16)); // wyżej = jaśniej
+      const p = i2 * 4;
+      obrazK.data[p] = Math.max(0, Math.min(255, br * t));
+      obrazK.data[p + 1] = Math.max(0, Math.min(255, bg * t));
+      obrazK.data[p + 2] = Math.max(0, Math.min(255, bb * t));
+      obrazK.data[p + 3] = 255;
+    }
+  }
+  ctxK.putImageData(obrazK, 0, 0);
+
+  /* --- 5. MAPA NORMALNYCH ---
+     Liczymy nachylenie terenu w poziomie i w pionie (różnica
+     wysokości sąsiednich punktów) i zapisujemy jako kolor.
+     UWAGA na zniekształcenie mapy: przy biegunach te same teksele
+     odpowiadają dużo mniejszemu kawałkowi powierzchni, więc
+     nachylenie w poziomie trzeba podzielić przez sin(szerokości)
+     — inaczej bieguny wyglądałyby jak zmięta folia. */
+  const plotnoN = document.createElement("canvas");
+  plotnoN.width = W;
+  plotnoN.height = H;
+  const ctxN = plotnoN.getContext("2d")!;
+  const obrazN = ctxN.createImageData(W, H);
+  const SILA = 15;
+  for (let y = 0; y < H; y++) {
+    const sinSurowy = Math.sin(((y + 0.5) / H) * Math.PI);
+    const sin = Math.max(sinSurowy, 0.3);
+    /* WYGASZANIE PRZY BIEGUNACH. Mapa prostokątna ma przy biegunach
+       osobliwość: wszystkie kolumny tekseli zbiegają się w jeden
+       punkt. Rzeźba robi się tam „ściągnięta" jak zaciśnięty worek
+       i widać gwiazdę promieni. Nie da się tego usunąć — da się
+       ukryć: przy biegunach stopniowo zerujemy siłę rzeźby. */
+    const wygasz = Math.min(1, sinSurowy / 0.55);
+    const yg = Math.max(y - 1, 0);
+    const yd = Math.min(y + 1, H - 1);
+    for (let x = 0; x < W; x++) {
+      const xl = (x - 1 + W) % W;
+      const xp = (x + 1) % W;
+      const dx = ((wysokosc[y * W + xp] - wysokosc[y * W + xl]) * 0.5 * SILA * wygasz) / sin;
+      const dy = (wysokosc[yd * W + x] - wysokosc[yg * W + x]) * 0.5 * SILA * wygasz;
+      const dl = Math.hypot(dx, dy, 1);
+      const p = (y * W + x) * 4;
+      obrazN.data[p] = ((-dx / dl) * 0.5 + 0.5) * 255;
+      /* ⚠️ PUŁAPKA, która kosztowała jeden obieg poprawek:
+         zielony kanał ma tu ZNAK DODATNI, choć „na logikę" powinien
+         być ujemny jak czerwony. Powód: CanvasTexture domyślnie
+         ODWRACA obraz w pionie (flipY), bo w WebGL pionowa
+         współrzędna tekstury rośnie do góry, a na płótnie w dół.
+         Nachylenie liczymy w układzie płótna, więc trzeba je z
+         powrotem odwrócić. Bez tego światło oświetla kratery od
+         złej strony i wszystkie wyglądają jak WYPUKŁE kulki
+         zamiast wklęsłych dziur. */
+      obrazN.data[p + 1] = ((dy / dl) * 0.5 + 0.5) * 255;
+      obrazN.data[p + 2] = (1 / dl) * 0.5 * 255 + 127.5;
+      obrazN.data[p + 3] = 255;
+    }
+  }
+  ctxN.putImageData(obrazN, 0, 0);
+
+  return { kolor: plotnoKoloru, normalna: plotnoN };
+}
+
+/* ============ SŁOŃCE — FINAŁ PODRÓŻY ============
+   Dawniej była to gładka biała kula i już. Z daleka (w hero)
+   wyglądała dobrze, ale w sekcji Kontakt kamera podchodzi blisko
+   i biała kula robiła się po prostu białym kółkiem z ostrą
+   krawędzią — jak naklejone koło z papieru.
+
+   Powierzchnia: GRANULACJA, czyli komórki konwekcyjne. To one
+   sprawiają, że gwiazda wygląda na wrzącą, a nie na wyciętą. */
+function namalujSlonce(): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 512;
+  c.width = 1024;
   c.height = 512;
   const ctx = c.getContext("2d")!;
-  ctx.fillStyle = kolorBazowy;
-  ctx.fillRect(0, 0, 512, 512);
-  // miękkie plamy — subtelna zmienność powierzchni
+  ctx.fillStyle = "#fffdf2";
+  ctx.fillRect(0, 0, 1024, 512);
   ctx.save();
-  ctx.filter = "blur(14px)";
-  for (let i = 0; i < 18; i++) {
-    ctx.fillStyle = `rgba(120,112,150,${(0.05 + Math.random() * 0.07).toFixed(3)})`;
-    ctx.beginPath();
-    ctx.arc(Math.random() * 512, Math.random() * 512, 30 + Math.random() * 90, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  for (let i = 0; i < ileKraterow; i++) {
-    const x = Math.random() * 512;
+  ctx.filter = "blur(2px)";
+  // Komórki są DROBNE i mało kontrastowe. Przy większych i mocniejszych
+  // słońce wygląda jak piłka golfowa, a nie jak wrząca gwiazda —
+  // granulacja ma być wyczuwalna, nie widoczna.
+  for (let i = 0; i < 2600; i++) {
+    const x = Math.random() * 1024;
     const y = Math.random() * 512;
-    const r = 8 + Math.random() * 30;
-    const cien = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
-    cien.addColorStop(0, "rgba(50,45,80,0.5)");
-    cien.addColorStop(0.75, "rgba(50,45,80,0.18)");
-    cien.addColorStop(1, "rgba(50,45,80,0)");
-    ctx.fillStyle = cien;
+    const r = 1.5 + Math.random() * 4;
+    ctx.fillStyle =
+      Math.random() < 0.5 ? "rgba(255,235,180,0.16)" : "rgba(255,255,255,0.2)";
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
-    // cienki jasny rant (górna-lewa krawędź krateru „łapie" światło)
-    ctx.strokeStyle = "rgba(255,255,255,0.16)";
-    ctx.lineWidth = Math.max(1, r * 0.1);
-    ctx.beginPath();
-    ctx.arc(x, y, r * 0.94, Math.PI * 0.65, Math.PI * 1.55);
-    ctx.stroke();
   }
+  ctx.restore();
+  return c;
+}
+
+/* PROMIENIE SŁOŃCA — wachlarz miękkich smug.
+   Kiedyś rysował je CSS (`repeating-conic-gradient`) doczepiony do
+   karty CTA i wycentrowany „na oko" na sztywnej wysokości. Skutek
+   był nieunikniony: przy innej wysokości okna wachlarz świecił obok
+   słońca. Teraz to zwykły obrazek naklejony NA TARCZĘ w scenie 3D —
+   jedzie z nią wszędzie, bo jest jej częścią.
+   Smugi mają losową szerokość i długość; równe wyglądałyby jak
+   wykres kołowy, a nie jak światło. */
+function namalujPromienie(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = 1024;
+  c.height = 1024;
+  const ctx = c.getContext("2d")!;
+  ctx.translate(512, 512);
+  ctx.filter = "blur(5px)";
+  const ile = 64;
+  for (let i = 0; i < ile; i++) {
+    const kat = (i / ile) * Math.PI * 2 + (Math.random() - 0.5) * 0.05;
+    const szer = (0.004 + Math.random() * 0.016) * Math.PI;
+    const dl = 300 + Math.random() * 190;
+    const moc = 0.05 + Math.random() * 0.11;
+    const g = ctx.createRadialGradient(0, 0, 60, 0, 0, dl);
+    g.addColorStop(0, `rgba(255,238,196,${moc.toFixed(3)})`);
+    g.addColorStop(0.45, `rgba(255,214,140,${(moc * 0.45).toFixed(3)})`);
+    g.addColorStop(1, "rgba(255,200,110,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, dl, kat - szer, kat + szer);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // wycinamy środek (żeby smugi nie leżały na samej tarczy)
+  // i wygaszamy je na zewnątrz — inaczej widać krawędź obrazka
+  ctx.filter = "none";
+  ctx.globalCompositeOperation = "destination-in";
+  const maska = ctx.createRadialGradient(0, 0, 0, 0, 0, 512);
+  maska.addColorStop(0, "rgba(0,0,0,0)");
+  maska.addColorStop(0.17, "rgba(0,0,0,0)");
+  maska.addColorStop(0.36, "rgba(0,0,0,1)");
+  maska.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = maska;
+  ctx.fillRect(-512, -512, 1024, 1024);
   return c;
 }
 
@@ -421,26 +746,71 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   pierscienie.rotation.x = PRZECHYL; // pochylenie pierścieni (z kadry.ts)
   uklad.add(pierscienie);
 
-  // księżyc GŁÓWNY (jaśniejszy) — to na nim „ląduje" sekcja Usługi
-  const plotnoKsiezyca = namalujKsiezyc("#e8e4ff");
+  /* księżyc GŁÓWNY — to na nim „ląduje" sekcja Usługi, czyli to
+     NAJDOKŁADNIEJ oglądana powierzchnia na całej stronie. Dlatego
+     dostaje pełną rozdzielczość, mapę normalnych i gęstą siatkę
+     wierzchołków (96×96 zamiast 64×64 — inaczej krawędź kuli
+     widocznej z bliska robi się kanciasta). */
+  /* Kolor bazowy jest CIEMNIEJSZY niż dawniej (dawniej #e8e4ff,
+     czyli prawie biel). Powód: skoro powierzchnia ma teraz
+     prawdziwą rzeźbę, to światło samo robi jasne wały i ciemne
+     misy. Startując od bieli nie zostaje miejsca na rozjaśnienie
+     — wszystko zlewa się w białą plamę. Prawdziwy Księżyc też
+     jest ciemnoszary; jasny wydaje się tylko na tle czerni. */
+  const powKsiezyca = zbudujKsiezyc({
+    szer: 2048,
+    bazowy: [163, 158, 186],
+    duze: 15,
+    srednie: 64,
+    male: 340,
+    morza: 3,
+    relief: 1,
+  });
   const ksiezyc = new THREE.Mesh(
-    new THREE.SphereGeometry(R_KSIEZYC, 64, 64),
+    new THREE.SphereGeometry(R_KSIEZYC, 96, 96),
     new THREE.MeshStandardMaterial({
-      map: tekstura(plotnoKsiezyca),
-      roughness: 0.6,
-      emissive: 0x2a2540,
+      map: tekstura(powKsiezyca.kolor),
+      // mapa normalnych NIE jest obrazkiem do oglądania, tylko
+      // zapisem kierunków — nie wolno jej przepuszczać przez
+      // korekcję sRGB, bo zafałszuje kąty (stąd `false`)
+      normalMap: tekstura(powKsiezyca.normalna, false),
+      normalScale: new THREE.Vector2(1, 1),
+      roughness: 0.98, // regolit jest matowy jak popiół — zero połysku
+      metalness: 0,
+      // emisja mocno ściszona: wcześniej rozjaśniała cienie tak,
+      // że rzeźba i tak by ich nie pokazała
+      emissive: 0x14111f,
     })
   );
+  /* Przechylenie osi księżyca. Tekstura prostokątna ma przy
+     biegunach nieusuwalną osobliwość (wszystkie kolumny zbiegają
+     się w punkt). Kamera w sekcji Usługi patrzy na księżyc lekko
+     od dołu, więc bez tego obrotu biegun wypadałby dokładnie na
+     środku widocznej tarczy. Obracamy go poza kadr — najstarsza
+     sztuczka w grafice: czego nie da się naprawić, to się odwraca. */
+  ksiezyc.rotation.set(1.15, 0.6, 0.35);
   uklad.add(ksiezyc);
 
   // drugi, MNIEJSZY księżyc — ta sama płaszczyzna orbity, własny
   // promień i tempo, żeby księżyce nigdy się nie mijały
+  // Ten księżyc oglądamy tylko z daleka, więc tekstura jest
+  // czterokrotnie mniejsza — po co liczyć detal, którego nie widać.
+  const powKsiezyca2 = zbudujKsiezyc({
+    szer: 512,
+    bazowy: [211, 205, 242],
+    duze: 6,
+    srednie: 22,
+    male: 60,
+    morza: 1,
+    relief: 1,
+  });
   const ksiezyc2 = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 32, 32),
     new THREE.MeshStandardMaterial({
-      map: tekstura(namalujKsiezyc("#d3cdf2", 24)),
-      roughness: 0.6,
-      emissive: 0x241f3a,
+      map: tekstura(powKsiezyca2.kolor),
+      normalMap: tekstura(powKsiezyca2.normalna, false),
+      roughness: 0.9,
+      emissive: 0x18142a,
       transparent: true, // patrz „NIE ZASŁANIAJ KADRU" niżej
     })
   );
@@ -499,12 +869,22 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   scena.add(poswiataTurk);
   // jej mały księżyc (na produkcji krąży w PRZECIWNĄ stronę niż
   // księżyce olbrzyma — zachowujemy ten szczegół)
+  const powKsiezycaT = zbudujKsiezyc({
+    szer: 512,
+    bazowy: [215, 232, 229],
+    duze: 4,
+    srednie: 16,
+    male: 40,
+    morza: 0,
+    relief: 1,
+  });
   const ksiezycTurkusowej = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 24, 24),
     new THREE.MeshStandardMaterial({
-      map: tekstura(namalujKsiezyc("#d7e8e5", 14)),
-      roughness: 0.7,
-      emissive: 0x1d3a38,
+      map: tekstura(powKsiezycaT.kolor),
+      normalMap: tekstura(powKsiezycaT.normalna, false),
+      roughness: 0.85,
+      emissive: 0x142826,
       transparent: true, // patrz „NIE ZASŁANIAJ KADRU" niżej
     })
   );
@@ -516,11 +896,43 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
      światła) + żółte halo w trybie additive. Bez tekstury i bez
      post-processingu, żeby wyglądało 1:1 jak w hero. */
   const slonce = new THREE.Mesh(
-    new THREE.SphereGeometry(R_SLONCE, 48, 48),
-    new THREE.MeshBasicMaterial({ color: 0xfffdf2 })
+    new THREE.SphereGeometry(R_SLONCE, 64, 64),
+    new THREE.MeshBasicMaterial({ map: tekstura(namalujSlonce()) })
   );
   slonce.position.copy(POZ_SLONCA);
   scena.add(slonce);
+
+  /* OTOCZKA — wąska, jasna obwódka tuż przy tarczy. Jej jedyne
+     zadanie: rozmyć ostrą krawędź kuli. Bez niej słońce z bliska
+     wygląda jak wycięte nożyczkami koło. */
+  const otoczka = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tekstura(namalujPoswiate("255,246,214"), false),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      opacity: 0.85,
+    })
+  );
+  otoczka.scale.set(1.15, 1.15, 1);
+  otoczka.position.copy(POZ_SLONCA).setZ(POZ_SLONCA.z - 0.02);
+  scena.add(otoczka);
+
+  /* PROMIENIE — obracają się bardzo powoli (pełny obrót ~5 minut).
+     Ruch ma być na granicy zauważalności: ma sprawiać wrażenie,
+     że gwiazda żyje, a nie kręcić się jak wiatraczek. */
+  const promienie = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: tekstura(namalujPromienie(), false),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      opacity: 0.9,
+    })
+  );
+  promienie.scale.set(7.4, 7.4, 1);
+  promienie.position.copy(POZ_SLONCA).setZ(POZ_SLONCA.z - 0.04);
+  scena.add(promienie);
   const halo = new THREE.Sprite(
     new THREE.SpriteMaterial({
       map: tekstura(namalujPoswiate("255,236,150"), false),
@@ -531,7 +943,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   );
   // skala przeliczona z produkcji (3.4 przy odległości ~13) na
   // nową odległość słońca, żeby halo wyglądało tak samo
-  halo.scale.set(5.2, 5.2, 1);
+  halo.scale.set(4.4, 4.4, 1);
   halo.position.copy(POZ_SLONCA).setZ(POZ_SLONCA.z - 0.1);
   scena.add(halo);
 
@@ -850,6 +1262,8 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     // ruch świata (tempo z produkcji, tylko olbrzym wolniej —
     // z bliska szybki obrót powierzchni męczyłby oko)
     planeta.rotation.y += dt * 0.06;
+    // promienie słońca: pełny obrót w ok. 5 minut
+    (promienie.material as THREE.SpriteMaterial).rotation += dt * 0.021;
     pierscienie.rotation.z += dt * 0.02;
     rozowa.rotation.y += dt * 0.18;
     turkusowa.rotation.y += dt * 0.14;
