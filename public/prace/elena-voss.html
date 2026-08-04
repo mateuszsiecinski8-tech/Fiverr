@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elena Voss — Documentary &amp; portrait photography</title>
+<!-- PROJEKT POKAZOWY (spec work) — fikcyjne portfolio fotografki.
+     Styl: skrajny minimalizm redakcyjny. Prawie brak koloru,
+     ogromna typografia, dużo powietrza — zdjęcia mają być
+     jedynym „kolorem" na stronie. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111; --mut:#8a8a8a; --tlo:#fafaf8; --linia:#e4e4e0; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:var(--tlo);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3,.serif{font-family:'Instrument Serif',serif;font-weight:400;letter-spacing:-.01em}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 40px}
+  .kap{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--mut)}
+
+  /* NAV */
+  nav{position:fixed;inset:0 0 auto;z-index:30;mix-blend-mode:difference}
+  .nav-in{display:flex;align-items:baseline;justify-content:space-between;height:88px;color:#fff}
+  .logo{font-family:'Instrument Serif',serif;font-size:23px;letter-spacing:.02em}
+  .menu{display:flex;gap:36px;font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+
+  /* HERO — jedno wielkie zdanie i jeden kadr */
+  .hero{padding:180px 0 0}
+  .hero h1{font-size:clamp(46px,9.6vw,148px);line-height:.9;letter-spacing:-.03em;max-width:14ch}
+  .hero h1 em{font-style:italic;color:var(--mut)}
+  .hero-meta{display:flex;justify-content:space-between;align-items:flex-end;margin-top:54px;padding-bottom:22px;border-bottom:1px solid var(--linia);flex-wrap:wrap;gap:20px}
+  .hero-meta p{max-width:38ch;color:var(--mut);font-size:15px;line-height:1.75}
+
+  /* WIELKI KADR */
+  .glowny{margin-top:22px;height:min(74vh,660px);position:relative;overflow:hidden;
+    background:linear-gradient(115deg,#2c2c2a 0%,#5b5a55 38%,#9d9a91 62%,#3a3936 100%)}
+  .glowny::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 30% 30%,rgba(255,255,255,.24),transparent 60%)}
+  .podpis{display:flex;justify-content:space-between;margin-top:14px;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+
+  /* PRACE */
+  section{padding:130px 0}
+  .tytul-sekcji{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--linia);padding-bottom:20px;flex-wrap:wrap;gap:14px}
+  .tytul-sekcji h2{font-size:clamp(30px,4.4vw,56px)}
+
+  .prace{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin-top:56px}
+  .praca{position:relative}
+  .praca .kadr{position:relative;overflow:hidden;background:#ddd}
+  .praca .kadr::after{content:"";position:absolute;inset:0;background:radial-gradient(70% 70% at 34% 26%,rgba(255,255,255,.22),transparent 62%)}
+  .praca h3{font-size:23px;margin-top:16px}
+  .praca span{display:block;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin-top:5px}
+  .p1{grid-column:span 7} .p1 .kadr{aspect-ratio:7/5;background:linear-gradient(140deg,#3d3a35,#8d8579 70%,#4a4640)}
+  .p2{grid-column:span 5} .p2 .kadr{aspect-ratio:5/6;background:linear-gradient(160deg,#20262b,#6f7b83 62%,#2b3237)}
+  .p3{grid-column:span 5} .p3 .kadr{aspect-ratio:5/6;background:linear-gradient(150deg,#4b3b33,#a08a76 58%,#3a2f29)}
+  .p4{grid-column:span 7} .p4 .kadr{aspect-ratio:7/5;background:linear-gradient(120deg,#2f3330,#7f8a7d 66%,#343a34)}
+  .p5{grid-column:span 12} .p5 .kadr{aspect-ratio:12/5;background:linear-gradient(105deg,#26221f,#6d655c 44%,#a49a8c 72%,#2c2825)}
+
+  /* O MNIE */
+  .o-mnie{display:grid;grid-template-columns:5fr 7fr;gap:80px;align-items:start}
+  .portret{aspect-ratio:4/5;background:linear-gradient(150deg,#3a3a38,#8e8c85 64%,#45443f)}
+  .o-mnie h2{font-size:clamp(28px,3.6vw,46px);line-height:1.14}
+  .o-mnie p{color:var(--mut);font-size:16px;line-height:1.9;margin-top:22px;max-width:52ch}
+  .lista-nagrod{margin-top:44px;border-top:1px solid var(--linia)}
+  .lista-nagrod div{display:flex;justify-content:space-between;gap:20px;padding:15px 0;border-bottom:1px solid var(--linia);font-size:14.5px}
+  .lista-nagrod span{color:var(--mut)}
+
+  /* KLIENCI */
+  .klienci{display:flex;flex-wrap:wrap;gap:14px 46px;margin-top:44px;font-family:'Instrument Serif',serif;font-size:clamp(20px,2.4vw,30px);color:#c2c0ba}
+
+  /* KONTAKT */
+  .kontakt{border-top:1px solid var(--linia);padding-top:70px}
+  .kontakt h2{font-size:clamp(38px,7vw,104px);line-height:.94;letter-spacing:-.03em}
+  .kontakt a.mail{display:inline-block;margin-top:26px;font-family:'Instrument Serif',serif;font-size:clamp(22px,3vw,40px);border-bottom:1px solid var(--ink);padding-bottom:5px}
+  .kontakt-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:70px}
+  .kontakt-meta h4{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);margin-bottom:12px}
+  .kontakt-meta p{font-size:15px;line-height:1.85}
+
+  footer{padding:60px 0 40px;display:flex;justify-content:space-between;font-size:12px;letter-spacing:.1em;color:var(--mut);flex-wrap:wrap;gap:12px}
+
+  @media(max-width:900px){
+    .wrap{padding:0 22px}
+    .menu{display:none}
+    .hero{padding-top:130px}
+    .prace{grid-template-columns:1fr;gap:38px}
+    .p1,.p2,.p3,.p4,.p5{grid-column:auto}
+    .p1 .kadr,.p4 .kadr,.p5 .kadr{aspect-ratio:4/3}
+    .o-mnie,.kontakt-meta{grid-template-columns:1fr;gap:40px}
+    section{padding:80px 0}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <div class="logo">Elena Voss</div>
+    <div class="menu"><a href="#work">Work</a><a href="#about">About</a><a href="#contact">Contact</a><a href="#contact">Instagram</a></div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>People, <em>mostly</em>, and the rooms they leave behind.</h1>
+    <div class="hero-meta">
+      <p class="kap">Documentary &amp; portrait photography — Copenhagen, available worldwide</p>
+      <p>Twelve years photographing people who are not performing. Editorial, reportage and long-form documentary for magazines, museums and the occasional very patient brand.</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="glowny"></div>
+    <div class="podpis"><span>Harbour workers, Nordhavn — 2025</span><span>Hasselblad 907X · natural light</span></div>
+  </div>
+</header>
+
+<section id="work">
+  <div class="wrap">
+    <div class="tytul-sekcji">
+      <h2>Selected work</h2>
+      <span class="kap">2019 — 2026</span>
+    </div>
+    <div class="prace">
+      <div class="praca p1"><div class="kadr"></div><h3>The Last Shift</h3><span>Reportage · Politiken Weekend</span></div>
+      <div class="praca p2"><div class="kadr"></div><h3>Ingrid, at 94</h3><span>Portrait · personal</span></div>
+      <div class="praca p3"><div class="kadr"></div><h3>Salt Houses</h3><span>Documentary · Læsø</span></div>
+      <div class="praca p4"><div class="kadr"></div><h3>Six Weeks in Tbilisi</h3><span>Editorial · Monocle</span></div>
+      <div class="praca p5"><div class="kadr"></div><h3>Nothing Grows Here Yet</h3><span>Exhibition · Copenhagen Contemporary, 2025</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="wrap o-mnie">
+    <div class="portret"></div>
+    <div>
+      <p class="kap">About</p>
+      <h2 style="margin-top:16px">I photograph slowly, and I ask a lot of questions first.</h2>
+      <p>I started in newspapers, which taught me to be fast, and then spent a decade unlearning it. Most of my work now happens over days rather than hours — sitting in kitchens, waiting for the light, letting people forget the camera is there.</p>
+      <p>I shoot digital and film, almost always available light, and I edit my own work. If you need forty polished frames by Friday, I'm probably the wrong photographer. If you want six that people remember, let's talk.</p>
+      <div class="lista-nagrod">
+        <div><b>World Press Photo — Nominee, Long-Term Projects</b><span>2025</span></div>
+        <div><b>Danish Picture of the Year — Portrait, First Prize</b><span>2024</span></div>
+        <div><b>Solo exhibition — Copenhagen Contemporary</b><span>2025</span></div>
+        <div><b>Sony World Photography Awards — Shortlist</b><span>2022</span></div>
+      </div>
+      <p class="kap" style="margin-top:52px">Selected clients</p>
+      <div class="klienci"><span>Monocle</span><span>The Guardian</span><span>Politiken</span><span>Louisiana Museum</span><span>Kinfolk</span><span>Aesop</span><span>Danish Design Centre</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" style="padding-bottom:0">
+  <div class="wrap kontakt">
+    <p class="kap">Contact</p>
+    <h2 style="margin-top:22px">Tell me about the story.</h2>
+    <a href="#contact" class="mail">studio@elenavoss.com</a>
+    <div class="kontakt-meta">
+      <div><h4>Studio</h4><p>Refshalevej 163A<br>1432 Copenhagen K<br>Denmark</p></div>
+      <div><h4>Representation</h4><p>Northern Light Agency<br>Berlin &amp; London<br>agency@northernlight.de</p></div>
+      <div><h4>Available for</h4><p>Editorial commissions<br>Documentary projects<br>Exhibition &amp; book work</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><footer><span>© 2026 Elena Voss</span><span>Spec work — design concept by Maty</span></footer></div>
+
+</body>
+</html>

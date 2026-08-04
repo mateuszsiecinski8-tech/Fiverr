@@ -665,37 +665,29 @@ body {
    dzięki temu miniatury projektów są wreszcie dobrze widoczne
    (wcześniej leżały na jasnej, fioletowej ścianie planety).
    ============================================================ */
-.tryb-lot #portfolio a[class*="border-akcent"] {
-  background: linear-gradient(
-    152deg,
-    rgba(74, 52, 158, 0.34) 0%,
-    rgba(17, 11, 40, 0.8) 55%,
-    rgba(12, 8, 30, 0.88) 100%
-  ) !important;
-  border-color: rgba(var(--pl-rgb), 0.3) !important;
-  backdrop-filter: blur(14px);
+/* Kafelki mozaiki to NIEPRZEZROCZYSTE OBRAZY — i to jest powód,
+   dla którego akurat ta scena mogła dostać największą planetę.
+   Zdjęcia nie potrzebują ciemnego tła pod spodem: same są tłem.
+   Wystarczy je „odkleić" od chmur olbrzyma cienką obwódką
+   i mocnym cieniem, żeby czytały się jak przedmioty leżące
+   NAD sceną, a nie wtopione w nią. */
+.tryb-lot #portfolio .kafel-projektu {
+  border: 1px solid rgba(var(--pl-rgb), 0.22);
   box-shadow:
     0 40px 90px -38px rgba(0, 0, 0, 0.95),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    0 2px 10px -4px rgba(0, 0, 0, 0.8);
 }
-.tryb-lot #portfolio a[class*="border-akcent"]:hover {
-  border-color: rgba(var(--pl-rgb), 0.6) !important;
+.tryb-lot #portfolio .kafel-projektu:hover {
+  border-color: rgba(var(--pl-rgb), 0.55);
   box-shadow:
     0 48px 110px -38px rgba(0, 0, 0, 1),
-    0 0 70px -22px rgba(var(--pl-rgb), 0.4) !important;
+    0 0 70px -22px rgba(var(--pl-rgb), 0.35);
 }
-/* kafelki bento to zdjęcia — ramka i mocny cień „odklejają" je od planety */
-.tryb-lot #portfolio a[class*="h-72"] {
-  border: 1px solid rgba(var(--pl-rgb), 0.26);
-  box-shadow: 0 34px 78px -36px rgba(0, 0, 0, 0.95);
-}
-.tryb-lot #portfolio a[class*="h-72"]:hover {
-  border-color: rgba(var(--pl-rgb), 0.55);
-}
-/* tagi projektów — cienka fioletowa obwódka zamiast szarej */
-.tryb-lot #portfolio span[class*="border-zinc"] {
-  border-color: rgba(var(--pl-rgb), 0.28) !important;
-  color: rgba(224, 217, 255, 0.85) !important;
+/* Nagłówek sekcji to JEDYNY tekst leżący wprost na kosmosie,
+   więc tylko on potrzebuje cienia pod literami. */
+.tryb-lot #portfolio > div:last-child > *:first-child p,
+.tryb-lot #portfolio > div:last-child > *:first-child h2 {
+  text-shadow: 0 2px 26px rgba(var(--pl-tlo), 0.95);
 }
 
 /* ============================================================

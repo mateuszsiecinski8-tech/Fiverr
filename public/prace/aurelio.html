@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurelio — Contemporary Italian dining</title>
+<!-- PROJEKT POKAZOWY (spec work) — fikcyjna restauracja fine dining.
+     Styl: ciemny, elegancki, szeryfowy tytuł + złoty akcent.
+     Zdjęcia zastąpione kompozycjami CSS (gradienty + ziarno). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tlo:#0e0d0b; --tlo2:#16140f; --tekst:#f3efe6; --mut:#a09884;
+    --zloto:#c9a227; --zloto2:#e8cf7a; --linia:rgba(233,222,196,.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Jost',sans-serif;background:var(--tlo);color:var(--tekst);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif;font-weight:400}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  a{color:inherit;text-decoration:none}
+  .kap{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--zloto);font-weight:500}
+
+  /* NAV */
+  nav{position:fixed;inset:0 0 auto;z-index:20;backdrop-filter:blur(12px);background:rgba(14,13,11,.72);border-bottom:1px solid var(--linia)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:76px}
+  .logo{font-family:'Cormorant Garamond',serif;font-size:27px;letter-spacing:.16em;text-transform:uppercase}
+  .logo i{font-style:normal;color:var(--zloto)}
+  .menu{display:flex;gap:34px;font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut)}
+  .rez{border:1px solid var(--zloto);color:var(--zloto);padding:11px 24px;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+
+  /* HERO */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden}
+  .hero-tlo{position:absolute;inset:0;
+    background:
+      radial-gradient(70% 90% at 78% 40%, rgba(201,162,39,.30), transparent 62%),
+      radial-gradient(50% 60% at 20% 90%, rgba(120,48,22,.34), transparent 70%),
+      linear-gradient(160deg,#151310,#0b0a08 70%)}
+  /* „talerz" — ilustracja z gradientów zamiast zdjęcia */
+  .talerz{position:absolute;right:-4%;top:50%;transform:translateY(-50%);width:min(46vw,620px);aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #3a3227, #1b1712 58%, #100e0b 100%);
+    box-shadow:0 60px 140px rgba(0,0,0,.7), inset 0 2px 0 rgba(255,240,200,.10)}
+  .talerz::after{content:"";position:absolute;inset:16%;border-radius:50%;
+    background:radial-gradient(circle at 42% 36%, rgba(232,207,122,.30), rgba(140,74,30,.28) 46%, rgba(30,22,16,.9) 78%);
+    box-shadow:inset 0 0 60px rgba(0,0,0,.6)}
+  .hero-tresc{position:relative;z-index:2;max-width:620px;padding-top:60px}
+  .hero h1{font-size:clamp(52px,7.4vw,104px);line-height:.98;letter-spacing:-.01em;margin-top:26px}
+  .hero h1 em{font-style:italic;color:var(--zloto2)}
+  .hero p{color:var(--mut);font-size:17px;line-height:1.85;margin-top:26px;max-width:430px;font-weight:300}
+  .hero-cta{display:flex;gap:16px;margin-top:42px;flex-wrap:wrap}
+  .btn{padding:16px 34px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;display:inline-block}
+  .btn.pelny{background:linear-gradient(120deg,var(--zloto2),var(--zloto));color:#191408}
+  .btn.pusty{border:1px solid var(--linia);color:var(--tekst)}
+
+  /* PASEK */
+  .pasek{border-block:1px solid var(--linia);background:var(--tlo2)}
+  .pasek .wrap{display:flex;justify-content:space-between;gap:28px;padding-block:30px;flex-wrap:wrap}
+  .pasek div{font-size:13px;letter-spacing:.1em;color:var(--mut)}
+  .pasek b{display:block;font-family:'Cormorant Garamond',serif;font-size:23px;color:var(--tekst);letter-spacing:.04em;margin-bottom:4px}
+
+  /* SEKCJE */
+  section{padding:120px 0}
+  .naglowek{max-width:660px}
+  .naglowek h2{font-size:clamp(36px,4.6vw,58px);line-height:1.1;margin-top:18px}
+  .naglowek p{color:var(--mut);margin-top:20px;line-height:1.85;font-weight:300}
+
+  /* MENU */
+  .dania{display:grid;grid-template-columns:1fr 1fr;gap:0 72px;margin-top:64px}
+  .danie{display:flex;gap:20px;align-items:baseline;padding:24px 0;border-bottom:1px solid var(--linia)}
+  .danie h3{font-size:24px;white-space:nowrap}
+  .kropki{flex:1;border-bottom:1px dotted rgba(233,222,196,.26);transform:translateY(-5px)}
+  .cena{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--zloto2)}
+  .danie small{display:block;color:var(--mut);font-size:13px;font-weight:300;margin-top:6px;letter-spacing:.02em}
+  .danie-txt{flex:1;min-width:0}
+
+  /* GALERIA */
+  .galeria{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;margin-top:64px;height:440px}
+  .kadr{border-radius:2px;position:relative;overflow:hidden}
+  .kadr::after{content:attr(data-podpis);position:absolute;left:20px;bottom:18px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(243,239,230,.86)}
+  .k1{background:linear-gradient(150deg,#4a3520,#1a1410 78%)}
+  .k2{background:linear-gradient(150deg,#2c3327,#111310 78%)}
+  .k3{background:linear-gradient(150deg,#432028,#160f10 78%)}
+  .kolumna{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+
+  /* CYTAT */
+  .cytat{background:var(--tlo2);border-block:1px solid var(--linia);text-align:center}
+  .cytat blockquote{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3.4vw,40px);line-height:1.4;font-style:italic;max-width:860px;margin:24px auto 0}
+  .cytat cite{display:block;font-style:normal;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--mut);margin-top:28px}
+
+  /* REZERWACJA */
+  .rez-box{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+  .pola{display:grid;gap:14px;margin-top:34px}
+  .pole{border:1px solid var(--linia);background:rgba(255,255,255,.02);padding:15px 18px;font-size:13px;letter-spacing:.08em;color:var(--mut)}
+  .pola .para{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+  /* STOPKA */
+  footer{border-top:1px solid var(--linia);padding:72px 0 40px}
+  .stopka{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px}
+  .stopka h4{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--zloto);margin-bottom:18px}
+  .stopka p,.stopka a{display:block;color:var(--mut);font-size:14px;font-weight:300;line-height:2}
+  .dol{margin-top:56px;padding-top:26px;border-top:1px solid var(--linia);display:flex;justify-content:space-between;font-size:12px;color:var(--mut);letter-spacing:.08em;flex-wrap:wrap;gap:12px}
+
+  @media(max-width:900px){
+    .menu,.rez{display:none}
+    .talerz{opacity:.42;right:-24%}
+    .dania,.rez-box,.stopka{grid-template-columns:1fr;gap:0}
+    .stopka{gap:34px}
+    .galeria{grid-template-columns:1fr;height:auto}
+    .kadr{height:200px}
+    section{padding:80px 0}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <div class="logo">Aurel<i>i</i>o</div>
+    <div class="menu"><a href="#menu">Menu</a><a href="#story">Story</a><a href="#rooms">Rooms</a><a href="#book">Contact</a></div>
+    <a href="#book" class="rez">Reserve</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-tlo"></div>
+  <div class="talerz"></div>
+  <div class="wrap hero-tresc">
+    <p class="kap">Est. 2011 · Two Michelin stars</p>
+    <h1>Twelve courses,<br>one <em>evening</em>.</h1>
+    <p>A tasting menu built around what the Ligurian coast gives us that week. No fixed carte, no shortcuts — the kitchen writes the evening the morning it happens.</p>
+    <div class="hero-cta">
+      <a href="#book" class="btn pelny">Reserve a table</a>
+      <a href="#menu" class="btn pusty">See this week's menu</a>
+    </div>
+  </div>
+</header>
+
+<div class="pasek">
+  <div class="wrap">
+    <div><b>Tue — Sat</b>18:00 — 23:30, single seating</div>
+    <div><b>28 seats</b>Booking opens 60 days ahead</div>
+    <div><b>€ 145</b>Tasting menu, per guest</div>
+    <div><b>Via Balbi 14</b>Genoa, Italy</div>
+  </div>
+</div>
+
+<section id="menu">
+  <div class="wrap">
+    <div class="naglowek">
+      <p class="kap">This week</p>
+      <h2>The menu changes when the sea does.</h2>
+      <p>Printed every Tuesday. What follows is the current week — by the time you read it on a Friday, two courses will already have moved on.</p>
+    </div>
+    <div class="dania">
+      <div class="danie"><div class="danie-txt"><h3>Raw amberjack</h3><small>Green almond, fermented lemon, olive oil from Taggia</small></div><span class="kropki"></span><span class="cena">1</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Bread &amp; cultured butter</h3><small>Sourdough started in 2011, still going</small></div><span class="kropki"></span><span class="cena">2</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Sea urchin, buckwheat</h3><small>Warm custard, toasted grain, chive oil</small></div><span class="kropki"></span><span class="cena">3</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Pansotti in walnut</h3><small>Wild herb filling, aged Parmigiano</small></div><span class="kropki"></span><span class="cena">4</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Red mullet, its own sauce</h3><small>Bone reduction, saffron, fennel pollen</small></div><span class="kropki"></span><span class="cena">5</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Pigeon, cherry, juniper</h3><small>Aged 14 days, grilled over vine cuttings</small></div><span class="kropki"></span><span class="cena">6</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Goat cheese, honeycomb</h3><small>From the farm above Camogli</small></div><span class="kropki"></span><span class="cena">7</span></div>
+      <div class="danie"><div class="danie-txt"><h3>Olive oil cake</h3><small>Rosemary ice cream, candied peel</small></div><span class="kropki"></span><span class="cena">8</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="rooms" style="padding-top:0">
+  <div class="wrap">
+    <div class="naglowek">
+      <p class="kap">The rooms</p>
+      <h2>A courtyard, a cellar, and one long table.</h2>
+    </div>
+    <div class="galeria">
+      <div class="kadr k1" data-podpis="The courtyard"></div>
+      <div class="kolumna">
+        <div class="kadr k2" data-podpis="Kitchen pass"></div>
+        <div class="kadr k3" data-podpis="Wine cellar, 1890"></div>
+      </div>
+      <div class="kadr k1" data-podpis="Chef's table"></div>
+    </div>
+  </div>
+</section>
+
+<section class="cytat" id="story">
+  <div class="wrap">
+    <p class="kap">Guida Ristoranti, 2024</p>
+    <blockquote>“Aurelio does the hardest thing in cooking — it makes restraint taste generous.”</blockquote>
+    <cite>Marta Bellini, food critic</cite>
+  </div>
+</section>
+
+<section id="book">
+  <div class="wrap rez-box">
+    <div>
+      <p class="kap">Reservations</p>
+      <h2 style="font-size:clamp(34px,4.2vw,52px);line-height:1.1;margin-top:18px">Tables open sixty days ahead, at nine in the morning.</h2>
+      <p style="color:var(--mut);margin-top:20px;line-height:1.85;font-weight:300">Parties of five or more are seated in the cellar. Dietary requirements are welcome — tell us at least 48 hours before, and the kitchen will write you your own menu.</p>
+    </div>
+    <div>
+      <div class="pola">
+        <div class="para"><div class="pole">First name</div><div class="pole">Last name</div></div>
+        <div class="pole">Email address</div>
+        <div class="para"><div class="pole">Date</div><div class="pole">Guests</div></div>
+        <div class="pole" style="padding-bottom:52px">Anything we should know?</div>
+        <a href="#book" class="btn pelny" style="text-align:center">Request a table</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="stopka">
+      <div>
+        <div class="logo" style="font-size:32px">Aurel<i>i</i>o</div>
+        <p style="margin-top:16px;max-width:280px">Contemporary Italian cooking on the Ligurian coast. Two Michelin stars since 2019.</p>
+      </div>
+      <div><h4>Visit</h4><p>Via Balbi 14<br>16126 Genoa<br>Italy</p></div>
+      <div><h4>Contact</h4><a href="#book">+39 010 555 0134</a><a href="#book">book@aurelio.it</a></div>
+      <div><h4>Follow</h4><a href="#book">Instagram</a><a href="#book">Guide Michelin</a><a href="#book">Newsletter</a></div>
+    </div>
+    <div class="dol"><span>© 2026 Ristorante Aurelio</span><span>Spec work — design concept by Maty</span></div>
+  </div>
+</footer>
+
+</body>
+</html>

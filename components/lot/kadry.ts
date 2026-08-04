@@ -174,10 +174,13 @@ export const PRZYSTANKI: Przystanek[] = [
     cel: { typ: "punkt", v: SRODEK_OLBRZYMA },
     kierunek: { typ: "staly", v: [-0.6, 0.35, 0.72] },
     promien: R_OLBRZYM,
-    ulamek: 0.46,
+    ulamek: 0.4,
     fov: 46,
     obrot: -5,
-    kadr: { x: 0.22, y: -0.06 },
+    // odsunięte bardziej w prawo niż w pozostałych scenach: mozaika
+    // projektów jest szeroka, a jasny brzeg olbrzyma nie powinien
+    // świecić dokładnie pod kafelkami
+    kadr: { x: 0.31, y: -0.04 },
   },
 
   /* 3. PROCES — TURKUSOWA planeta.

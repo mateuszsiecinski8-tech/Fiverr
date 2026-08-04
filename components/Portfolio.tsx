@@ -1,24 +1,74 @@
 // ============================================================
-// SEKCJA 3: PORTFOLIO — siatka bento z 6 projektami.
-// Każdy kafelek to obrazek-mockup (z folderu public/portfolio/),
-// a klik otwiera żywe demo projektu (z folderu public/prace/).
+// SEKCJA 3: PORTFOLIO — MOZAIKA Z HIERARCHIĄ
 //
-// Nowy projekt dodajesz w lib/dane.ts:
-//   1. wrzuć obrazek do public/portfolio/
-//   2. dopisz wpis z polami: tytul, kategoria, uklad, obraz, link
-//   uklad: "szeroki" = kafelek na 2 kolumny, "waski" = na 1 kolumnę
+// Co się zmieniło (ZUI v2) i dlaczego:
+//
+// Wcześniej były to dwie wielkie karty prawdziwych klientów
+// (każda z akapitem opisu) jedna pod drugą, a pod nimi siatka
+// sześciu kafelków. Czytało się to jak lista — a portfolio ma
+// się SKANOWAĆ, nie czytać. Klient z Fiverr daje tej sekcji
+// kilka sekund.
+//
+// Teraz wszystko jest kafelkiem, ale kafelki NIE SĄ RÓWNE:
+//   • dwaj prawdziwi klienci dostają największe pola u góry
+//     (to jedyny dowód, że ktoś naprawdę za to zapłacił),
+//   • dziesięć projektów pokazowych układa się w mozaikę
+//     o zmiennym rytmie — raz szeroki + wąski, raz odwrotnie,
+//     raz dwa równe. Rzędy mają różną wysokość.
+//
+// Opisy przeniosły się tam, gdzie ktoś naprawdę je przeczyta:
+// na podstrony /case/<nazwa>. Kafelek ma sprzedać kliknięcie,
+// podstrona ma sprzedać umiejętności.
+//
+// Nowy projekt dodajesz w lib/dane.ts (tablica `portfolio`)
+// + wpis w `studiaPrzypadku`. Jeśli nie dopiszesz go do
+// UKLAD_MOZAIKI niżej, dostanie sensowny układ domyślny.
 // ============================================================
 
 import Image from "next/image";
+import Link from "next/link";
 import Reveal from "./Reveal";
 import KartaProjektu from "./KartaProjektu";
 import OzdobyKosmos from "./OzdobyKosmos";
 import { IkonaStrzalka } from "./Ikony";
 import { portfolio, projektyWyroznione } from "@/lib/dane";
 
+/* RYTM MOZAIKI — siatka ma 6 kolumn, każdy rząd sumuje się do 6.
+   Wysokości zmieniają się rząd po rzędzie, żeby oko miało po czym
+   wędrować. To jedyne miejsce, w którym dobiera się kompozycję
+   tej sekcji.
+     kol — ile kolumn zajmuje kafelek
+     wys — wysokość kafelka (cały rząd musi mieć tę samą!) */
+const UKLAD_MOZAIKI = [
+  { kol: "md:col-span-4", wys: "h-72 md:h-[26rem]" }, // rząd 1
+  { kol: "md:col-span-2", wys: "h-72 md:h-[26rem]" },
+  { kol: "md:col-span-2", wys: "h-72 md:h-[19rem]" }, // rząd 2
+  { kol: "md:col-span-4", wys: "h-72 md:h-[19rem]" },
+  { kol: "md:col-span-3", wys: "h-72 md:h-[23rem]" }, // rząd 3
+  { kol: "md:col-span-3", wys: "h-72 md:h-[23rem]" },
+  { kol: "md:col-span-4", wys: "h-72 md:h-[26rem]" }, // rząd 4
+  { kol: "md:col-span-2", wys: "h-72 md:h-[26rem]" },
+  { kol: "md:col-span-3", wys: "h-72 md:h-[21rem]" }, // rząd 5
+  { kol: "md:col-span-3", wys: "h-72 md:h-[21rem]" },
+];
+
+/* Gdy dopiszesz projekt, a zapomnisz o UKLAD_MOZAIKI — nic się
+   nie psuje: „szeroki" dostaje 3 kolumny, „wąski" też 3. */
+function ukladDla(indeks: number, uklad: string) {
+  return (
+    UKLAD_MOZAIKI[indeks] ?? {
+      kol: uklad === "szeroki" ? "md:col-span-4" : "md:col-span-2",
+      wys: "h-72 md:h-[22rem]",
+    }
+  );
+}
+
 export default function Portfolio() {
   return (
-    <section id="portfolio" className="relative scroll-mt-20 bg-zinc-50 px-5 py-24 md:px-8 md:py-32 dark:bg-zinc-900/40">
+    <section
+      id="portfolio"
+      className="relative scroll-mt-20 bg-zinc-50 px-5 py-24 md:px-8 md:py-32 dark:bg-zinc-900/40"
+    >
       {/* Kosmiczne smaczki w tle sekcji (dekoracja) */}
       <OzdobyKosmos wariant="portfolio" />
       <div className="relative mx-auto max-w-6xl">
@@ -34,91 +84,76 @@ export default function Portfolio() {
             </sup>
           </h2>
           <p className="mt-4 max-w-xl text-zinc-600 dark:text-zinc-400">
-            Click any project to see it live.
+            Every project opens a short case study — the brief, the decisions, and a live demo.
           </p>
         </Reveal>
 
-        {/* ============================================================
-            PROJEKTY WYRÓŻNIONE — prawdziwi klienci, duże karty na całą
-            szerokość. Dane edytujesz w lib/dane.ts (projektyWyroznione).
-            Co druga karta ma odbity układ (obraz po lewej) — rytm wizualny.
-            ============================================================ */}
-        {projektyWyroznione.map((projekt, indeks) => (
-          <Reveal key={projekt.tytul} className={indeks === 0 ? "mt-14" : "mt-6"}>
-            <a
-              href={projekt.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative grid overflow-hidden rounded-3xl border border-akcent/30 bg-white shadow-xl shadow-akcent/10 transition-all duration-300 hover:-translate-y-1 hover:border-akcent/60 hover:shadow-2xl hover:shadow-akcent/20 md:grid-cols-2 dark:border-akcent/30 dark:bg-zinc-900"
-            >
-              {/* Połowa z opisem projektu (w co drugiej karcie po prawej) */}
-              <div
-                className={`flex flex-col justify-center p-8 md:p-12 ${
-                  indeks % 2 === 1 ? "md:order-2" : ""
-                }`}
+        {/* ===== PRAWDZIWI KLIENCI — największe pola w mozaice =====
+            Dane edytujesz w lib/dane.ts (projektyWyroznione). */}
+        <div className="mt-12 grid gap-5 md:grid-cols-2">
+          {projektyWyroznione.map((projekt, indeks) => (
+            <Reveal key={projekt.tytul} opoznienie={indeks * 0.1}>
+              <Link
+                href={`/case/${projekt.slug}`}
+                className="kafel-projektu group relative block h-80 overflow-hidden rounded-3xl border border-akcent/25 bg-zinc-800 shadow-xl shadow-akcent/10 transition-all duration-300 hover:-translate-y-1 hover:border-akcent/60 hover:shadow-2xl hover:shadow-akcent/20 md:h-[30rem]"
               >
-                {/* Odznaka „Prawdziwy klient" */}
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-gradient-to-r from-akcent to-pink-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg shadow-akcent/30">
-                  ★ {projekt.odznaka}
-                </span>
-
-                <h3 className="mt-5 text-2xl font-bold tracking-tight md:text-3xl">
-                  {projekt.tytul}
-                </h3>
-                <p className="mt-2 font-medium text-zinc-700 dark:text-zinc-300">
-                  {projekt.podtytul}
-                </p>
-                <p className="mt-4 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                  {projekt.opis}
-                </p>
-
-                {/* Tagi projektu */}
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {projekt.tagi.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* „Przycisk" (cała karta jest linkiem) */}
-                <span className="mt-7 inline-flex w-fit items-center gap-2 rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition-colors duration-300 group-hover:bg-akcent dark:bg-white dark:text-zinc-900 dark:group-hover:bg-akcent dark:group-hover:text-white">
-                  View live
-                  <IkonaStrzalka className="h-4 w-4 -rotate-45 transition-transform duration-300 group-hover:rotate-0" />
-                </span>
-              </div>
-
-              {/* Połowa z miniaturą strony klienta */}
-              <div className={`relative min-h-64 md:min-h-full ${indeks % 2 === 1 ? "md:order-1" : ""}`}>
                 <Image
                   src={projekt.obraz}
                   alt={projekt.tytul}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover object-left-top transition-transform duration-500 group-hover:scale-[1.03]"
+                  className="object-cover object-left-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]"
                 />
-              </div>
-            </a>
-          </Reveal>
-        ))}
+                {/* przyciemnienie tylko pod podpisem — dla czytelności */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/88 via-black/35 to-black/10" />
 
-        {/* Siatka bento: na komórce 1 kolumna, na komputerze 3 kolumny.
-            Karty „szerokie" zajmują 2 kolumny. */}
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
-          {portfolio.map((projekt, indeks) => (
-            <Reveal
-              key={projekt.tytul}
-              opoznienie={(indeks % 3) * 0.1}
-              className={projekt.uklad === "szeroki" ? "md:col-span-2" : ""}
-            >
-              {/* Karta z tiltem 3D i żywym podglądem po najechaniu —
-                  cała magia siedzi w components/KartaProjektu.tsx */}
-              <KartaProjektu projekt={projekt} />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 p-7">
+                  {/* Odznaka „Prawdziwy klient" — jedyne miejsce
+                      z gradientem, bo to jedyna rzecz, która musi
+                      krzyczeć na tej sekcji */}
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-gradient-to-r from-akcent to-pink-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg shadow-akcent/30">
+                    ★ {projekt.odznaka}
+                  </span>
+                  <h3 className="mt-4 text-2xl font-bold leading-tight text-white md:text-[1.7rem]">
+                    {projekt.tytul}
+                  </h3>
+                  <p className="mt-1.5 text-sm font-medium text-white/75">
+                    {projekt.podtytul}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {projekt.tagi.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/25 px-3 py-1 text-xs font-semibold text-white/85"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="mt-5 flex translate-y-2 items-center gap-2 text-sm font-semibold text-white/0 transition-all duration-300 group-hover:translate-y-0 group-hover:text-white">
+                    Read the case study
+                    <IkonaStrzalka className="h-4 w-4" />
+                  </span>
+                </div>
+              </Link>
             </Reveal>
           ))}
+        </div>
+
+        {/* ===== PROJEKTY POKAZOWE — mozaika o zmiennym rytmie ===== */}
+        <div className="mt-5 grid gap-5 md:grid-cols-6">
+          {portfolio.map((projekt, indeks) => {
+            const { kol, wys } = ukladDla(indeks, projekt.uklad);
+            return (
+              <Reveal
+                key={projekt.tytul}
+                opoznienie={(indeks % 2) * 0.08}
+                className={kol}
+              >
+                <KartaProjektu projekt={projekt} wysokosc={wys} />
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
