@@ -851,6 +851,105 @@ body {
   border-top-color: rgba(var(--pl-rgb), 0.22) !important;
 }
 
+/* ============================================================
+   DOSTĘPNOŚĆ: WIDOCZNY ŚLAD KLAWIATURY
+   ============================================================
+   Część osób nie używa myszki — poruszają się po stronie
+   klawiszem Tab. Bez wyraźnej obwódki taka osoba nie wie, na
+   czym stoi, i strona staje się nie do przejścia.
+
+   `:focus-visible`, a nie `:focus` — to różnica, o którą łatwo
+   się potknąć. `:focus` zapaliłby obwódkę także po kliknięciu
+   myszką (brzydko i bez powodu). `:focus-visible` pokazuje ją
+   tylko wtedy, gdy przeglądarka wie, że ktoś naprawdę korzysta
+   z klawiatury.
+
+   Ta reguła jest POZA sekcją trybu lotu celowo: obowiązuje na
+   całej stronie, także w wersji klasycznej i na podstronach
+   z opisami projektów. */
+:focus-visible {
+  outline: 2px solid var(--color-akcent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+/* W trybie lotu obwódka przejmuje kolor planety danej sceny —
+   ten sam język wizualny co kafelek w menu. */
+.tryb-lot section[id] :focus-visible {
+  outline-color: var(--pl, var(--color-akcent));
+}
+
+/* --- 6b. EKRAN STARTOWY ---
+   Zasłania stronę na czas budowania sceny 3D (mierzone: kilka
+   sekund — malowanie tekstur planet kodem i kompilacja shaderów).
+   Bez niego przez ten czas widać hero z pustym, czarnym niebem.
+
+   Zasada: ŻADNEGO sztucznego opóźnienia. Ekran znika dokładnie
+   wtedy, gdy scena jest gotowa — klasę „lot-gotowy" dokłada
+   components/lot/LotSekcja.tsx. Na szybkim sprzęcie mignie i już. */
+.ekran-startowy {
+  position: fixed;
+  inset: 0;
+  z-index: 60; /* nad navbarem (50) — to jest wejście do strony */
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 50% 45%, #14102a 0%, #07050f 62%, #050308 100%);
+  transition: opacity 0.9s ease, visibility 0.9s;
+}
+.lot-gotowy .ekran-startowy {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.ekran-startowy-tresc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.35rem;
+}
+.ekran-startowy-logo {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f4f2ff;
+}
+.ekran-startowy-logo span {
+  color: var(--color-akcent);
+}
+/* Pasek NIE pokazuje postępu — pokazuje, że coś się dzieje.
+   Udawany procent byłby kłamstwem: nie da się przewidzieć, ile
+   potrwa kompilacja shaderów na nieznanej karcie graficznej. */
+.ekran-startowy-pasek {
+  position: relative;
+  width: 8.5rem;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.ekran-startowy-pasek::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--color-akcent), transparent);
+  animation: przesuw-startowy 1.35s ease-in-out infinite;
+}
+@keyframes przesuw-startowy {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.ekran-startowy-podpis {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+
 /* --- 7. KAFELEK PODRÓŻY W MENU ---
    Zastąpił pasek kropek przy lewej krawędzi ekranu (a ten wcześniej
    „kule sąsiadów" w rogach kadru). Za każdym razem ta sama nauka:

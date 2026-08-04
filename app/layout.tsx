@@ -15,9 +15,21 @@ const inter = Inter({
   display: "swap",
 });
 
+/* Adres, względem którego liczą się obrazki podglądu (te, które
+   widać przy wklejeniu linku na Facebooku czy w Messengerze).
+   Vercel sam podstawia swój adres przy budowaniu, więc nie trzeba
+   niczego wpisywać ręcznie — a lokalnie działa localhost. */
+const bazowyAdres =
+  process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+
 // Meta-dane strony — to widzą Google i podgląd linku na social media.
 // ✏️ Podmień tytuł i opis na swoje!
 export const metadata: Metadata = {
+  metadataBase: new URL(bazowyAdres),
   title: "Maty — Web Design | Websites, Branding, UI/UX",
   description:
     "Freelance designer & developer: websites and landing pages, graphics and branding, UI/UX design. Premium-class projects that sell.",

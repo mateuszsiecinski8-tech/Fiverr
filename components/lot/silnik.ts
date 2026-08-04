@@ -240,12 +240,31 @@ type PowierzchniaKsiezyca = {
   normalna: HTMLCanvasElement;
 };
 
+/* --- POWTARZALNA LOSOWOŚĆ ---
+   Zwykłe Math.random() daje za każdym razem inny księżyc. Zwykle
+   to zaleta, ale tutaj byłaby katastrofą: tekstura powstaje DWA
+   RAZY — najpierw szybka wersja 512 px, żeby scena ruszyła od
+   razu, a potem pełna 2048 px w tle (patrz niżej). Gdyby obie
+   losowały niezależnie, w trakcie oglądania księżyc zmieniłby się
+   w INNY księżyc. Przy tym samym ziarnie generator zawsze rysuje
+   ten sam świat, więc podmiany nie widać.
+   (Algorytm: mulberry32 — cztery linijki, bardzo dobra jakość.) */
+function losowanie(ziarno: number): () => number {
+  let a = ziarno >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /* --- szum „wartościowy" z zawijaniem w poziomie ---
    Zawijanie jest konieczne, bo tekstura owija się wokół kuli:
    lewa krawędź musi pasować do prawej, inaczej widać pionowy szew. */
-function siatkaSzumu(w: number, h: number): Float32Array {
+function siatkaSzumu(w: number, h: number, rnd: () => number): Float32Array {
   const a = new Float32Array(w * h);
-  for (let i = 0; i < a.length; i++) a[i] = Math.random();
+  for (let i = 0; i < a.length; i++) a[i] = rnd();
   return a;
 }
 function probkuj(siatka: Float32Array, w: number, h: number, u: number, v: number): number {
@@ -301,7 +320,10 @@ function zbudujKsiezyc(opcje: {
   male: number;
   morza: number; // ile ciemnych „mórz" (zastygła lawa)
   relief: number; // siła rzeźby (0 = płasko)
+  /** ziarno losowości — ten sam numer = ten sam księżyc */
+  ziarno: number;
 }): PowierzchniaKsiezyca {
+  const rnd = losowanie(opcje.ziarno);
   const W = opcje.szer;
   const H = W / 2;
   const wysokosc = new Float32Array(W * H); // mapa wysokości
@@ -311,15 +333,15 @@ function zbudujKsiezyc(opcje: {
 
   /* --- 1. PODKŁAD: pofalowany, stary teren --- */
   const oktawy = [
-    { siatka: siatkaSzumu(24, 12), w: 24, h: 12, waga: 1.0 },
-    { siatka: siatkaSzumu(64, 32), w: 64, h: 32, waga: 0.45 },
-    { siatka: siatkaSzumu(180, 90), w: 180, h: 90, waga: 0.18 },
-    { siatka: siatkaSzumu(420, 210), w: 420, h: 210, waga: 0.07 },
+    { siatka: siatkaSzumu(24, 12, rnd), w: 24, h: 12, waga: 1.0 },
+    { siatka: siatkaSzumu(64, 32, rnd), w: 64, h: 32, waga: 0.45 },
+    { siatka: siatkaSzumu(180, 90, rnd), w: 180, h: 90, waga: 0.18 },
+    { siatka: siatkaSzumu(420, 210, rnd), w: 420, h: 210, waga: 0.07 },
     /* Najdrobniejsza warstwa — ledwie widoczna gołym okiem, ale to
        ona decyduje, czy powierzchnia wygląda jak PYŁ, czy jak
        wypolerowany plastik. Bez niej duże kratery robią się
        gładkie i „galaretowate". */
-    { siatka: siatkaSzumu(1100, 550), w: 1100, h: 550, waga: 0.022 },
+    { siatka: siatkaSzumu(1100, 550, rnd), w: 1100, h: 550, waga: 0.022 },
   ];
   for (let y = 0; y < H; y++) {
     const v = y / H;
@@ -336,11 +358,11 @@ function zbudujKsiezyc(opcje: {
          powstały później i „zalały" starszy teren. --- */
   for (let i = 0; i < opcje.morza; i++) {
     // punkt równomiernie na kuli (inaczej morza tłoczą się przy biegunach)
-    const theta = Math.acos(Math.random() * 1.4 - 0.7);
-    const cx = Math.random() * W;
+    const theta = Math.acos(rnd() * 1.4 - 0.7);
+    const cx = rnd() * W;
     const cy = (theta / Math.PI) * H;
-    const promien = (0.1 + Math.random() * 0.13) * W;
-    const nieregularnosc = siatkaSzumu(16, 8);
+    const promien = (0.1 + rnd() * 0.13) * W;
+    const nieregularnosc = siatkaSzumu(16, 8, rnd);
     const zasieg = Math.ceil(promien * 1.6);
     for (let dy = -zasieg; dy <= zasieg; dy++) {
       const y = Math.round(cy) + dy;
@@ -366,9 +388,9 @@ function zbudujKsiezyc(opcje: {
   /* --- 3. KRATERY w trzech skalach --- */
   function wbijKrater(promienTeksela: number, mlody: boolean) {
     // środek równomiernie na kuli
-    const theta = Math.acos(Math.random() * 2 - 1);
+    const theta = Math.acos(rnd() * 2 - 1);
     const cy = (theta / Math.PI) * H;
-    const cx = Math.random() * W;
+    const cx = rnd() * W;
     const sin = Math.max(Math.sin(theta), 0.16); // przy biegunach nie rozciągamy w nieskończoność
     // Jasne promienie przy biegunie rozciągają się w wachlarz smug
     // zbiegających się w jednym punkcie — brzydki artefakt mapy
@@ -380,8 +402,8 @@ function zbudujKsiezyc(opcje: {
     const szczyt = promienTeksela > W * 0.028 ? 0.45 : 0; // centralny szczyt tylko w dużych
     const zasieg = Math.ceil(promienTeksela * 2.6);
     // promienie: losowy wzór „szprych" wokół młodego krateru
-    const faza = Math.random() * Math.PI * 2;
-    const ileSzprych = 5 + Math.floor(Math.random() * 7);
+    const faza = rnd() * Math.PI * 2;
+    const ileSzprych = 5 + Math.floor(rnd() * 7);
 
     for (let dy = -zasieg; dy <= zasieg; dy++) {
       const y = Math.round(cy) + dy;
@@ -415,9 +437,9 @@ function zbudujKsiezyc(opcje: {
     }
   }
 
-  for (let i = 0; i < opcje.duze; i++) wbijKrater(W * (0.018 + Math.random() * 0.028), Math.random() < 0.3);
-  for (let i = 0; i < opcje.srednie; i++) wbijKrater(W * (0.006 + Math.random() * 0.012), Math.random() < 0.18);
-  for (let i = 0; i < opcje.male; i++) wbijKrater(W * (0.0018 + Math.random() * 0.0042), false);
+  for (let i = 0; i < opcje.duze; i++) wbijKrater(W * (0.018 + rnd() * 0.028), rnd() < 0.3);
+  for (let i = 0; i < opcje.srednie; i++) wbijKrater(W * (0.006 + rnd() * 0.012), rnd() < 0.18);
+  for (let i = 0; i < opcje.male; i++) wbijKrater(W * (0.0018 + rnd() * 0.0042), false);
 
   /* --- 4. KOLOR --- */
   const plotnoKoloru = document.createElement("canvas");
@@ -425,7 +447,7 @@ function zbudujKsiezyc(opcje: {
   plotnoKoloru.height = H;
   const ctxK = plotnoKoloru.getContext("2d")!;
   const obrazK = ctxK.createImageData(W, H);
-  const drobnySzum = siatkaSzumu(W / 2, H / 2);
+  const drobnySzum = siatkaSzumu(W / 2, H / 2, rnd);
   const [br, bg, bb] = opcje.bazowy;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
@@ -757,18 +779,29 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
      misy. Startując od bieli nie zostaje miejsca na rozjaśnienie
      — wszystko zlewa się w białą plamę. Prawdziwy Księżyc też
      jest ciemnoszary; jasny wydaje się tylko na tle czerni. */
-  const powKsiezyca = zbudujKsiezyc({
-    szer: 2048,
-    bazowy: [163, 158, 186],
+  const USTAWIENIA_KSIEZYCA = {
+    bazowy: [163, 158, 186] as [number, number, number],
     duze: 15,
     srednie: 64,
     male: 340,
     morza: 3,
     relief: 1,
-  });
-  const ksiezyc = new THREE.Mesh(
-    new THREE.SphereGeometry(R_KSIEZYC, 96, 96),
-    new THREE.MeshStandardMaterial({
+    ziarno: Math.floor(Math.random() * 1e9), // losowy świat, ale JEDEN
+  };
+
+  /* ⭐ DWA ETAPY ŁADOWANIA — najważniejsza optymalizacja startu.
+     Tekstura 2048×1024 z mapą wysokości i mapą normalnych to ponad
+     dwa miliony punktów do policzenia. A w hero księżyc zajmuje…
+     4% wysokości ekranu. Liczenie tam pełnego detalu to czysta
+     strata — i przez nią strona stała kilka sekund, zanim pokazała
+     kosmos.
+     Dlatego: najpierw wersja 512 px (scena rusza natychmiast),
+     a pełna dobudowuje się w tle, kiedy przeglądarka nie ma nic
+     pilnego — na długo zanim scroll dowiezie kogokolwiek do sekcji
+     Usługi. Wspólne ziarno sprawia, że to ten sam księżyc, więc
+     podmiany nie widać. */
+  const powKsiezyca = zbudujKsiezyc({ szer: 512, ...USTAWIENIA_KSIEZYCA });
+  const materialKsiezyca = new THREE.MeshStandardMaterial({
       map: tekstura(powKsiezyca.kolor),
       // mapa normalnych NIE jest obrazkiem do oglądania, tylko
       // zapisem kierunków — nie wolno jej przepuszczać przez
@@ -780,7 +813,10 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       // emisja mocno ściszona: wcześniej rozjaśniała cienie tak,
       // że rzeźba i tak by ich nie pokazała
       emissive: 0x14111f,
-    })
+  });
+  const ksiezyc = new THREE.Mesh(
+    new THREE.SphereGeometry(R_KSIEZYC, 96, 96),
+    materialKsiezyca
   );
   /* Przechylenie osi księżyca. Tekstura prostokątna ma przy
      biegunach nieusuwalną osobliwość (wszystkie kolumny zbiegają
@@ -790,6 +826,32 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
      sztuczka w grafice: czego nie da się naprawić, to się odwraca. */
   ksiezyc.rotation.set(1.15, 0.6, 0.35);
   uklad.add(ksiezyc);
+
+  /* — dobudowanie pełnej tekstury księżyca (patrz komentarz wyżej).
+       `requestIdleCallback` znaczy „zrób to, gdy nie masz nic
+       lepszego do roboty". Limit 5 s na wypadek sprzętu, na którym
+       chwila bezczynności nigdy nie nadejdzie. — */
+  let zniszczony = false;
+  let dopieszczanie: number | null = null;
+  function dopiescKsiezyc() {
+    if (zniszczony) return;
+    const pelny = zbudujKsiezyc({ szer: 2048, ...USTAWIENIA_KSIEZYCA });
+    const stareKolor = materialKsiezyca.map;
+    const stareNorm = materialKsiezyca.normalMap;
+    materialKsiezyca.map = tekstura(pelny.kolor);
+    materialKsiezyca.normalMap = tekstura(pelny.normalna, false);
+    materialKsiezyca.needsUpdate = true;
+    stareKolor?.dispose(); // zwalniamy pamięć karty graficznej
+    stareNorm?.dispose();
+  }
+  const bezczynnosc = (
+    window as Window & {
+      requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  dopieszczanie = bezczynnosc
+    ? bezczynnosc(dopiescKsiezyc, { timeout: 5000 })
+    : (setTimeout(dopiescKsiezyc, 1200) as unknown as number);
 
   // drugi, MNIEJSZY księżyc — ta sama płaszczyzna orbity, własny
   // promień i tempo, żeby księżyce nigdy się nie mijały
@@ -803,6 +865,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     male: 60,
     morza: 1,
     relief: 1,
+     ziarno: Math.floor(Math.random() * 1e9),
   });
   const ksiezyc2 = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 32, 32),
@@ -877,6 +940,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     male: 40,
     morza: 0,
     relief: 1,
+     ziarno: Math.floor(Math.random() * 1e9),
   });
   const ksiezycTurkusowej = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 24, 24),
@@ -1348,6 +1412,14 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       f(pozycjaPodrozy); // od razu podaj stan na starcie
     },
     zniszcz() {
+      zniszczony = true;
+      // jeśli pełna tekstura jeszcze się nie policzyła — odwołujemy
+      // zlecenie, żeby nie liczyła się „w próżnię"
+      if (dopieszczanie !== null) {
+        const anuluj = (window as Window & { cancelIdleCallback?: (id: number) => void })
+          .cancelIdleCallback;
+        anuluj ? anuluj(dopieszczanie) : clearTimeout(dopieszczanie);
+      }
       poinformujOPozycji = null;
       cancelAnimationFrame(klatka);
       obserwator.disconnect();

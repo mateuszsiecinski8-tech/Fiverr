@@ -143,6 +143,39 @@ kolumna jest wysoka-wąska) — dlatego promień orbity księżyca jest mały,
   Wpięty w Services/Portfolio/Process/Testimonials/Contact (hero BEZ zmian
   — tam chipy tylko odskakują od kursora). Czysty CSS, zero JS.
 
+**Etap 11 — ZUI v2 (gałąź `experiment/zui-space-scroll`).**
+Podniesienie trybu „lot kosmiczny" z prototypu do poziomu portfolio
+studia. ⚠️ To wciąż WERSJA EKSPERYMENTALNA — deploy tylko jako preview,
+NIGDY na `claude/freelancer-portfolio-nextjs-0e9u0j`.
+
+- **Nawigacja.** Pasek kropek przy lewej krawędzi USUNIĘTY. Jego rolę
+  przejęło górne menu: kafelek przejeżdża między pozycjami razem
+  z kamerą i zmienia kolor na kolor sceny. Żeby napisy zostały
+  czytelne także w POŁOWIE przejazdu, menu renderuje się dwa razy,
+  a ciemna kopia jest przycięta do kształtu kafelka (`clip-path`).
+  Komunikacja silnik → navbar: `components/lot/stanPodrozy.ts`.
+- **Kadry wydzielone do `components/lot/kadry.ts`** — plik bez
+  zależności od przeglądarki, więc działa też w Node. Dzięki temu
+  `node narzedzia/policzKadry.mts` LICZY, w którym miejscu ekranu
+  wyląduje każda planeta, zamiast dobierać liczby na oko.
+- **Koniec zaciemnień tła.** Prostokątne mgły pod sekcjami wyleciały
+  (było widać ich ukośną krawędź przecinającą planetę). Czytelność
+  niesie teraz: rozłączne kadrowanie (planeta i kolumna tekstu nigdy
+  się nie nakładają), materiał kart, jedna winieta krawędziowa
+  przyklejona do ekranu i cień pod nagłówkami.
+- **Księżyc ma prawdziwą rzeźbę.** Najpierw powstaje mapa wysokości
+  (misa, wał, ejecta, centralny szczyt, ciemne morza), a z niej kolor
+  I MAPA NORMALNYCH. Światło samo tworzy cienie na wałach.
+- **Portfolio to mozaika, nie lista.** Dwaj prawdziwi klienci mają
+  największe pola, dziesięć projektów pokazowych układa się w rzędy
+  o zmiennym rytmie. Opisy przeniosły się na PODSTRONY `/case/<nazwa>`
+  (statyczne, indeksowane, link do wysłania klientowi na Fiverr).
+- **Cztery nowe projekty pokazowe:** Aurelio (restauracja), Northfield
+  Dental (klinika), Elena Voss (fotograf), KANO (sklep) — każdy
+  w innym stylu.
+- **Ekran startowy** na czas budowania sceny (mierzone: ~5 s).
+  Bez sztucznego opóźnienia — znika, gdy scena wstanie.
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.
@@ -167,6 +200,23 @@ kolumna jest wysoka-wąska) — dlatego promień orbity księżyca jest mały,
       z `public/portfolio/`).
 - [ ] **Prawdziwe opinie:** gdy pojawią się pierwsze zlecenia, podmień
       placeholdery w `lib/dane.ts` (sekcja `opinie`).
+
+## 4b. Narzędzia deweloperskie (katalog `narzedzia/`)
+
+Powstały w etapie 11, bo poprzednie skrypty przepadły razem z sesją.
+Teraz są w repo i można ich użyć w każdej chwili.
+
+- **`node narzedzia/policzKadry.mts`** — wypisuje, w którym miejscu
+  ekranu wyląduje każda planeta na każdym przystanku (w % ekranu).
+  Importuje ten sam `components/lot/kadry.ts`, z którego korzysta
+  strona, więc wyliczenia nie mogą się rozjechać z rzeczywistością.
+  Można podać rozdzielczość: `node narzedzia/policzKadry.mts 2560 1080`.
+- **`node narzedzia/miniatury.mjs --wszystkie`** — generuje miniatury
+  kafelków portfolio: robi zrzut strony-demo w wersji na komputer
+  i na telefon, skleja je w mockup (okno przeglądarki + telefon na
+  kosmicznym gradiencie) i zapisuje do `public/portfolio/`.
+  ⚠️ Wymaga uruchomionego `npm run dev` na porcie 3000.
+  Nowy projekt dopisujesz w tablicy `PROJEKTY` na górze skryptu.
 
 ## 5. Jak pracować z Claude nad tym projektem
 

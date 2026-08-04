@@ -263,6 +263,28 @@ export default function LotSekcja() {
       {/* ===== KOSMOS: jedna kanwa przypięta POD całą stroną ===== */}
       <div ref={pojemnik3d} className="pojemnik-kosmos fixed inset-0 -z-10" />
 
+      {/* ===== EKRAN STARTOWY =====
+          Nie jest ozdobą. Zbudowanie sceny (tekstury planet malowane
+          kodem, kompilacja shaderów) zajmuje kilka sekund — zmierzone.
+          Bez tego ekranu gość przez ten czas widzi hero z pustym,
+          czarnym niebem i ma prawo pomyśleć, że strona jest zepsuta.
+          Teraz czekanie jest częścią wejścia, a nie usterką.
+
+          Znika sam: klasa „lot-gotowy" pojawia się na rodzicu w chwili
+          zbudowania sceny (patrz useEffect wyżej), a CSS wygasza go
+          płynnie. Nie ma tu żadnego licznika ani sztucznego opóźnienia
+          — jak scena wstanie szybciej, ekran zniknie szybciej. */}
+      <div className="ekran-startowy" aria-hidden="true">
+        <div className="ekran-startowy-tresc">
+          <span className="ekran-startowy-logo">
+            {/* to samo logo co w menu — spójność od pierwszej sekundy */}
+            Maty<span>.</span>
+          </span>
+          <span className="ekran-startowy-pasek" />
+          <span className="ekran-startowy-podpis">Plotting the flight path</span>
+        </div>
+      </div>
+
       {/* Gdzie jesteś w podróży, mówi teraz GÓRNE MENU — kafelek
           przejeżdża między pozycjami i zmienia kolor razem ze sceną
           (components/Navbar.tsx). Pasek kropek przy lewej krawędzi
