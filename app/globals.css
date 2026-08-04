@@ -437,7 +437,12 @@ body {
   .tryb-lot #opinie > div:last-child,
   .tryb-lot #kontakt > div:last-child {
     position: sticky;
-    top: 13vh;
+    /* BUDŻET PIONOWY: treść musi zmieścić się w jednym ekranie,
+       bo stoi nieruchomo, kiedy kamera dokuje przy planecie.
+       10vh od góry + ~78vh treści + zapas = mieści się na
+       laptopie 1536×864. Wcześniej było 13vh + 12vh paddingu
+       i trzecia karta wychodziła poza dolną krawędź. */
+    top: 10vh;
   }
   /* PUŁAPKA, o którą łatwo się potknąć: przyklejony element może
      jeździć tylko w obrębie POLA TREŚCI swojego rodzica — a padding
@@ -449,125 +454,153 @@ body {
   .tryb-lot #opinie,
   .tryb-lot #kontakt {
     min-height: 135vh;
-    padding-top: 12vh;
+    padding-top: 4vh;
     padding-bottom: 8vh;
   }
 }
 
 /* --- 2c. KOLUMNY TREŚCI dosunięte do wolnej połowy kadru ---
-   Liczby nie są „na oko": silnik stawia księżyc na ekranie w polu
-   x = 61–93%, a olbrzyma w x = 65–99%. Treść musi się w tym czasie
-   zmieścić PO LEWEJ, żeby nie leżeć na planecie. Różowa planeta
-   wschodzi z lewej, więc opinie uciekają w prawo — dzięki temu
-   każda scena ma inny rytm i nie wygląda jak ten sam szablon. */
+   ⭐ Liczby NIE są „na oko" — pochodzą ze skryptu
+   `node narzedzia/policzKadry.mts`, który wylicza, w którym
+   miejscu ekranu wyląduje każda tarcza. Zasada jest jedna:
+   PLANETA I KOLUMNA TEKSTU NIE MOGĄ SIĘ NAKŁADAĆ. Dopiero to
+   pozwoliło wyrzucić zaciemnienia tła.
+
+     Usługi   — księżyc x 61–87%  → treść w lewej połowie
+     Proces   — planeta x 38–74%, górny brzeg na 65% wysokości
+                → treść szeroka, ale trzyma się górnej części
+     Opinie   — różowa x 9–42%    → opinie uciekają w PRAWO
+     Portfolio— olbrzym x 47–105% → kafelki to nieprzezroczyste
+                obrazy, więc mogą leżeć na planecie; czystego
+                kosmosu potrzebuje tylko nagłówek (lewa góra) */
 .tryb-lot #uslugi > div:last-child {
-  max-width: min(60rem, 58vw);
+  max-width: min(46rem, 48vw);
   margin-left: clamp(1.25rem, 5vw, 5.5rem);
   margin-right: auto;
 }
-.tryb-lot #portfolio > div:last-child {
-  max-width: min(66rem, 68vw);
-  margin-left: clamp(1.25rem, 6vw, 7rem);
+.tryb-lot #proces > div:last-child {
+  max-width: min(74rem, 80vw);
+  margin-left: clamp(1.25rem, 5vw, 5.5rem);
   margin-right: auto;
 }
 .tryb-lot #opinie > div:last-child {
-  max-width: min(62rem, 64vw);
+  max-width: min(40rem, 43vw);
   margin-left: auto;
   margin-right: clamp(1.25rem, 5vw, 5.5rem);
 }
 
-/* --- 3. ZASŁONA: miękka mgła zamiast prostokątnego paska ---
-   To był drugi artefakt, który raził w oczy: zasłona pod tekstem
-   była zwykłym prostokątem z pionowym gradientem, więc na górze
-   i na dole kończyła się PROSTĄ LINIĄ. Wyglądało to jak szary
-   pasek doklejony do kosmosu.
+/* --- 2d. USŁUGI: trzy karty JEDNA POD DRUGĄ ---
+   Na produkcji to trzy kolumny obok siebie. Tutaj nie ma na to
+   miejsca — prawa połowa kadru należy do księżyca. Zamiast
+   ściskać kolumny do nieczytelnej szerokości, obracamy układ:
+   karty stają się poziomymi wierszami (ikona z lewej, treść
+   z prawej), a lista „co dostajesz" idzie w dwie kolumny.
+   Ta sama treść, o połowę mniej wysokości. */
+.tryb-lot #uslugi .grid {
+  grid-template-columns: 1fr !important;
+  gap: 0.75rem !important;
+  margin-top: 1.5rem !important;
+}
+.tryb-lot #uslugi article {
+  display: grid;
+  grid-template-columns: 2.9rem 1fr;
+  column-gap: 1.15rem;
+  align-items: start;
+  padding: 1rem 1.35rem !important;
+}
+.tryb-lot #uslugi article > div:first-child {
+  grid-row: 1 / span 3;
+  height: 2.9rem !important;
+  width: 2.9rem !important;
+  border-radius: 0.9rem !important;
+}
+.tryb-lot #uslugi article > div:first-child svg {
+  height: 1.4rem;
+  width: 1.4rem;
+}
+.tryb-lot #uslugi article h3 {
+  margin-top: 0 !important;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+.tryb-lot #uslugi article p {
+  margin-top: 0.3rem !important;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.tryb-lot #uslugi article ul {
+  margin-top: 0.75rem !important;
+  padding-top: 0.75rem !important;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 1rem;
+  font-size: 0.8rem;
+}
+.tryb-lot #uslugi article ul > li {
+  margin-top: 0 !important; /* kasuje `space-y-3` z produkcji */
+}
 
-   Nowa zasada — dwie rzeczy naraz:
-   1) MASKA liczona w jednostkach EKRANU (vh) wygasza mgłę na obu
-      końcach. Działa tak samo w krótkim Procesie i w bardzo długim
-      Portfolio, więc krawędzi nie widać NIGDZIE.
-   2) Kierunek ciemności ustawiamy OSOBNO dla każdej sceny — mgła
-      gęstnieje tam, gdzie stoi treść, i znika tam, gdzie jest
-      najładniejszy fragment planety. */
-.tryb-lot section[id]:not([id="start"])::before {
+/* --- 2e. OPINIE: trzy karty JEDNA POD DRUGĄ, po prawej ---
+   Różowa planeta wschodzi z lewego dołu, więc opinie ustawiamy
+   w wąskiej kolumnie przy prawej krawędzi. Dodatkowa korzyść:
+   cytat czyta się lepiej w krótszej linii. */
+.tryb-lot #opinie .grid {
+  grid-template-columns: 1fr !important;
+  gap: 0.75rem !important;
+  margin-top: 1.5rem !important;
+}
+.tryb-lot #opinie figure {
+  padding: 1.1rem 1.4rem !important;
+}
+.tryb-lot #opinie blockquote {
+  margin-top: 0.7rem !important;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.tryb-lot #opinie figcaption {
+  margin-top: 0.9rem !important;
+  padding-top: 0.9rem !important;
+}
+.tryb-lot #opinie figcaption span:first-child {
+  height: 2.25rem !important;
+  width: 2.25rem !important;
+}
+
+/* --- 3. WINIETA KADRU (zamiast zaciemnień pod sekcjami) ---
+   ⭐ CO SIĘ ZMIENIŁO I DLACZEGO
+
+   Wcześniej każda sekcja miała pod spodem własną „mgłę" —
+   prostokąt z ukośnym gradientem, który przyciemniał tło pod
+   tekstem. Dwa problemy:
+     • było WIDAĆ jego krawędź (ostra ukośna linia przecinająca
+       planetę — wyglądało jak błąd renderowania),
+     • zjadał najładniejszy fragment sceny.
+
+   Teraz czytelność bierze się z czterech innych rzeczy:
+     1. KADR — planeta i kolumna tekstu zajmują ROZŁĄCZNE części
+        ekranu. To rozstrzygnięte liczbowo w components/lot/kadry.ts
+        i sprawdzone skryptem narzedzia/policzKadry.mts, a nie na oko.
+     2. MATERIAŁ KART — ciemne szkło z jasnym rantem niesie własny
+        kontrast, niezależnie od tego, co jest za nim.
+     3. WINIETA (niżej) — jedna, przyklejona do EKRANU, przygaszająca
+        wyłącznie rogi kadru. Nie da się zobaczyć jej krawędzi, bo
+        nie ma krawędzi: to miękkie koło większe od ekranu.
+     4. Cienki cień pod literami nagłówków.
+
+   Winieta siedzi na kanwie 3D (::after pojemnika), więc jest NAD
+   kosmosem, ale POD treścią strony — dokładnie tam, gdzie trzeba. */
+.tryb-lot .pojemnik-kosmos::after {
   content: "";
-  position: absolute;
-  inset: -26vh 0;
-  z-index: -1;
+  position: fixed;
+  inset: 0;
+  z-index: 1; /* nad kanwą; cały pojemnik i tak siedzi pod treścią */
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(
-    180deg,
-    transparent 0,
-    #000 22vh,
-    #000 calc(100% - 22vh),
-    transparent 100%
+  background: radial-gradient(
+    128% 96% at 50% 46%,
+    transparent 38%,
+    rgba(5, 3, 12, 0.34) 74%,
+    rgba(5, 3, 12, 0.62) 100%
   );
-  mask-image: linear-gradient(
-    180deg,
-    transparent 0,
-    #000 22vh,
-    #000 calc(100% - 22vh),
-    transparent 100%
-  );
-}
-/* Usługi: treść po lewej, księżyc na dole po prawej → mgła gęsta
-   z lewej, zupełnie przezroczysta nad tarczą księżyca */
-.tryb-lot #uslugi::before {
-  background:
-    linear-gradient(
-      98deg,
-      rgba(var(--pl-tlo), 0.92) 0%,
-      rgba(var(--pl-tlo), 0.86) 40%,
-      rgba(var(--pl-tlo), 0.42) 66%,
-      rgba(var(--pl-tlo), 0) 88%
-    ),
-    /* odbite światło księżyca — delikatna liliowa poświata z prawej */
-    radial-gradient(
-      60% 50% at 88% 62%,
-      rgba(var(--pl-rgb), 0.09) 0%,
-      rgba(var(--pl-rgb), 0) 72%
-    );
-}
-/* Portfolio: bardzo długa sekcja → mgła MUSI być równa na całej
-   wysokości (żaden gradient pionowy tu nie zadziała, bo procenty
-   liczą się od wysokości sekcji, a ta ma ponad trzy ekrany) */
-.tryb-lot #portfolio::before {
-  background: linear-gradient(
-    100deg,
-    rgba(var(--pl-tlo), 0.93) 0%,
-    rgba(var(--pl-tlo), 0.88) 44%,
-    rgba(var(--pl-tlo), 0.48) 74%,
-    rgba(var(--pl-tlo), 0.08) 92%,
-    rgba(var(--pl-tlo), 0) 100%
-  );
-}
-/* Proces: horyzont planety świeci na dole, więc przyciemniamy
-   głównie NIEBO nad nim — z lekkim przechyleniem w prawo */
-.tryb-lot #proces::before {
-  background: linear-gradient(
-    172deg,
-    rgba(var(--pl-tlo), 0.92) 0%,
-    rgba(var(--pl-tlo), 0.84) 38%,
-    rgba(var(--pl-tlo), 0.34) 66%,
-    rgba(var(--pl-tlo), 0) 86%
-  );
-}
-/* Opinie: kula wschodzi z lewego dołu → mgła gęstnieje w prawo,
-   gdzie stoją karty, i puszcza planetę po lewej */
-.tryb-lot #opinie::before {
-  background:
-    linear-gradient(
-      262deg,
-      rgba(var(--pl-tlo), 0.92) 0%,
-      rgba(var(--pl-tlo), 0.85) 42%,
-      rgba(var(--pl-tlo), 0.45) 70%,
-      rgba(var(--pl-tlo), 0) 90%
-    ),
-    radial-gradient(
-      55% 45% at 12% 78%,
-      rgba(var(--pl-rgb), 0.1) 0%,
-      rgba(var(--pl-rgb), 0) 72%
-    );
 }
 
 /* --- 4. AKCENTY: fiolet marki ustępuje kolorowi planety --- */
@@ -744,107 +777,40 @@ body {
    i złoty przycisk zamiast fioletowego: podróż kończy się CIEPŁEM.
    ============================================================ */
 
-/* Niebo finału: ciemne u góry (pod nagłówek), rozjaśnione w pasie,
-   w którym stoi tarcza słońca, i znów ciemne przy stopce — czyli
-   dokładnie tak, jak wygląda niebo przy wschodzie. */
-.tryb-lot #kontakt::before {
-  inset: -26vh 0 -60vh;
-  /* Uwaga na proporcje: tu zasłona ma być NAJSŁABSZA z całej strony.
-     Kosmos dookoła i tak jest prawie czarny, a kontrast pod tekstem
-     daje sama karta CTA. Gdyby przyciemnić środek mocniej, tarcza
-     słońca zrobiłaby się szara — a to ona jest bohaterem finału. */
-  background: linear-gradient(
-    180deg,
-    rgba(var(--pl-tlo), 0.82) 0%,
-    rgba(var(--pl-tlo), 0.46) 24%,
-    rgba(var(--pl-tlo), 0.1) 50%,
-    rgba(var(--pl-tlo), 0.1) 78%,
-    rgba(var(--pl-tlo), 0.72) 100%
-  );
-}
-/* PROMIENIE — wachlarz cienkich smug obracający się bardzo powoli.
-   Maska sprawia, że są niewidoczne przy samej tarczy i gasną na
-   zewnątrz, więc wyglądają jak światło, a nie jak wykres kołowy.
+/* PROMIENIE SŁOŃCA — USUNIĘTE Z CSS.
+   Stały tu kiedyś: wachlarz smug rysowany `repeating-conic-gradient`,
+   doczepiony do karty CTA i wycentrowany „na oko" na `top: 91vh`.
+   Problem był z gatunku nie do naprawienia: tarcza słońca żyje
+   w scenie 3D i jej miejsce na ekranie zależy od kadru kamery,
+   a promienie były przyklejone do HTML-a. Wystarczyła inna
+   wysokość okna i wachlarz świecił obok słońca — stąd wrażenie,
+   że „coś tu nie pasuje".
+   Teraz promienie są CZĘŚCIĄ SCENY 3D (components/lot/silnik.ts),
+   doczepione do samej tarczy. Nie da się ich rozjechać, bo są
+   przyklejone do słońca, a nie do strony. */
 
-   Doczepiamy je do PRZYKLEJONEJ karty, a nie do sekcji: karta stoi
-   13vh od góry ekranu, a tarcza słońca ląduje na wysokości ~104vh,
-   czyli 91vh niżej. Dzięki temu środek promieni siedzi dokładnie
-   na słońcu i nie ucieka przy przewijaniu. */
-.tryb-lot #kontakt > div:last-child::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 91vh;
-  /* nigdy szerzej niż okno — inaczej wystaje poza stronę
-     i przeglądarka dokłada poziomy pasek przewijania */
-  width: min(150vh, 96vw);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  z-index: -1;
-  pointer-events: none;
-  background: repeating-conic-gradient(
-    from 0deg,
-    rgba(255, 214, 140, 0.14) 0deg 2deg,
-    rgba(255, 214, 140, 0) 2deg 13deg
-  );
-  -webkit-mask-image: radial-gradient(
-    closest-side,
-    transparent 16%,
-    #000 34%,
-    transparent 72%
-  );
-  mask-image: radial-gradient(closest-side, transparent 16%, #000 34%, transparent 72%);
-  animation: promienie-slonca 90s linear infinite;
-}
-@keyframes promienie-slonca {
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-/* KARTA CTA — obsydianowa płyta ze złotym rantem */
+/* KARTA CTA — ZNIKA CAŁKOWICIE.
+   Na produkcji finał to wielka, ciemna płyta z tekstem. W trybie
+   lotu ta sama płyta zasłaniała słońce — czyli bohatera całej
+   podróży. Efekt był absurdalny: lecimy pięć ekranów do gwiazdy,
+   a na miejscu dostajemy czarny prostokąt.
+   Teraz karty nie ma. Nagłówek i przyciski wiszą po prostu
+   w kosmosie, a słońce wschodzi pod nimi. Kontrast niesie sam
+   tekst (ciepły gradient + cień) i pełny, złoty przycisk. */
 .tryb-lot #kontakt [class*="2.5rem"] {
-  background: linear-gradient(
-    180deg,
-    rgba(10, 8, 6, 0.86) 0%,
-    rgba(26, 17, 6, 0.7) 100%
-  ) !important;
-  border: 1px solid rgba(255, 214, 140, 0.38);
-  backdrop-filter: blur(18px) saturate(120%);
-  box-shadow:
-    0 50px 130px -44px rgba(0, 0, 0, 0.98),
-    0 0 110px -26px rgba(255, 190, 90, 0.4),
-    inset 0 1px 0 rgba(255, 231, 180, 0.3) !important;
+  background: none !important;
+  border: 0 !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+  overflow: visible !important;
 }
-/* poświata w karcie: fiolet marki → złoto słońca */
-.tryb-lot #kontakt .pulsuje {
-  background: rgba(255, 190, 90, 0.45) !important;
-}
-/* światło wschodzące zza DOLNEJ krawędzi karty (karta ma
-   overflow-hidden, więc widać tylko górną część tego łuku —
-   dokładnie tak, jak wygląda słońce wschodzące zza przeszkody) */
-.tryb-lot #kontakt [class*="2.5rem"]::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -22%;
-  width: 120%;
-  height: 62%;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    rgba(255, 214, 130, 0.5) 0%,
-    rgba(255, 170, 60, 0.18) 58%,
-    rgba(255, 170, 60, 0) 78%
-  );
-  filter: blur(26px);
-  pointer-events: none;
-  z-index: 0;
-}
-/* treść karty musi zostać NAD tym światłem */
-.tryb-lot #kontakt [class*="2.5rem"] > .relative {
-  z-index: 2;
+/* fioletowa poświata i ziarno z produkcji dublują to, co robi
+   prawdziwe słońce w scenie 3D — chowamy */
+.tryb-lot #kontakt .pulsuje,
+.tryb-lot #kontakt .ziarno {
+  display: none !important;
 }
 /* nagłówek finału — ciepły gradient zamiast płaskiej bieli */
 .tryb-lot #kontakt h2 {
@@ -893,68 +859,35 @@ body {
   border-top-color: rgba(var(--pl-rgb), 0.22) !important;
 }
 
-/* --- 7. PASEK PODRÓŻY (kropki przy lewej krawędzi) ---
-   Zastąpił „kule sąsiadów" w rogach kadru — te wyglądały jak brud
-   na obiektywie. Pasek mówi to samo (gdzie jesteś w podróży),
-   tylko czytelnie: aktywna kropka rośnie i dostaje kolor planety,
-   a obok pojawia się nazwa przystanku. --- */
-.pasek-podrozy {
-  position: fixed;
-  left: 1.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-.lot-gotowy .pasek-podrozy {
-  opacity: 1;
-}
-.pasek-podrozy a {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  text-decoration: none;
-}
-/* kropka */
-.pasek-podrozy a::before {
-  content: "";
-  width: 7px;
-  height: 7px;
+/* --- 7. KAFELEK PODRÓŻY W MENU ---
+   Zastąpił pasek kropek przy lewej krawędzi ekranu (a ten wcześniej
+   „kule sąsiadów" w rogach kadru). Za każdym razem ta sama nauka:
+   informacja „gdzie jesteś" ma być JEDNA i ma siedzieć tam, gdzie
+   człowiek i tak patrzy — czyli w menu. Osobne wskaźniki tylko
+   zaśmiecały kadr.
+
+   Pozycję, szerokość i kolor wpisuje w style JavaScript
+   (components/Navbar.tsx), 60 razy na sekundę, prosto z silnika
+   kamery. Dlatego TU NIE MA żadnej `transition` na transformację —
+   płynność bierze się z ruchu kamery, a nie z animacji CSS. Gdyby
+   dołożyć tu przejście, kafelek wlókłby się za sceną. */
+.kafelek-menu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
-  transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.pasek-podrozy a:hover::before {
-  background: rgba(255, 255, 255, 0.6);
-}
-.pasek-podrozy a[aria-current="true"]::before {
-  width: 11px;
-  height: 11px;
-  background: var(--kropka, #ffffff);
-  box-shadow: 0 0 18px 2px var(--kropka, rgba(255, 255, 255, 0.5));
-}
-/* nazwa przystanku — widoczna tylko przy aktywnej kropce i na hover */
-.pasek-podrozy span {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.72);
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
-}
-.pasek-podrozy a:hover span,
-.pasek-podrozy a[aria-current="true"] span {
-  opacity: 1;
-  transform: translateX(0);
-}
-.pasek-podrozy a[aria-current="true"] span {
-  color: var(--kropka, #ffffff);
+  pointer-events: none;
+  /* kolor sceny (RGB bez nawiasów) wstrzykuje JS */
+  --kolor-kafelka: 228 223 253;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--kolor-kafelka) / 0.98) 0%,
+    rgb(var(--kolor-kafelka) / 0.86) 100%
+  );
+  box-shadow:
+    0 6px 20px -8px rgb(var(--kolor-kafelka) / 0.7),
+    0 0 34px -12px rgb(var(--kolor-kafelka) / 0.8),
+    inset 0 1px 0 rgb(255 255 255 / 0.55);
 }

@@ -26,7 +26,7 @@
 // (app/page.tsx), więc nie ma przystanku.
 // ============================================================
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Hero from "../Hero";
@@ -35,6 +35,7 @@ import Portfolio from "../Portfolio";
 import Process from "../Process";
 import Testimonials from "../Testimonials";
 import Contact from "../Contact";
+import { ustawPozycjePodrozy, ustawTrybLotu } from "./stanPodrozy";
 import type { SilnikLotu } from "./silnik";
 
 // ScrollTrigger używamy TYLKO do efektów HTML (odjazd tekstu hero,
@@ -44,18 +45,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* Sekcje-przystanki (kolejność MUSI się zgadzać z trasą w silnik.ts) */
 const SEKCJE = ["uslugi", "portfolio", "proces", "opinie", "kontakt"];
-
-/* Przystanki na pasku podróży (kropki przy lewej krawędzi ekranu).
-   Kolor = kolor ciała niebieskiego, przy którym stoi kamera.
-   Nazwy takie same jak w menu (components/Navbar.tsx). */
-const PRZYSTANKI_PASKA = [
-  { id: "start", nazwa: "Start", kolor: "#cfc9ff" },
-  { id: "uslugi", nazwa: "Services", kolor: "#e4dffd" },
-  { id: "portfolio", nazwa: "Portfolio", kolor: "#c9bcff" },
-  { id: "proces", nazwa: "Process", kolor: "#b5e8dd" },
-  { id: "opinie", nazwa: "Reviews", kolor: "#ffc4e0" },
-  { id: "kontakt", nazwa: "Contact", kolor: "#ffe0a8" },
-];
 
 /* Pusta przerwa między sekcjami — tu dzieje się lot. DŁUGA (200vh),
    żeby przelot kamery przez układ był powolny i filmowy — widać
@@ -69,8 +58,6 @@ export default function LotSekcja() {
   const pojemnik3d = useRef<HTMLDivElement>(null);
   const heroTresc = useRef<HTMLDivElement>(null);
   const podpowiedz = useRef<HTMLDivElement>(null);
-  // numer przystanku, przy którym stoi kamera — świeci nim pasek podróży
-  const [przystanek, setPrzystanek] = useState(0);
 
   useEffect(() => {
     let silnik: SilnikLotu | null = null;
@@ -141,9 +128,11 @@ export default function LotSekcja() {
       silnik = zbudujLot(pojemnik3d.current);
       // kanwa jest ukryta do czasu zbudowania sceny (klasa niżej)
       root.current.classList.add("lot-gotowy");
-      // silnik sam mówi, przy którym ciele niebieskim stoi kamera —
-      // pasek podróży po lewej podświetla wtedy właściwą kropkę
-      silnik.naPrzystanku(setPrzystanek);
+      /* — silnik co klatkę melduje, gdzie na trasie jest kamera;
+           przekazujemy to na „tablicę ogłoszeń" (stanPodrozy.ts),
+           z której czyta górne menu i przesuwa swój kafelek — */
+      silnik.naPozycji(ustawPozycjePodrozy);
+      ustawTrybLotu(true);
 
       /* — pomiar OKIEN POSTOJU z prawdziwego układu strony —
          okno = zakres scrolla (w PIKSELACH), w którym sekcja jest
@@ -172,6 +161,25 @@ export default function LotSekcja() {
         silnik.ustawOkna(nowe);
       }
       przeliczOkna();
+
+      /* — WEJŚCIE PROSTO Z LINKU (np. twojastrona.pl/#portfolio) —
+           Sekcje powstają dopiero TUTAJ, bo tryb lotu montuje się po
+           wczytaniu strony. Przeglądarka próbowała skoczyć do kotwicy
+           dużo wcześniej — wtedy tej sekcji jeszcze nie było w HTML-u,
+           więc skok się nie udał i gość lądował na samej górze.
+           Dlatego skaczemy sami, już po zmierzeniu układu.
+           (Kamera dopłynie na miejsce w ciągu sekundy — silnik
+           wygładza scroll, więc wejście wygląda jak szybki dolot.) */
+      const kotwica = location.hash.slice(1);
+      if (kotwica && kotwica !== "start") {
+        const sekcja = document.getElementById(kotwica);
+        if (sekcja) {
+          window.scrollTo(
+            0,
+            sekcja.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.12
+          );
+        }
+      }
 
       /* — układ strony zmienia się, gdy doładują się miniatury
            portfolio albo gdy zmienisz rozmiar okna — wtedy trzeba
@@ -236,6 +244,7 @@ export default function LotSekcja() {
 
     return () => {
       zatrzymana = true;
+      ustawTrybLotu(false); // menu chowa kafelek podróży
       if (stoper) clearTimeout(stoper);
       sprzataczki.forEach((s) => s());
       document.removeEventListener("click", przyKliku);
@@ -254,22 +263,10 @@ export default function LotSekcja() {
       {/* ===== KOSMOS: jedna kanwa przypięta POD całą stroną ===== */}
       <div ref={pojemnik3d} className="pojemnik-kosmos fixed inset-0 -z-10" />
 
-      {/* ===== PASEK PODRÓŻY — sześć kropek przy lewej krawędzi.
-          Mówi, na którym przystanku jesteś, i pozwala przeskoczyć
-          do dowolnego (klik = ta sama filmowa podróż co z menu).
-          Wygląd: app/globals.css, sekcja „PASEK PODRÓŻY". ===== */}
-      <nav aria-label="Journey" className="pasek-podrozy">
-        {PRZYSTANKI_PASKA.map((p, i) => (
-          <a
-            key={p.id}
-            href={`#${p.id}`}
-            aria-current={i === przystanek ? "true" : undefined}
-            style={{ "--kropka": p.kolor } as React.CSSProperties}
-          >
-            <span>{p.nazwa}</span>
-          </a>
-        ))}
-      </nav>
+      {/* Gdzie jesteś w podróży, mówi teraz GÓRNE MENU — kafelek
+          przejeżdża między pozycjami i zmienia kolor razem ze sceną
+          (components/Navbar.tsx). Pasek kropek przy lewej krawędzi
+          został usunięty: powtarzał tę samą informację i zaśmiecał kadr. */}
 
       {/* ===== HERO — produkcyjny układ; planety rysuje kanwa wyżej ===== */}
       <div ref={heroTresc} className="relative">
