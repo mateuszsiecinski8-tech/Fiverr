@@ -197,9 +197,43 @@ function namalujPierscienie(): HTMLCanvasElement {
   c.height = 1024;
   const ctx = c.getContext("2d")!;
   const srodek = 512;
-  for (let r = 300; r < 508; r++) {
+
+  /* Geometria pierścieni (RingGeometry 1.6 → 2.7) rzutuje promień
+     wprost na piksele: promień 2.7 to 512 px od środka płótna.
+     Stąd przeliczniki niżej. */
+  const NA_PIKSELE = 512 / 2.7;
+  const WEWN = 1.6 * NA_PIKSELE; // ≈ 303
+  const ZEWN = 2.7 * NA_PIKSELE; // = 512
+  const SZCZELINA = R_ORBITY * NA_PIKSELE; // tam, gdzie krąży księżyc
+
+  /** Miękkie zejście do zera na odcinku [a, b] (0 przy a, 1 przy b). */
+  const wygladz = (x: number, a: number, b: number) => {
+    const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+
+  for (let r = 300; r < 512; r++) {
     const pasmo = Math.sin(r * 0.16) * 0.5 + Math.sin(r * 0.045) * 0.5;
-    const alfa = Math.max(0, 0.16 + pasmo * 0.18);
+    let alfa = Math.max(0, 0.16 + pasmo * 0.18);
+
+    /* ⭐ MIĘKKIE KRAWĘDZIE (runda v4). Wcześniej pierścienie kończyły
+       się w pół piksela — z daleka nie było tego widać, ale w scenie
+       Usługi kamera przelatuje TUŻ NAD nimi i ostra krawędź kładła się
+       na księżycu jak prostokątna płyta. Teraz obie krawędzie gasną
+       łagodnie, więc zamiast płyty jest mgiełka. */
+    alfa *= wygladz(r, WEWN - 2, WEWN + 26); // wewnętrzna krawędź
+    alfa *= 1 - wygladz(r, ZEWN - 30, ZEWN); // zewnętrzna krawędź
+
+    /* ⭐ SZCZELINA PASTERSKA — księżyc krąży DOKŁADNIE w pierścieniach
+       (orbita 1,95 leży między 1,6 a 2,7), więc grawitacyjnie wymiata
+       z nich wąski pas. Tak działa np. szczelina Keelera w pierścieniach
+       Saturna. Efekt uboczny jest czysto praktyczny: w sekcji Usługi
+       to właśnie ten pas leżałby między obiektywem a księżycem, więc
+       usunięcie go czyści kadr — a przy okazji tłumaczy, skąd tam
+       w ogóle wziął się księżyc. */
+    alfa *= 1 - 0.92 * Math.exp(-Math.pow((r - SZCZELINA) / 13, 2));
+
+    if (alfa <= 0.002) continue;
     const kolor = r % 52 < 26 ? "201,191,255" : "209,124,232";
     ctx.strokeStyle = `rgba(${kolor},${alfa.toFixed(3)})`;
     ctx.beginPath();
@@ -805,11 +839,19 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
        wszystkim ciemne plamy mórz, a nie gęsto upakowane kratery.
        Kratery mają być drugim planem, nie tematem. */
     duze: 9,
-    srednie: 38,
-    male: 240,
-    morza: 5,
+    srednie: 30,
+    male: 170,
+    morza: 6,
     relief: 0.6,
-    ziarno: Math.floor(Math.random() * 1e9), // losowy świat, ale JEDEN
+    /* ⭐ ZIARNO USTALONE NA STAŁE (runda v4).
+       Wcześniej było losowane przy każdym wejściu na stronę — czyli
+       KAŻDY odwiedzający oglądał inny księżyc. Część losowań wypadała
+       ładnie, część fatalnie (kratery kumulowały się na środku tarczy),
+       i nie dało się tego ani ocenić, ani poprawić: co zrzut, to inna
+       powierzchnia. Ta jedna liczba jest wybrana ręcznie i sprawdzona
+       na zrzucie z bliska. Chcesz inny księżyc? Zmień ją i obejrzyj
+       wynik — ale zmieniaj ŚWIADOMIE, nie losowo. */
+    ziarno: 20250806,
   };
 
   /* ⭐ DWA ETAPY ŁADOWANIA — najważniejsza optymalizacja startu.
@@ -848,7 +890,31 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
      środku widocznej tarczy. Obracamy go poza kadr — najstarsza
      sztuczka w grafice: czego nie da się naprawić, to się odwraca. */
   ksiezyc.rotation.set(1.15, 0.6, 0.35);
-  uklad.add(ksiezyc);
+
+  /* ⭐ PŁYWOWE ZWIĄZANIE Z ORBITĄ (runda v4) — czyli dokładnie to,
+     co robi prawdziwy Księżyc: zawsze pokazuje Ziemi TĘ SAMĄ twarz.
+
+     Po co? Wcześniej księżyc miał obrót ustawiony RAZ, na sztywno,
+     a jego pozycję przepisywaliśmy w każdej klatce. Skutek: w miarę
+     obiegu kamera oglądała go z coraz innej strony, więc w sekcji
+     Usługi widać było raz jedną, raz drugą półkulę — a startowy kąt
+     orbity był LOSOWY. Ta sama scena wyglądała inaczej przy każdym
+     wejściu na stronę, łącznie z tym, jak wypadały kratery.
+
+     Rozwiązanie jest czysto konstrukcyjne — dwa zagnieżdżone
+     „uchwyty" zamiast liczenia pozycji w pętli:
+       orbitaKsiezyca — leży w płaszczyźnie pierścieni (obrót o PRZECHYL),
+       wahaczKsiezyca — kręci się o kąt obiegu (jedna linijka w pętli),
+       ksiezyc        — siedzi na końcu ramienia z własnym, STAŁYM obrotem.
+     Kula obraca się razem z ramieniem, więc ta sama, raz wybrana
+     twarz jest zawsze zwrócona w tę samą stronę względem orbity. */
+  const orbitaKsiezyca = new THREE.Group();
+  orbitaKsiezyca.rotation.x = PRZECHYL;
+  uklad.add(orbitaKsiezyca);
+  const wahaczKsiezyca = new THREE.Group();
+  orbitaKsiezyca.add(wahaczKsiezyca);
+  ksiezyc.position.set(R_ORBITY, 0, 0); // ramię orbity
+  wahaczKsiezyca.add(ksiezyc);
 
   /* — dobudowanie pełnej tekstury księżyca (patrz komentarz wyżej).
        `requestIdleCallback` znaczy „zrób to, gdy nie masz nic
@@ -890,7 +956,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     // ta sama łagodność co duży księżyc — inaczej mniejszy wyglądałby
     // na bardziej „dziurawy" od tego oglądanego z bliska
     relief: 0.6,
-     ziarno: Math.floor(Math.random() * 1e9),
+    ziarno: 77010203, // też na stałe — patrz komentarz przy dużym księżycu
   });
   const ksiezyc2 = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 32, 32),
@@ -1052,22 +1118,34 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const pomocniczy = new THREE.Vector3();
   const pomocniczy2 = new THREE.Vector3();
   const bufNormalnej = new THREE.Vector3();
+  const bufPionu = new THREE.Vector3();
 
   function srodekKsiezyca(): THREE.Vector3 {
     return ksiezyc.getWorldPosition(pomocniczy2);
   }
 
-  /* Kierunek podejścia do KSIĘŻYCA: od zewnątrz jego orbity,
-     uniesiony nad płaszczyznę pierścieni. Dzięki temu kamera
-     „skacze" tuż nad pierścieniami, księżyc jest w kadrze, a za nim
-     rozciąga się wielka tarcza olbrzyma. */
-  function kierunekKsiezyca(unies: number): THREE.Vector3 {
+  /* Kierunek podejścia do KSIĘŻYCA, opisany w LOKALNYM UKŁADZIE
+     ORBITY (r = promieniowo na zewnątrz, t = wzdłuż ruchu księżyca,
+     n = oś pierścieni). Dokładnie ta sama matematyka co
+     `kierunekPrzystanku` w kadry.ts — tylko tam liczy się ją w Node,
+     a tu z żywej sceny.
+
+     Dlaczego akurat tak? Bo taki opis NIE ZALEŻY od tego, gdzie
+     księżyc akurat jest na orbicie. Wcześniej kamera podchodziła
+     promieniowo, a górą kadru był pion świata — więc pierścienie
+     przechylały się na ekranie inaczej przy każdym wejściu. */
+  const bufStyczna = new THREE.Vector3();
+  function kierunekKsiezyca(unies: number, wzdluz: number): THREE.Vector3 {
     ksiezyc.getWorldPosition(pomocniczy);
-    pomocniczy.sub(SRODEK_OLBRZYMA).normalize(); // promieniowo, na zewnątrz
-    pierscienie.getWorldDirection(bufNormalnej); // normalna pierścieni
+    pomocniczy.sub(SRODEK_OLBRZYMA).normalize(); // r
+    pierscienie.getWorldDirection(bufNormalnej); // n
+    bufStyczna.crossVectors(bufNormalnej, pomocniczy).normalize(); // t
+    const a = wzdluz * STOPIEN;
+    const e = unies * STOPIEN;
     return pomocniczy
-      .multiplyScalar(Math.cos(unies * STOPIEN))
-      .addScaledVector(bufNormalnej, Math.sin(unies * STOPIEN))
+      .multiplyScalar(Math.cos(a) * Math.cos(e))
+      .addScaledVector(bufStyczna, Math.sin(a) * Math.cos(e))
+      .addScaledVector(bufNormalnej, Math.sin(e))
       .normalize();
   }
 
@@ -1079,6 +1157,8 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     /** przechył kadru (roll) w RADIANACH (w scenariuszu są stopnie) */
     obrot: number;
     kadr: { x: number; y: number };
+    /** co jest GÓRĄ kadru — pion świata albo oś pierścieni olbrzyma */
+    pion: () => THREE.Vector3;
   };
 
   const PRZYSTANKI: Przystanek[] = SCENARIUSZ.map((p) => {
@@ -1088,7 +1168,8 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     let kierunek: () => THREE.Vector3;
     if (p.kierunek.typ === "ksiezyc") {
       const unies = p.kierunek.unies;
-      kierunek = () => kierunekKsiezyca(unies);
+      const wzdluz = p.kierunek.wzdluz ?? 0;
+      kierunek = () => kierunekKsiezyca(unies, wzdluz);
     } else if (p.kierunek.typ === "staly") {
       kierunek = staly(new THREE.Vector3(...p.kierunek.v).normalize());
     } else {
@@ -1099,6 +1180,16 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       kierunek = staly(v);
     }
 
+    /* Górą kadru jest zwykle pion świata. Wyjątek: przystanek Usługi,
+       gdzie górą jest OŚ PIERŚCIENI — dzięki temu pierścienie kładą
+       się na ekranie zawsze tak samo, a księżyc (który krąży w ich
+       płaszczyźnie) siedzi dokładnie na nich. Normalną bierzemy
+       z żywej sceny, więc nie da się jej rozjechać z modelem. */
+    const pion =
+      p.pion === "pierscienie"
+        ? () => pierscienie.getWorldDirection(bufPionu)
+        : staly(new THREE.Vector3(0, 1, 0));
+
     return {
       srodek,
       kierunek,
@@ -1106,6 +1197,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       fov: p.fov,
       obrot: p.obrot * STOPIEN,
       kadr: p.kadr,
+      pion,
     };
   });
 
@@ -1209,6 +1301,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const kontrola = new THREE.Vector3();
   const pozB = new THREE.Vector3();
   const celB = new THREE.Vector3();
+  const bufPion = new THREE.Vector3(0, 1, 0);
 
   function ustawKamere(y: number, czas: number) {
     // gdzie jesteśmy: w oknie przystanku (kamera stoi) czy w locie?
@@ -1239,6 +1332,7 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       pozycjaPodrozy = a;
       pozycjaPrzystanku(a, bufPoz);
       bufCel.copy(PRZYSTANKI[a].srodek());
+      bufPion.copy(PRZYSTANKI[a].pion());
       kamera.fov = PRZYSTANKI[a].fov;
       przechylKadru = PRZYSTANKI[a].obrot;
       kadrX = PRZYSTANKI[a].kadr.x;
@@ -1259,6 +1353,11 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
       // 2) CEL patrzenia płynnie wędruje na następne ciało
       celB.copy(PRZYSTANKI[b].srodek());
       bufCel.copy(PRZYSTANKI[a].srodek()).lerp(celB, t);
+      /* 2b) GÓRA KADRU też płynnie się przechyla. Oś pierścieni
+             jest odchylona od pionu świata tylko o ~24°, więc zwykły
+             lerp w zupełności wystarczy — nie ma ryzyka, że wektory
+             ustawią się przeciwnie i kadr zrobi salto. */
+      bufPion.copy(PRZYSTANKI[a].pion()).lerp(PRZYSTANKI[b].pion(), t).normalize();
       // 3) FOV „oddycha" — w połowie lotu szerzej (mocniejszy zoom out)
       kamera.fov =
         PRZYSTANKI[a].fov +
@@ -1278,7 +1377,9 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     bufPoz.y += Math.cos(czas * 0.19) * 0.035 * luz - myszPlynna.y * 0.07 * luz;
 
     kamera.position.copy(bufPoz);
-    kamera.up.set(0, 1, 0); // lookAt liczy obrót od pionu — resetujemy
+    // lookAt liczy obrót względem `up`, więc górę kadru ustawiamy
+    // ZAWSZE, przed każdym spojrzeniem (patrz pole `pion` przystanku)
+    kamera.up.copy(bufPion);
     kamera.lookAt(bufCel);
     kamera.rotateZ(przechylKadru); // ← PRZECHYŁ KADRU (efekt „Prezi")
 
@@ -1328,9 +1429,13 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
 
   /* — pętla renderowania — */
   const zegar = new THREE.Clock();
-  let kat = Math.random() * Math.PI * 2;
-  let kat2 = Math.random() * Math.PI * 2;
-  let kat3 = Math.random() * Math.PI * 2;
+  /* Kąty startowe są USTALONE, nie losowe (runda v4). Wcześniej były
+     losowane, przez co scena wyglądała inaczej przy każdym wejściu —
+     a przy robieniu zrzutów nie dało się porównać „przed" i „po".
+     Ruch i tak trwa, tylko zaczyna się zawsze w tym samym miejscu. */
+  let kat = 0.7;
+  let kat2 = 2.4;
+  let kat3 = 4.1;
   let klatka = 0;
   let widoczna = true;
   let krycieGwiazd = 0;
@@ -1357,16 +1462,24 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
     rozowa.rotation.y += dt * 0.18;
     turkusowa.rotation.y += dt * 0.14;
 
-    // Oba księżyce olbrzyma: prawdziwa orbita w PŁASZCZYŹNIE
-    // pierścieni, w tę samą stronę. Główny krąży wolno, bo to na nim
-    // „stoi" kamera w sekcji Usługi (szybka orbita = zawroty głowy).
-    kat += dt * 0.12;
-    const s = Math.sin(kat);
-    ksiezyc.position.set(
-      Math.cos(kat) * R_ORBITY,
-      s * R_ORBITY * Math.cos(PRZECHYL),
-      s * R_ORBITY * Math.sin(PRZECHYL)
-    );
+    /* Oba księżyce olbrzyma: prawdziwa orbita w PŁASZCZYŹNIE
+       pierścieni, w tę samą stronę.
+
+       ⭐ Główny obiega BARDZO wolno — pełne okrążenie w ok. 5 minut
+       (runda v4). To nie jest kosmetyka, tylko warunek powtarzalności
+       sceny Usługi: kamera na tym przystanku stoi w układzie orbity,
+       więc razem z księżycem OBJEŻDŻA olbrzyma. Przy dawnym tempie
+       0,12 rad/s zdążyła przelecieć pół okrążenia, zanim ktokolwiek
+       doscrollował do sekcji — i tło (poświata, różowa planeta) za
+       każdym razem wypadało gdzie indziej. Teraz przez cały czas
+       czytania sekcji scena przesuwa się o kilkanaście stopni:
+       widać delikatny dryf, ale kadr zostaje ten sam.
+       Za żywy ruch w hero odpowiada mniejszy księżyc (0,4 rad/s). */
+    kat += dt * 0.02;
+    // jedna linijka zamiast przepisywania pozycji: obracamy RAMIĘ,
+    // więc kula jedzie po orbicie i obraca się razem z nią
+    // (pływowe związanie — patrz komentarz przy `wahaczKsiezyca`)
+    wahaczKsiezyca.rotation.z = kat;
     kat2 += dt * 0.4;
     const s2 = Math.sin(kat2);
     ksiezyc2.position.set(

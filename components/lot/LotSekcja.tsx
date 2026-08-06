@@ -36,6 +36,7 @@ import Process from "../Process";
 import Testimonials from "../Testimonials";
 import Contact from "../Contact";
 import { ustawPozycjePodrozy, ustawTrybLotu } from "./stanPodrozy";
+import { polePodKafelki } from "./kadry";
 import type { SilnikLotu } from "./silnik";
 
 // ScrollTrigger używamy TYLKO do efektów HTML (odjazd tekstu hero,
@@ -181,14 +182,36 @@ export default function LotSekcja() {
         }
       }
 
+      /* ============ PAS NA KAFELKI PORTFOLIO (runda v4) ============
+         Olbrzym ma zostać po prawej SAM — żaden kafelek nie może na
+         niego wejść. Gdzie dokładnie zaczyna się jego tarcza, zależy
+         od PROPORCJI EKRANU, więc nie da się tego wpisać na sztywno
+         w CSS. Liczymy to tą samą matematyką, którą kadruje kamera
+         (kadry.ts → `polePodKafelki`), i podajemy do CSS jako
+         zmienną `--pole-kafelkow`. Styl w globals.css zwęża do niej
+         całą kolumnę treści portfolio. */
+      function ustawPoleKafelkow() {
+        const pas = polePodKafelki(window.innerWidth, window.innerHeight);
+        document.documentElement.style.setProperty(
+          "--pole-kafelkow",
+          `${(pas * 100).toFixed(1)}vw`
+        );
+      }
+      ustawPoleKafelkow();
+
       /* — układ strony zmienia się, gdy doładują się miniatury
            portfolio albo gdy zmienisz rozmiar okna — wtedy trzeba
-           przemierzyć okna postoju od nowa — */
+           przemierzyć okna postoju od nowa (i przeliczyć pas) — */
+      function przyZmianie() {
+        ustawPoleKafelkow();
+        przeliczOkna();
+      }
       window.addEventListener("load", przeliczOkna);
-      window.addEventListener("resize", przeliczOkna);
+      window.addEventListener("resize", przyZmianie);
       sprzataczki.push(() => {
         window.removeEventListener("load", przeliczOkna);
-        window.removeEventListener("resize", przeliczOkna);
+        window.removeEventListener("resize", przyZmianie);
+        document.documentElement.style.removeProperty("--pole-kafelkow");
       });
       stoper = setTimeout(przeliczOkna, 1500);
 

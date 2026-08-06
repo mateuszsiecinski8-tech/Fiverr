@@ -715,6 +715,55 @@ body {
    dzięki temu miniatury projektów są wreszcie dobrze widoczne
    (wcześniej leżały na jasnej, fioletowej ścianie planety).
    ============================================================ */
+/* ⭐ RUNDA v4 — MOZAIKA ZWĘŻONA I DOSUNIĘTA DO LEWEJ.
+   Wcześniej kafelki rozciągały się przez całą szerokość i po prostu
+   PRZYKRYWAŁY olbrzyma — z całej sceny 3D zostawał skrawek chmur
+   między obrazkami. Teraz cała kolumna treści kończy się tam, gdzie
+   zaczyna się tarcza planety, więc prawa strona kadru należy
+   wyłącznie do niej.
+
+   Skąd wiadomo, gdzie zaczyna się tarcza? Liczy to `polePodKafelki`
+   w components/lot/kadry.ts — tą samą matematyką, którą kadruje
+   kamera — a LotSekcja.tsx wstawia wynik do zmiennej niżej. Wpisanie
+   „52%" na sztywno rozjechałoby się na innych proporcjach ekranu.
+   Wartość w `var(..., 52vw)` to tylko bezpiecznik na ułamek sekundy
+   przed pierwszym pomiarem.
+
+   Układ kafelków zostaje DOKŁADNIE taki jak był: równe rzędy, ten
+   sam rytm szerokości. Zmienia się tylko szerokość kolumny. */
+.tryb-lot #portfolio > div:last-child {
+  max-width: calc(var(--pole-kafelkow, 52vw) - 3rem);
+  margin-left: 0;
+  margin-right: auto;
+}
+/* Kolumna jest węższa, więc kafelki muszą być NIŻSZE — inaczej wąskie
+   pola zrobiłyby się wieżami. Wysokości rzędów przeliczone tak, żeby
+   najszerszy kafelek w rzędzie miał proporcje mniej więcej ekranu.
+   Odstępy za to ROSNĄ: sekcja ma się dalej przewijać, a większy luz
+   między rzędami daje parallaksie miejsce na pokazanie głębi. */
+.tryb-lot #portfolio .siatka-projekty {
+  gap: 3rem 1.25rem;
+}
+.tryb-lot #portfolio .rzad-0 .kafel-projektu { height: 20rem; }
+.tryb-lot #portfolio .rzad-1 .kafel-projektu { height: 15rem; }
+.tryb-lot #portfolio .rzad-2 .kafel-projektu { height: 18rem; }
+.tryb-lot #portfolio .rzad-3 .kafel-projektu { height: 20rem; }
+.tryb-lot #portfolio .rzad-4 .kafel-projektu { height: 16.5rem; }
+/* dwaj prawdziwi klienci — nadal największe pola, ale bez przesady */
+.tryb-lot #portfolio .siatka-klienci a {
+  height: 22rem;
+}
+/* Węższa kolumna = węższe kafelki, więc podpisy muszą zejść o klasę.
+   Bez tego „Northfield Dental — clinic" łamał się na trzy linijki
+   i zasłaniał pół miniatury. */
+.tryb-lot #portfolio .siatka-projekty .kafel-projektu h3 {
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+.tryb-lot #portfolio .siatka-projekty .kafel-projektu > div:last-of-type {
+  padding: 1.1rem;
+}
+
 /* Kafelki mozaiki to NIEPRZEZROCZYSTE OBRAZY — i to jest powód,
    dla którego akurat ta scena mogła dostać największą planetę.
    Zdjęcia nie potrzebują ciemnego tła pod spodem: same są tłem.

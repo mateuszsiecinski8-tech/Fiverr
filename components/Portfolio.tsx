@@ -90,7 +90,11 @@ export default function Portfolio() {
 
         {/* ===== PRAWDZIWI KLIENCI — największe pola w mozaice =====
             Dane edytujesz w lib/dane.ts (projektyWyroznione). */}
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
+        {/* `siatka-klienci` / `siatka-projekty` to HACZYKI DLA TRYBU LOTU.
+            W zwykłej wersji nic nie robią — w kosmicznej (globals.css)
+            zwężają mozaikę do lewej połowy kadru, żeby olbrzym został
+            po prawej sam. */}
+        <div className="siatka-klienci mt-12 grid gap-5 md:grid-cols-2">
           {projektyWyroznione.map((projekt, indeks) => (
             <Reveal key={projekt.tytul} opoznienie={indeks * 0.1}>
               <Link
@@ -141,7 +145,7 @@ export default function Portfolio() {
         </div>
 
         {/* ===== PROJEKTY POKAZOWE — mozaika o zmiennym rytmie ===== */}
-        <div className="mt-5 grid gap-5 md:grid-cols-6">
+        <div className="siatka-projekty mt-5 grid gap-5 md:grid-cols-6">
           {portfolio.map((projekt, indeks) => {
             const { kol, wys } = ukladDla(indeks, projekt.uklad);
             return (

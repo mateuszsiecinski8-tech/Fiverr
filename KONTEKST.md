@@ -260,6 +260,76 @@ Wciąż gałąź `experiment/zui-space-scroll`, wciąż tylko preview.
 - **Statystyka poprawiona:** „6+ projects" → „12+" (10 pokazowych
   + 2 prawdziwych klientów).
 
+### Etap 13 — ZUI v4: koniec loterii w scenie Usługi, planeta odzyskuje prawą stronę
+
+Runda dotyczyła dwóch scen. Najważniejsze odkrycie: to, co wyglądało
+jak „brzydka tekstura księżyca", w dużej części było **niepowtarzalnym
+kadrem** — scena Usługi wyglądała INACZEJ przy każdym wejściu na stronę.
+
+- **Trzy źródła losowości, wszystkie usunięte.** Wcześniej: (1) kąt
+  startowy orbity księżyca był losowany, (2) księżyc miał obrót
+  ustawiony raz na sztywno, więc w miarę obiegu kamera oglądała go
+  z coraz innej strony, (3) samo ZIARNO tekstury było losowe, czyli
+  każdy odwiedzający dostawał inny księżyc. Teraz kąt startowy jest
+  stały (0,7), księżyc jest **pływowo związany z orbitą** (jak
+  prawdziwy Księżyc — zawsze ta sama twarz; robią to dwa zagnieżdżone
+  uchwyty `orbitaKsiezyca`/`wahaczKsiezyca` zamiast liczenia pozycji
+  w pętli), a ziarno to wpisana na stałe liczba, dobrana i sprawdzona
+  na zrzucie z bliska.
+- **Kadr Usług opisany w UKŁADZIE ORBITY, nie w świecie.** Nowe pola
+  w `kadry.ts`: `wzdluz` (ile stopni w bok od „promieniowo na zewnątrz"
+  w stronę ruchu księżyca) i `pion: "pierscienie"` (górą kadru jest oś
+  pierścieni, nie pion świata). Dzięki temu pierścienie kładą się na
+  ekranie ZAWSZE tak samo, a księżyc — który krąży w ich płaszczyźnie —
+  siedzi dokładnie na nich. Stąd „jedna linia", o którą prosił właściciel.
+  Wartości: `unies -31°`, `wzdluz 69°`.
+  ⚠️ Bez `pion: "pierscienie"` nachylenie pierścieni na ekranie kręci
+  się razem z fazą orbity — to był główny winowajca.
+- **Orbita głównego księżyca spowolniona 0,12 → 0,02 rad/s.** To nie
+  kosmetyka: kamera na tym przystanku stoi w układzie orbity, więc
+  RAZEM z księżycem objeżdża olbrzyma. Przy dawnym tempie zdążyła
+  przelecieć pół okrążenia, zanim ktokolwiek doscrollował — i tło
+  (poświata, różowa planeta) za każdym razem wypadało gdzie indziej.
+  Za żywy ruch w hero odpowiada teraz mniejszy księżyc (0,4 rad/s).
+- **Pierścienie: miękkie krawędzie + szczelina pasterska.** Kamera
+  w scenie Usług przelatuje tuż nad pierścieniami, a ich ostra
+  krawędź kładła się na księżycu jak prostokątna płyta. Teraz obie
+  krawędzie gasną łagodnie. Do tego w miejscu orbity księżyca jest
+  ciemna szczelina — tak jak Keelera w pierścieniach Saturna. Widać
+  ją też w hero i tłumaczy, skąd w pierścieniach wziął się księżyc.
+- **Tekstura księżyca spokojniejsza:** `srednie` 38→30, `male` 240→170,
+  `morza` 5→6. Trzecie podejście do tej samej uwagi — tym razem
+  poparte tym, że w ogóle DA SIĘ ją ocenić, bo kadr jest powtarzalny.
+- **Portfolio: mozaika zwężona i dosunięta do lewej.** Właściciel
+  najpierw wybrał „pole odłamków" (swobodne rozsypanie), a potem
+  doprecyzował: kafelki mają być równo, prosto ułożone, tylko po
+  lewej — „połączenie stanu obecnego z opcją A". Tak zostało zrobione:
+  układ kafelków jest DOKŁADNIE ten sam co wcześniej (równe rzędy,
+  ten sam rytm szerokości), zmieniła się tylko szerokość kolumny.
+  Prawa strona kadru należy wyłącznie do olbrzyma.
+- **Pas na kafelki liczony, nie zgadywany.** `polePodKafelki()`
+  w `kadry.ts` rzutuje sylwetkę olbrzyma tą samą matematyką, którą
+  kadruje kamera, i zwraca miejsce, w którym zaczyna się jego tarcza.
+  `LotSekcja.tsx` wstawia to do CSS jako `--pole-kafelkow`.
+  ⚠️ Wpisanie „52%" na sztywno rozjechałoby się na innych proporcjach
+  ekranu — kadr liczony jest z WYSOKOŚCI, więc szerokość zależy
+  od proporcji.
+- **Wspólny kod pomiarowy.** `kameraPrzystanku()` i `sylwetkaNaEkranie()`
+  mieszkają teraz w `kadry.ts` i korzysta z nich zarówno strona, jak
+  i `narzedzia/policzKadry.mts`. Wcześniej narzędzie miało własną
+  kopię — prosta droga do tego, żeby „zmierzone" rozjechało się
+  z „widocznym".
+- **Pułapka rzutowania (dopisana do narzędzia):** punkty ZA obiektywem
+  trzeba odrzucać ręcznie. Rzutowanie perspektywiczne daje dla nich
+  liczby rzędu „23 000% szerokości" — poprawne matematycznie,
+  bez sensu jako kadr. Widać to przy planetach oglądanych z bliska
+  (Usługi, Kontakt), gdzie pół sylwetki naprawdę jest za kamerą.
+- **Test determinizmu w `policzKadry.mts`:** liczy scenę Usług na
+  ośmiu punktach orbity i wypisuje rozrzut. Ma wychodzić 0,00°.
+- Zmierzone: build ✓ (16 stron statycznych), 60 fps w Usługach
+  i w Portfolio, wersja mobilna nietknięta (tryb lotu wyłączony,
+  12 kafelków, statystyki widoczne, zero poziomego przewijania).
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.
@@ -295,6 +365,22 @@ Teraz są w repo i można ich użyć w każdej chwili.
   Importuje ten sam `components/lot/kadry.ts`, z którego korzysta
   strona, więc wyliczenia nie mogą się rozjechać z rzeczywistością.
   Można podać rozdzielczość: `node narzedzia/policzKadry.mts 2560 1080`.
+  Od etapu 13 wypisuje też **nachylenie pierścieni** na ekranie
+  i uruchamia **test determinizmu** sceny Usługi (osiem punktów
+  orbity — rozrzut ma wynosić 0,00°).
+- **`node narzedzia/scena.js`** — sterowanie przeglądarką po protokole
+  DevTools. Powstało, bo panel podglądu w edytorze nie renderuje
+  klatek przy schowanym oknie (pułapka nr 8), a zwykły
+  `chrome --screenshot` nie umie przewinąć strony. Zero zależności.
+  - `node narzedzia/scena.js zrzut <url> <scrollY> <plik.png> [czekajMs] [x,y,w,h,skala]`
+  - `node narzedzia/scena.js ocen <url> <scrollY> <wyrażenieJS> [czekajMs]`
+  - `node narzedzia/scena.js fps <url> <scrollY>` — pomiar płynności
+  - `node narzedzia/scena.js stop` — zamyka przeglądarkę pomiarową
+  ⚠️ Współrzędne wycinka są w układzie CAŁEJ STRONY, nie okna —
+  do `y` trzeba doliczyć scrollY.
+  ⚠️ Jeśli scena nie zdąży się zbudować, ekran startowy blokuje
+  przewijanie i zrzut wychodzi z HERO zamiast z zamówionej sekcji.
+  Skrypt to wykrywa i pisze ostrzeżenie; limit zmienia `GOTOWOSC_MS`.
 - **`node narzedzia/miniatury.mjs --wszystkie`** — generuje miniatury
   kafelków portfolio: robi zrzut strony-demo w wersji na komputer
   i na telefon, skleja je w mockup (okno przeglądarki + telefon na

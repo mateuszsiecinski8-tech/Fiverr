@@ -74,6 +74,17 @@ export function normalnaPierscieni(out = new THREE.Vector3()) {
   return out.applyAxisAngle(OS_Z, OBROT_UKLADU);
 }
 
+/** Kierunek RUCHU księżyca po orbicie (styczna do orbity), w świecie.
+    Razem z „promieniowo na zewnątrz" i normalną pierścieni tworzy
+    lokalny układ współrzędnych orbity — i to w NIM opisujemy kadr
+    sekcji Usługi. Dzięki temu kompozycja nie zależy od tego, w którym
+    miejscu orbity księżyc akurat jest (patrz `kierunekPrzystanku`). */
+export function stycznaOrbity(kat: number, out = new THREE.Vector3()) {
+  const n = normalnaPierscieni();
+  out.copy(pozycjaKsiezyca(kat, R_ORBITY)).sub(SRODEK_OLBRZYMA).normalize();
+  return out.crossVectors(n, out).normalize();
+}
+
 /** Jak daleko odsunąć kamerę, żeby tarcza o promieniu R zajęła
     `ulamek` WYSOKOŚCI kadru.
 
@@ -95,11 +106,17 @@ export type Kierunek =
   /** „od poprzedniego ciała" — lot wygląda wtedy naturalnie:
       wylatujemy zza pleców jednego świata wprost na drugi */
   | { typ: "odPunktu"; skad: THREE.Vector3 }
-  /** podejście do księżyca: promieniowo na zewnątrz jego orbity,
-      uniesione o `unies` stopni nad płaszczyznę pierścieni —
-      kamera „skacze" tuż nad pierścieniami, a za księżycem
-      rozciąga się wielka tarcza olbrzyma */
-  | { typ: "ksiezyc"; unies: number };
+  /** podejście do księżyca, opisane w LOKALNYM UKŁADZIE ORBITY:
+        `unies`  — ile stopni NAD płaszczyzną pierścieni (0 = dokładnie
+                   w płaszczyźnie, czyli pierścienie widziane z boku
+                   jako cienka kreska),
+        `wzdluz` — ile stopni w bok, licząc od „promieniowo na zewnątrz"
+                   w stronę ruchu księżyca po orbicie. 0° = olbrzym
+                   dokładnie za plecami księżyca (ściana!), 90° = patrzymy
+                   WZDŁUŻ pierścieni, a olbrzym odchodzi w bok kadru.
+      Ten opis jest niezależny od tego, gdzie księżyc akurat jest na
+      orbicie — dlatego kadr wygląda tak samo przy każdym wejściu. */
+  | { typ: "ksiezyc"; unies: number; wzdluz?: number };
 
 /** Na co patrzy kamera. */
 export type Cel =
@@ -120,6 +137,13 @@ export type Przystanek = {
   obrot: number;
   /** gdzie na ekranie ma stanąć środek tarczy (ułamki od środka) */
   kadr: { x: number; y: number };
+  /** CO JEST GÓRĄ KADRU.
+      Domyślnie pion świata — tak jak w każdej normalnej scenie.
+      "pierscienie" znaczy: górą jest oś pierścieni olbrzyma. Wtedy
+      pierścienie zawsze kładą się na ekranie POZIOMO, niezależnie od
+      fazy orbity — a bez tego ich nachylenie kręciło się razem
+      z księżycem i kompozycja była inna przy każdym wejściu. */
+  pion?: "swiat" | "pierscienie";
   /** stała odległość — używane TYLKO w hero, gdzie kadr jest
       odtworzeniem zdjęcia z produkcji i nie wolno go ruszać */
   dystansNaSztywno?: number;
@@ -141,24 +165,39 @@ export const PRZYSTANKI: Przystanek[] = [
     kadr: { x: 0, y: 0 },
   },
 
-  /* 1. USŁUGI — duży KSIĘŻYC olbrzyma.
-     Kompozycja: księżyc to PEŁNA, nieprzycięta kula w prawej
-     części kadru, na wysokości środka ekranu. Wcześniej leżał
-     na dole po prawej i był ucięty z dwóch stron.
-     `unies` podniesione z 38° na 56°: kamera patrzy na księżyc
-     bardziej z góry, więc olbrzym przestaje być jasną ścianą
-     pod tekstem i schodzi w prawy dolny róg. Lewa połowa kadru
-     robi się czystym kosmosem — i dopiero dzięki temu można było
-     wyrzucić zaciemnienie tła. */
+  /* 1. USŁUGI — duży KSIĘŻYC olbrzyma na linii pierścieni (runda v4).
+     ⭐ Co było nie tak wcześniej: kamera podchodziła promieniowo
+     (`wzdluz` = 0) i uniesiona aż o 46° nad pierścienie, a górą kadru
+     był pion świata. Skutek: pierścienie przechylały się na ekranie
+     inaczej przy każdym wejściu na stronę, bo księżyc startował
+     w LOSOWYM miejscu orbity. Kompozycja tej sceny była loterią.
+
+     Teraz kadr jest opisany w układzie orbity i wygląda tak samo
+     zawsze:
+       `wzdluz` 62°  — patrzymy prawie WZDŁUŻ pierścieni, więc olbrzym
+                       nie stoi już jasną ścianą za księżycem, tylko
+                       odchodzi w bok, a pasma pierścieni uciekają
+                       w głąb kadru,
+       `unies`  -13° — kamera tuż pod płaszczyzną pierścieni, więc
+                       widać je niemal z boku: cienka smuga zamiast
+                       rozwartej elipsy,
+       `pion` = pierścienie — górą kadru jest oś pierścieni, więc ta
+                       smuga kładzie się POZIOMO. Księżyc krąży
+                       w tej samej płaszczyźnie (orbita 1,95 wypada
+                       między 1,6 a 2,7 pierścieni), więc siedzi
+                       dokładnie NA niej. Stąd „jedna linia".
+     Lewa połowa kadru zostaje czystym kosmosem pod tekst — tak jak
+     wymagało tego usunięcie zaciemnień w rundzie v2. */
   {
     nazwa: "uslugi",
     cel: { typ: "ksiezyc" },
-    kierunek: { typ: "ksiezyc", unies: -46 },
+    kierunek: { typ: "ksiezyc", unies: -31, wzdluz: 69 },
     promien: R_KSIEZYC,
     ulamek: 0.22,
     fov: 52,
     obrot: 6,
-    kadr: { x: 0.24, y: -0.09 },
+    kadr: { x: 0.24, y: 0.02 },
+    pion: "pierscienie",
   },
 
   /* 2. PORTFOLIO — OLBRZYM z pierścieniami.
@@ -278,14 +317,136 @@ export function kierunekPrzystanku(
     srodekPrzystanku(p, katKsiezyca, out);
     return out.subVectors(p.kierunek.skad, out).normalize();
   }
-  // księżyc: promieniowo na zewnątrz orbity + uniesienie nad pierścienie
-  pozycjaKsiezyca(katKsiezyca, R_ORBITY, out).sub(SRODEK_OLBRZYMA).normalize();
+  /* KSIĘŻYC — kadr budujemy w lokalnym układzie orbity:
+       r = promieniowo na zewnątrz, t = wzdłuż ruchu, n = oś pierścieni.
+     Najpierw obracamy się o `wzdluz` w płaszczyźnie pierścieni
+     (to odsuwa olbrzyma w bok), potem podnosimy o `unies` nad nią. */
+  const r = pozycjaKsiezyca(katKsiezyca, R_ORBITY, out).sub(SRODEK_OLBRZYMA).normalize();
   const n = normalnaPierscieni();
-  const kat = p.kierunek.unies * STOPIEN;
-  return out.multiplyScalar(Math.cos(kat)).addScaledVector(n, Math.sin(kat)).normalize();
+  const t = stycznaOrbity(katKsiezyca);
+  const a = (p.kierunek.wzdluz ?? 0) * STOPIEN;
+  const e = p.kierunek.unies * STOPIEN;
+  return r
+    .multiplyScalar(Math.cos(a) * Math.cos(e))
+    .addScaledVector(t, Math.sin(a) * Math.cos(e))
+    .addScaledVector(n, Math.sin(e))
+    .normalize();
+}
+
+/** Który kierunek jest GÓRĄ KADRU na danym przystanku. */
+export function pionPrzystanku(p: Przystanek, out = new THREE.Vector3()): THREE.Vector3 {
+  if (p.pion === "pierscienie") return normalnaPierscieni(out);
+  return out.set(0, 1, 0);
 }
 
 /** Odległość kamery od środka ciała. */
 export function dystansPrzystanku(p: Przystanek): number {
   return p.dystansNaSztywno ?? tarczaNa(p.promien, p.fov, p.ulamek);
+}
+
+/* ============================================================
+   GDZIE NA EKRANIE WYLĄDUJE PLANETA
+   ============================================================
+   Poniższe dwie funkcje są WSPÓLNE dla strony i dla narzędzia
+   narzedzia/policzKadry.mts. To celowe: gdyby każde liczyło po
+   swojemu, prędzej czy później rozjechałyby się i „zmierzone"
+   położenie planety przestałoby odpowiadać temu, co widać.
+   ============================================================ */
+
+/** Kamera ustawiona dokładnie tak, jak robi to silnik na postoju.
+    Kolejność MA ZNACZENIE (patrz KONTEKST.md, pułapka 4):
+    najpierw patrzenie na cel, potem przechył, na końcu przesunięcie
+    kadru („odwrócenie głowy"). */
+export function kameraPrzystanku(
+  p: Przystanek,
+  aspect: number,
+  katKsiezyca = 0.7
+): THREE.PerspectiveCamera {
+  const kamera = new THREE.PerspectiveCamera(p.fov, aspect, 0.02, 260);
+  const srodek = srodekPrzystanku(p, katKsiezyca);
+  const kierunek = kierunekPrzystanku(p, katKsiezyca);
+  kamera.position.copy(srodek).addScaledVector(kierunek, dystansPrzystanku(p));
+  kamera.up.copy(pionPrzystanku(p));
+  kamera.lookAt(srodek);
+  kamera.rotateZ(p.obrot * STOPIEN);
+  if (p.kadr.x !== 0 || p.kadr.y !== 0) {
+    const polKadru = Math.tan((p.fov / 2) * STOPIEN);
+    kamera.rotateY(Math.atan(2 * p.kadr.x * polKadru * aspect));
+    kamera.rotateX(Math.atan(2 * p.kadr.y * polKadru));
+  }
+  kamera.updateMatrixWorld(true);
+  kamera.updateProjectionMatrix();
+  return kamera;
+}
+
+/** Rzutuj SYLWETKĘ kuli na ekran i zwróć jej prostokąt w ułamkach
+    ekranu (0 = lewa/górna krawędź, 1 = prawa/dolna).
+
+    Uwaga 1: sylwetka to NIE okrąg przechodzący przez środek kuli —
+    leży bliżej kamery i jest odrobinę mniejsza.
+    Uwaga 2: punkty ZA obiektywem trzeba wyrzucić ręcznie, bo
+    rzutowanie perspektywiczne daje dla nich liczby rzędu „23 000%
+    szerokości" — poprawne matematycznie, bez sensu jako kadr. */
+export function sylwetkaNaEkranie(
+  kamera: THREE.PerspectiveCamera,
+  srodekKuli: THREE.Vector3,
+  promien: number
+) {
+  const doKamery = new THREE.Vector3().subVectors(kamera.position, srodekKuli);
+  const d = doKamery.length();
+  if (d <= promien) return null; // kamera w środku kuli
+  const u = doKamery.clone().normalize();
+  const srodekSylwetki = srodekKuli.clone().addScaledVector(u, (promien * promien) / d);
+  const rSylwetki = promien * Math.sqrt(1 - (promien * promien) / (d * d));
+
+  const os1 = new THREE.Vector3(0, 1, 0).cross(u);
+  if (os1.lengthSq() < 1e-6) os1.set(1, 0, 0).cross(u);
+  os1.normalize();
+  const os2 = new THREE.Vector3().crossVectors(u, os1).normalize();
+
+  let lewo = 1e9, prawo = -1e9, gora = 1e9, dol = -1e9, obciete = 0;
+  const punkt = new THREE.Vector3();
+  for (let i = 0; i < 128; i++) {
+    const a = (i / 128) * Math.PI * 2;
+    punkt
+      .copy(srodekSylwetki)
+      .addScaledVector(os1, Math.cos(a) * rSylwetki)
+      .addScaledVector(os2, Math.sin(a) * rSylwetki);
+    if (punkt.clone().applyMatrix4(kamera.matrixWorldInverse).z > -0.02) {
+      obciete++;
+      continue;
+    }
+    punkt.project(kamera);
+    const x = (punkt.x + 1) / 2;
+    const y = (1 - punkt.y) / 2; // y liczone OD GÓRY ekranu
+    lewo = Math.min(lewo, x); prawo = Math.max(prawo, x);
+    gora = Math.min(gora, y); dol = Math.max(dol, y);
+  }
+  if (obciete === 128) return null; // cała kula za plecami
+  const s = srodekSylwetki.clone().project(kamera);
+  return {
+    x: (s.x + 1) / 2,
+    y: (1 - s.y) / 2,
+    lewo, prawo, gora, dol,
+    wys: dol - gora,
+    obciete,
+    zaPlecami: srodekSylwetki.clone().applyMatrix4(kamera.matrixWorldInverse).z > 0,
+  };
+}
+
+/** ⭐ SZEROKOŚĆ PASA NA KAFELKI w sekcji Portfolio, w ułamku ekranu.
+
+    Olbrzym ma zostać po prawej SAM — żaden kafelek nie może na niego
+    wejść. Zamiast wpisywać na sztywno „kafelki do 52%" (co rozjechałoby
+    się na innych proporcjach ekranu), liczymy, gdzie NAPRAWDĘ zaczyna
+    się tarcza planety, i zostawiamy przed nią margines oddechu.
+    Wynik trafia do CSS jako zmienna `--pole-kafelkow`. */
+export function polePodKafelki(szer: number, wys: number, margines = 0.035): number {
+  const p = PRZYSTANKI.find((x) => x.nazwa === "portfolio");
+  if (!p) return 0.52;
+  const s = sylwetkaNaEkranie(kameraPrzystanku(p, szer / wys), SRODEK_OLBRZYMA, R_OLBRZYM);
+  if (!s) return 0.52;
+  // klamry bezpieczeństwa: na bardzo wąskim ekranie pas nie może
+  // zrobić się mikroskopijny, na bardzo szerokim — zjeść całego kadru
+  return Math.min(0.66, Math.max(0.4, s.lewo - margines));
 }
