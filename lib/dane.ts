@@ -31,7 +31,8 @@ export const hero = {
   przyciskKontakt: "Get in touch",
   // Trzy liczby pod przyciskami — buduj wiarygodność (edytuj śmiało!)
   statystyki: [
-    { liczba: "6+", opis: "projects in portfolio" },
+    // 12 = 10 projektów pokazowych + 2 prawdziwych klientów
+    { liczba: "12+", opis: "projects in portfolio" },
     { liczba: "<24h", opis: "response time" },
     { liczba: "100%", opis: "on-time delivery" },
   ],
@@ -710,4 +711,14 @@ export const kontakt = {
 // --- STOPKA ---
 export const stopka = {
   nazwa: "Maty — Web Design", // podpis w stopce
+  // --- dopisane w rundzie v3 (przeprojektowana stopka) ---
+  haslo: "Websites, brands and interfaces that look premium and sell.",
+  zachetaNaglowek: "Still scrolling?",
+  zachetaOpis: "Then you already know how much attention detail gets here. Let's put that into your project.",
+  zachetaPrzycisk: "Start a project",
+  // nagłówki kolumn
+  kolumnaPrace: "Work",
+  kolumnaUslugi: "Services",
+  kolumnaKontakt: "Contact",
+  zbudowane: "Designed & built by hand — Next.js, Tailwind, Three.js",
 };

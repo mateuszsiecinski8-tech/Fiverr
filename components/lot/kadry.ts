@@ -213,20 +213,27 @@ export const PRZYSTANKI: Przystanek[] = [
     kadr: { x: -0.22, y: 0.28 },
   },
 
-  /* 5. KONTAKT — FINAŁ: WSCHÓD SŁOŃCA.
-     Tarcza na środku, górny brzeg mniej więcej w 55% wysokości.
-     Nad nią zostaje ciemne niebo na nagłówek i przyciski —
-     bez ciężkiej, ciemnej karty, która wcześniej zasłaniała
-     całe słońce. */
+  /* 5. KONTAKT — FINAŁ: SŁOŃCE JAKO PODŁOGA (runda v3).
+     Wcześniej słońce było odległą tarczą nisko w kadrze. Teraz
+     kamera podchodzi tak blisko, że gwiazda przestaje być kulą,
+     a staje się ŚWIECĄCĄ POWIERZCHNIĄ zamykającą dół kadru —
+     jak horyzont planety, nad którym wisi tekst.
+
+     Dwie liczby robią całą robotę:
+       `ulamek` 0.22 → 0.62  — tarcza rośnie prawie trzykrotnie,
+       `kadr.y` 0.42 → 0.66  — i schodzi tak nisko, że widać już
+                               tylko jej górną część.
+     Efekt: nagłówek i przyciski wiszą tuż nad jasną powierzchnią,
+     jak satelita na niskiej orbicie. */
   {
     nazwa: "kontakt",
     cel: { typ: "punkt", v: POZ_SLONCA },
     kierunek: { typ: "odPunktu", skad: POZ_ROZOWEJ },
     promien: R_SLONCE,
-    ulamek: 0.22,
+    ulamek: 0.62,
     fov: 52,
-    obrot: 8,
-    kadr: { x: 0.0, y: 0.42 },
+    obrot: 4, // mniejszy przechył — horyzont ma być spokojny, nie krzywy
+    kadr: { x: 0.0, y: 0.74 },
   },
 ];
 

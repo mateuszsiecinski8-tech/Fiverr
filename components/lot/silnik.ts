@@ -296,10 +296,13 @@ function profilKrateru(r: number): number {
   let h = 0;
   // MISA — zagłębienie, najgłębsze w środku
   if (r < 0.92) h -= Math.pow(1 - (r / 0.92) * (r / 0.92), 0.75);
-  // WAŁ — podniesiona obwódka tuż za krawędzią misy.
-  //       To on „łapie" światło i sprawia, że krater wygląda
-  //       na wklęsły, a nie na plamę.
-  h += 0.6 * Math.exp(-(((r - 1.0) / 0.1) * ((r - 1.0) / 0.1)));
+  /* WAŁ — podniesiona obwódka tuż za krawędzią misy. To on „łapie"
+     światło i sprawia, że krater czyta się jako wklęsły.
+     Był 0.6 i wąski (0.1) — wychodziły z tego ostre, białe rantki
+     i cała kula wyglądała jak dziurawy ser. Teraz wał jest NIŻSZY
+     i SZERSZY: światło ślizga się po nim łagodnie, tak jak na
+     prawdziwym Księżycu oglądanym z Ziemi. */
+  h += 0.3 * Math.exp(-(((r - 1.0) / 0.17) * ((r - 1.0) / 0.17)));
   // EJECTA — materiał wyrzucony przy uderzeniu, opada z odległością.
   // `zanik` doprowadza warstwę DOKŁADNIE do zera na granicy r = 2.6.
   // Bez tego zostawał tam mikroskopijny uskok — a mapa normalnych
@@ -437,8 +440,10 @@ function zbudujKsiezyc(opcje: {
     }
   }
 
-  for (let i = 0; i < opcje.duze; i++) wbijKrater(W * (0.018 + rnd() * 0.028), rnd() < 0.3);
-  for (let i = 0; i < opcje.srednie; i++) wbijKrater(W * (0.006 + rnd() * 0.012), rnd() < 0.18);
+  // młodych (promienistych) kraterów jest teraz garstka — na
+  // prawdziwej tarczy też rzucają się w oczy tylko dwa-trzy
+  for (let i = 0; i < opcje.duze; i++) wbijKrater(W * (0.018 + rnd() * 0.028), rnd() < 0.12);
+  for (let i = 0; i < opcje.srednie; i++) wbijKrater(W * (0.006 + rnd() * 0.012), rnd() < 0.05);
   for (let i = 0; i < opcje.male; i++) wbijKrater(W * (0.0018 + rnd() * 0.0042), false);
 
   /* --- 4. KOLOR --- */
@@ -455,10 +460,14 @@ function zbudujKsiezyc(opcje: {
       // ziarno regolitu — bez niego powierzchnia wygląda plastikowo
       const ziarno = (probkuj(drobnySzum, W / 2, H / 2, x / W, y / H) - 0.5) * 0.12;
       let t = 1 + ziarno;
-      t *= 1 - morze[i2] * 0.42; // morza wyraźnie ciemniejsze
-      t *= 1 + swiezosc[i2] * 0.22; // świeże wały jaśniejsze
-      t += jasnosc[i2] * 0.24; // promienie
-      t += Math.max(-0.12, Math.min(0.12, wysokosc[i2] * 0.16)); // wyżej = jaśniej
+      /* KONTRAST — tu decyduje się, czy księżyc jest spokojny,
+         czy „krzyczy". Morza zostają dobrze widoczne (to one
+         dają rozpoznawalny rysunek tarczy), ale jasne obwódki
+         kraterów i promienie zeszły do połowy dawnej siły. */
+      t *= 1 - morze[i2] * 0.36; // morza — główny rysunek tarczy
+      t *= 1 + swiezosc[i2] * 0.1; // świeże wały tylko odrobinę jaśniejsze
+      t += jasnosc[i2] * 0.09; // promienie ledwie zaznaczone
+      t += Math.max(-0.07, Math.min(0.07, wysokosc[i2] * 0.1)); // wyżej = jaśniej
       const p = i2 * 4;
       obrazK.data[p] = Math.max(0, Math.min(255, br * t));
       obrazK.data[p + 1] = Math.max(0, Math.min(255, bg * t));
@@ -480,7 +489,14 @@ function zbudujKsiezyc(opcje: {
   plotnoN.height = H;
   const ctxN = plotnoN.getContext("2d")!;
   const obrazN = ctxN.createImageData(W, H);
-  const SILA = 15;
+  /* SIŁA RZEŹBY — najważniejsza liczba w całej teksturze.
+     Była 15: każdy krater rzucał wyraźny cień i tarcza wyglądała
+     agresywnie, „dziurawo". Teraz 5,5 — relief jest wyczuwalny
+     (światło ma się na czym złapać, powierzchnia nie jest płaską
+     naklejką), ale nie rzuca się w oczy. Dokładnie tak wygląda
+     Księżyc widziany z Ziemi: rozpoznajesz morza, a kratery są
+     delikatnym rysunkiem, nie reliefem. */
+  const SILA = 5.5;
   for (let y = 0; y < H; y++) {
     const sinSurowy = Math.sin(((y + 0.5) / H) * Math.PI);
     const sin = Math.max(sinSurowy, 0.3);
@@ -780,12 +796,19 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
      — wszystko zlewa się w białą plamę. Prawdziwy Księżyc też
      jest ciemnoszary; jasny wydaje się tylko na tle czerni. */
   const USTAWIENIA_KSIEZYCA = {
-    bazowy: [163, 158, 186] as [number, number, number],
-    duze: 15,
-    srednie: 64,
-    male: 340,
-    morza: 3,
-    relief: 1,
+    /* Po ściszeniu rzeźby tarcza zrobiła się ciemna jak asteroida,
+       więc podnosimy JASNOŚĆ BAZOWĄ — bez dotykania kontrastu.
+       To ważne rozróżnienie: jaśniej ≠ bardziej krzykliwie. */
+    bazowy: [190, 185, 210] as [number, number, number],
+    /* Mniej kraterów niż w pierwszej wersji, za to WIĘCEJ MÓRZ.
+       To jest sedno poprawki: rozpoznawalny Księżyc to przede
+       wszystkim ciemne plamy mórz, a nie gęsto upakowane kratery.
+       Kratery mają być drugim planem, nie tematem. */
+    duze: 9,
+    srednie: 38,
+    male: 240,
+    morza: 5,
+    relief: 0.6,
     ziarno: Math.floor(Math.random() * 1e9), // losowy świat, ale JEDEN
   };
 
@@ -860,11 +883,13 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const powKsiezyca2 = zbudujKsiezyc({
     szer: 512,
     bazowy: [211, 205, 242],
-    duze: 6,
-    srednie: 22,
-    male: 60,
-    morza: 1,
-    relief: 1,
+    duze: 5,
+    srednie: 18,
+    male: 50,
+    morza: 2,
+    // ta sama łagodność co duży księżyc — inaczej mniejszy wyglądałby
+    // na bardziej „dziurawy" od tego oglądanego z bliska
+    relief: 0.6,
      ziarno: Math.floor(Math.random() * 1e9),
   });
   const ksiezyc2 = new THREE.Mesh(
@@ -935,11 +960,11 @@ export function zbudujLot(pojemnik: HTMLDivElement): SilnikLotu {
   const powKsiezycaT = zbudujKsiezyc({
     szer: 512,
     bazowy: [215, 232, 229],
-    duze: 4,
-    srednie: 16,
-    male: 40,
-    morza: 0,
-    relief: 1,
+    duze: 3,
+    srednie: 12,
+    male: 32,
+    morza: 1,
+    relief: 0.6, // spójnie z pozostałymi księżycami
      ziarno: Math.floor(Math.random() * 1e9),
   });
   const ksiezycTurkusowej = new THREE.Mesh(

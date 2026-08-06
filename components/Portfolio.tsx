@@ -148,7 +148,15 @@ export default function Portfolio() {
               <Reveal
                 key={projekt.tytul}
                 opoznienie={(indeks % 2) * 0.08}
-                className={kol}
+                /* Klasa `rzad-N` jest HACZYKIEM DLA PARALLAKSY.
+                   W trybie lotu components/lot/LotSekcja.tsx łapie
+                   po niej całe rzędy i przesuwa je przy scrollu
+                   z różną prędkością — dzięki temu płaska siatka
+                   zyskuje głębię i przestaje wyglądać jak naklejka
+                   na scenie 3D. Kafelki zostają NA WPROST: obrót
+                   w perspektywie zniekształcałby miniatury, a to
+                   one mają sprzedawać. */
+                className={`${kol} rzad-${Math.floor(indeks / 2)}`}
               >
                 <KartaProjektu projekt={projekt} wysokosc={wys} />
               </Reveal>

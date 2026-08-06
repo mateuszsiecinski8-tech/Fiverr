@@ -401,6 +401,53 @@ body {
 .tryb-lot .planetka-css {
   display: none;
 }
+
+/* --- 1c. HERO: „CISZA WOKÓŁ SCENY" (wariant B, runda v3) ---
+   Właściciel wybrał minimalizm przez ODJĘCIE TEKSTU, a nie przez
+   wyciszenie grafiki: scena 3D zostaje bohaterem, a wokół niej
+   robi się pusto.
+
+   Co znika w trybie lotu: blok trzech statystyk pod przyciskami.
+   Zostaje: plakietka dostępności, nagłówek, JEDNO zdanie i dwa
+   przyciski. To wszystko.
+
+   Statystyki NIE są kasowane z kodu — nadal widać je w wersji
+   klasycznej (telefon, „ograniczone animacje"), gdzie nie ma
+   sceny 3D i to one budują wiarygodność. */
+.tryb-lot #start dl {
+  display: none;
+}
+/* Nie trzeba nic dodawać poza tym: kolumna tekstu jest wyśrodkowana
+   w pionie (`items-center` w Hero.tsx), więc po usunięciu statystyk
+   sama wraca na środek kadru i robi się wokół niej pusto. */
+
+/* --- 1d. WSPÓLNE NIEBO NA CAŁEJ TRASIE (runda v3) ---
+   Problem: przy przelocie z hero do pierwszej sceny niebo
+   „przesuwało się i zmieniało kolor". Powód: hero miało własne
+   fioletowe poświaty (klasy `plywa1`/`plywa2` w komponencie Hero),
+   a dalsze sceny już nie — więc od pierwszego lotu tło robiło się
+   zupełnie inne.
+
+   Rozwiązanie: ta sama mgławica jest teraz PRZYKLEJONA DO EKRANU
+   i towarzyszy całej podróży. Kanwa 3D jest przezroczysta, więc
+   wystarczy położyć ją pod spodem.
+
+   Uwaga: to celowo jedna, NIEZMIENNA warstwa. Gdyby zmieniała
+   kolor razem ze sceną, wróciłby dokładnie ten problem, który
+   naprawiamy. Kolor planety wolno teraz nosić tylko kartom
+   i tekstowi — nie całemu kadrowi. */
+.tryb-lot .pojemnik-kosmos::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1; /* pod kanwą, która jest dzieckiem tego pojemnika */
+  pointer-events: none;
+  background:
+    radial-gradient(58% 46% at 16% 88%, rgba(109, 78, 208, 0.2) 0%, transparent 68%),
+    radial-gradient(48% 40% at 86% 12%, rgba(150, 92, 200, 0.14) 0%, transparent 70%),
+    radial-gradient(70% 60% at 50% 50%, rgba(24, 16, 52, 0.55) 0%, transparent 78%),
+    #05030c;
+}
 /* Dekoracje sekcji (planetki, komety) — dubluje je prawdziwa scena */
 .tryb-lot .ozdoby-kosmos {
   display: none;
@@ -595,11 +642,14 @@ body {
   inset: 0;
   z-index: 1; /* nad kanwą; cały pojemnik i tak siedzi pod treścią */
   pointer-events: none;
+  /* Delikatniejsza niż w v2: od kiedy pod kanwą leży wspólna
+     mgławica (sekcja 1d), kadr jest już spokojny sam z siebie
+     i mocna winieta tylko robiła z każdej sceny inny „tunel". */
   background: radial-gradient(
-    128% 96% at 50% 46%,
-    transparent 38%,
-    rgba(5, 3, 12, 0.34) 74%,
-    rgba(5, 3, 12, 0.62) 100%
+    132% 100% at 50% 46%,
+    transparent 44%,
+    rgba(5, 3, 12, 0.22) 76%,
+    rgba(5, 3, 12, 0.46) 100%
   );
 }
 
@@ -683,6 +733,28 @@ body {
     0 48px 110px -38px rgba(0, 0, 0, 1),
     0 0 70px -22px rgba(var(--pl-rgb), 0.35);
 }
+/* GŁĘBIA BEZ OBRACANIA KAFELKÓW.
+   Sam ruch parallaksy (LotSekcja.tsx) to dopiero połowa efektu —
+   drugą połowę robi ŚWIATŁO. Dalsze rzędy dostają słabszy cień
+   i odrobinę mniej kontrastu, bo tak zachowuje się powietrze
+   (a w kosmosie: pył) między nami a przedmiotem.
+   Wartości są celowo malutkie — ma być wyczuwalne, nie widoczne. */
+.tryb-lot #portfolio .rzad-1 .kafel-projektu,
+.tryb-lot #portfolio .rzad-3 .kafel-projektu {
+  box-shadow: 0 26px 60px -34px rgba(0, 0, 0, 0.9);
+  opacity: 0.965;
+}
+.tryb-lot #portfolio .rzad-4 .kafel-projektu {
+  box-shadow: 0 20px 48px -30px rgba(0, 0, 0, 0.85);
+  opacity: 0.95;
+}
+/* najbliższy rząd — najmocniejszy cień, pełny kontrast */
+.tryb-lot #portfolio .rzad-0 .kafel-projektu {
+  box-shadow:
+    0 52px 110px -40px rgba(0, 0, 0, 1),
+    0 4px 14px -6px rgba(0, 0, 0, 0.85);
+}
+
 /* Nagłówek sekcji to JEDYNY tekst leżący wprost na kosmosie,
    więc tylko on potrzebuje cienia pod literami. */
 .tryb-lot #portfolio > div:last-child > *:first-child p,
@@ -812,6 +884,20 @@ body {
   color: transparent !important;
   text-shadow: none;
   filter: drop-shadow(0 6px 30px rgba(255, 180, 70, 0.28));
+  /* ⚠️ BEZ TYCH DWÓCH LINIJEK OGONKI LITER SĄ UCIĘTE.
+     Dlaczego: `background-clip: text` maluje litery TŁEM elementu,
+     a tło kończy się na krawędzi jego pudełka. Nagłówek ma tu
+     rozmiar 60 px i interlinię też 60 px (klasa `text-6xl`), więc
+     pudełko dwóch linijek ma DOKŁADNIE 120 px — ani piksela zapasu.
+     Ogonki liter „g", „y", „j" schodzą poniżej tej granicy i po
+     prostu znikają razem z tłem.
+     Zwykły biały tekst by się nie przyciął — przycina się tylko
+     tekst malowany gradientem. Stąd błąd był widoczny wyłącznie
+     w trybie lotu i tylko na tej jednej scenie.
+     Lekarstwo: odrobinę luźniejsza interlinia + dolny margines
+     wewnętrzny, który przedłuża pudełko tła pod linię pisma. */
+  line-height: 1.12;
+  padding-bottom: 0.14em;
 }
 .tryb-lot #kontakt p {
   color: rgba(255, 235, 205, 0.78) !important;
@@ -948,6 +1034,47 @@ body {
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.42);
+}
+
+/* ============================================================
+   STOPKA — DOMKNIĘCIE PODRÓŻY
+   ============================================================
+   Te style są POZA sekcją trybu lotu: stopka ma wyglądać tak samo
+   na telefonie i na komputerze. To ostatnia rzecz, jaką widzi
+   klient — nie ma powodu, żeby połowa odwiedzających dostawała
+   gorszą wersję.
+
+   Ciepła łuna u dołu jest echem słońca z ostatniej sceny. Dzięki
+   niej strona nie kończy się ścianą, tylko wygasa. */
+.stopka-kosmos {
+  /* Górne kilkanaście procent jest PRZEZROCZYSTE, żeby scena 3D
+     (słońce z ostatniego kadru) wtapiała się w stopkę zamiast
+     kończyć twardą, poziomą kreską. Przy nieprzezroczystym tle
+     w tym miejscu powstawał wyraźny szew — wyglądało, jakby
+     doklejono drugą stronę. */
+  background: linear-gradient(
+    180deg,
+    rgba(8, 6, 15, 0) 0%,
+    rgba(8, 6, 15, 0.78) 12%,
+    #0a0712 34%,
+    #0b0713 68%,
+    #100a14 100%
+  );
+}
+.stopka-luna {
+  position: absolute;
+  left: 50%;
+  bottom: -46%;
+  width: min(120rem, 150vw);
+  aspect-ratio: 2.4;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 190, 105, 0.16) 0%,
+    rgba(255, 150, 70, 0.07) 46%,
+    rgba(255, 140, 60, 0) 74%
+  );
 }
 
 /* --- 7. KAFELEK PODRÓŻY W MENU ---

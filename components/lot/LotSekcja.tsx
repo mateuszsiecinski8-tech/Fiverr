@@ -223,6 +223,45 @@ export default function LotSekcja() {
         );
       }
 
+      /* ============ PARALLAKSA KAFELKÓW PORTFOLIO ============
+         Problem, który to naprawia: mozaika projektów była PŁASKA
+         i cała jechała z tą samą prędkością, a za nią stała
+         przestrzenna scena 3D. Oko czytało to jak naklejkę
+         przyklejoną na zdjęcie — dwie rzeczy, nie jedna.
+
+         Lekarstwo: kolejne rzędy przesuwają się przy scrollu
+         o różną wartość. Rzędy „bliższe" jadą szybciej, „dalsze"
+         wolniej — dokładnie tak, jak zachowuje się świat za oknem
+         pociągu. Kafelki zostają przy tym NA WPROST, bez obracania
+         w perspektywie: obrót zniekształcałby miniatury, a to one
+         mają sprzedawać.
+
+         Dlaczego to bezpieczne: `transform` NIE zmienia wysokości
+         strony, więc okna postoju kamery (liczone w pikselach)
+         zostają nietknięte — patrz pułapka nr 3 w KONTEKST.md. */
+      const GLEBIA = [0.2, 0.65, 0.35, 0.8, 0.5]; // 0 = blisko, 1 = daleko
+      GLEBIA.forEach((glebia, nr) => {
+        const rzad = document.querySelectorAll<HTMLElement>(`#portfolio .rzad-${nr}`);
+        if (!rzad.length) return;
+        const zasieg = 46 * glebia; // ile pikseli dryfu
+        tweeny.push(
+          gsap.fromTo(
+            rzad,
+            { y: -zasieg },
+            {
+              y: zasieg,
+              ease: "none",
+              scrollTrigger: {
+                trigger: rzad[0],
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 0.6, // lekkie opóźnienie = ruch ma bezwładność
+              },
+            }
+          )
+        );
+      });
+
       /* — AKTYWNA SEKCJA („wyspa", przy której właśnie stoi kamera):
            pełna jasność + poświata w kolorze ciała niebieskiego.
            Reszta lekko przygaszona — patrz app/globals.css. — */

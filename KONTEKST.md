@@ -176,6 +176,90 @@ NIGDY na `claude/freelancer-portfolio-nextjs-0e9u0j`.
 - **Ekran startowy** na czas budowania sceny (mierzone: ~5 s).
   Bez sztucznego opóźnienia — znika, gdy scena wstanie.
 
+**Etap 12 — ZUI v3 (runda poprawek po obejrzeniu etapu 11).**
+Nadal gałąź `experiment/zui-space-scroll`, nadal TYLKO preview.
+
+- **Hero: wariant „cisza wokół sceny".** Właściciel wybrał minimalizm
+  przez ODJĘCIE TEKSTU, nie przez wyciszenie grafiki. Scena 3D zostaje
+  bohaterem; w trybie lotu znika blok trzech statystyk. W wersji
+  klasycznej (telefon) statystyki ZOSTAJĄ — tam nie ma sceny 3D i to
+  one budują wiarygodność.
+- **Wspólne niebo na całej trasie.** Wcześniej hero miało własne
+  fioletowe poświaty, a dalsze sceny już nie — więc przy pierwszym
+  przelocie tło „zmieniało kolor". Teraz ta sama mgławica jest
+  przyklejona do ekranu i towarzyszy całej podróży
+  (`.tryb-lot .pojemnik-kosmos::before`). Jest CELOWO niezmienna —
+  gdyby zmieniała barwę razem ze sceną, wróciłby ten sam problem.
+  Kolor planety wolno nosić tylko kartom i tekstowi, nie całemu kadrowi.
+- **Księżyce złagodzone (koryguje etap 11).** Poprzednia wersja była
+  zbyt agresywna — „dziurawy ser". Siła rzeźby zeszła z 15 na 5,5,
+  wał krateru z 0.6 na 0.3 (i szerszy), jasne obwódki i promienie
+  o połowę słabsze, za to WIĘCEJ MÓRZ. Wzorzec: Księżyc widziany
+  z Ziemi — rozpoznawalne ciemne plamy, kratery jako drugi plan.
+- **Portfolio: kafelki NA WPROST + parallaksa.** Płaska siatka nad
+  przestrzenną sceną czytała się jak naklejka na zdjęciu. Teraz
+  kolejne rzędy przesuwają się przy scrollu o różną wartość
+  (`GLEBIA` w LotSekcja.tsx) i mają różną siłę cienia. Kafelków
+  CELOWO nie obracamy w perspektywie — obrót zniekształcałby
+  miniatury, a to one sprzedają.
+- **Kontakt: słońce jako podłoga.** `ulamek` 0.22 → 0.62,
+  `kadr.y` 0.42 → 0.74. Górny brzeg tarczy ląduje na ~58% wysokości,
+  więc dolne 42% kadru to świecąca powierzchnia, a tekst wisi nad nią.
+- **Stopka przeprojektowana.** Była jedną linijką z copyrightem
+  i wyglądała, jakby strona się urwała. Teraz trzy piętra: wezwanie
+  do działania, mapa strony, podpis — plus ciepła łuna, echo słońca
+  z ostatniej sceny.
+- **BUG naprawiony: ucięte ogonki liter w nagłówku Kontaktu.**
+  Nagłówek ma rozmiar 60 px i interlinię 60 px, więc pudełko dwóch
+  linijek miało DOKŁADNIE 120 px. Ponieważ w trybie lotu tekst jest
+  malowany gradientem przez `background-clip: text`, litery były
+  przycinane do pudełka i „g", „y", „j" traciły ogonki. Zwykły biały
+  tekst by się nie przyciął — stąd błąd tylko w jednej scenie.
+  Lekarstwo: `line-height: 1.12` + `padding-bottom: 0.14em`.
+- **Statystyka poprawiona:** „6+ projects" → „12+" (10 pokazowych
+  + 2 prawdziwych klientów) — za zgodą właściciela.
+
+**Etap 12 — ZUI v3 (runda poprawek po obejrzeniu v2).**
+Wciąż gałąź `experiment/zui-space-scroll`, wciąż tylko preview.
+
+- **Hero: wariant „cisza wokół sceny".** Właściciel wybrał minimalizm
+  przez ODJĘCIE TEKSTU, nie przez wyciszenie grafiki. Blok trzech
+  statystyk znika w trybie lotu (`.tryb-lot #start dl`), zostaje
+  plakietka, nagłówek, jedno zdanie i dwa przyciski. Statystyki
+  nadal widać w wersji klasycznej — tam nie ma sceny 3D i to one
+  budują wiarygodność.
+- **Wspólne niebo na całej trasie.** Wcześniej hero miało własne
+  fioletowe poświaty, a dalsze sceny nie — więc przy pierwszym
+  przelocie tło zmieniało kolor. Teraz ta sama mgławica jest
+  przyklejona do ekranu pod kanwą (`.pojemnik-kosmos::before`)
+  i towarzyszy całej podróży. ⚠️ To celowo JEDNA, NIEZMIENNA
+  warstwa — gdyby zmieniała kolor razem ze sceną, wróciłby
+  dokładnie ten problem. Kolor planety wolno nosić tylko kartom
+  i tekstowi, nigdy całemu kadrowi.
+- **Księżyce złagodzone (koryguje etap 11).** Poprzednia wersja była
+  zbyt agresywna — „dziurawy ser". Teraz: mniej kraterów, więcej
+  mórz, siła rzeźby 0,6 zamiast 1, kontrast obwódek i promieni
+  ścięty o połowę, jaśniejsza baza. Wzór: Księżyc widziany z Ziemi.
+- **Portfolio: kafelki NA WPROST + parallaksa.** Kafelki NIE są
+  obracane w perspektywie (obrót zniekształcał miniatury, a to one
+  sprzedają). Głębia bierze się z ruchu: rzędy `.rzad-N` przesuwają
+  się przy scrollu z różną prędkością (GSAP w LotSekcja.tsx),
+  mają różną wielkość i różną siłę cienia.
+- **Kontakt: słońce jako podłoga.** `ulamek` 0,22 → 0,62 i `kadr.y`
+  0,42 → 0,74. Gwiazda wypełnia dolne ~42% kadru jak horyzont,
+  a tekst wisi nad nią.
+- **Stopka przeprojektowana.** Trzy piętra: wezwanie do działania,
+  mapa strony w kolumnach, podpis. Góra stopki jest przezroczysta,
+  żeby scena wtapiała się w nią bez twardego szwu.
+- **Naprawiony bug:** ucięte ogonki liter w nagłówku Kontaktu.
+  `background-clip: text` maluje litery TŁEM elementu, a nagłówek
+  miał interlinię równą rozmiarowi pisma — pudełko nie miało zapasu
+  na litery „g", „y", „j". Lekarstwo: `line-height: 1.12` +
+  `padding-bottom: 0.14em`. Uwaga na przyszłość: ten błąd dotyczy
+  wyłącznie tekstu malowanego gradientem.
+- **Statystyka poprawiona:** „6+ projects" → „12+" (10 pokazowych
+  + 2 prawdziwych klientów).
+
 ## 3. Ważne decyzje (nie zmieniać bez powodu)
 
 - Treści edytuje się TYLKO w `lib/dane.ts` — nigdy na sztywno w komponentach.
